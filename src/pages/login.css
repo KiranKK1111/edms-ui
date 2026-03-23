@@ -1,0 +1,153 @@
+.login-wrapper {
+  min-height: 100vh;
+  overflow: auto;
+  background-color: #ccc;
+  display: flex;
+
+  background-image: linear-gradient(to right, #2c3a87, #055cbe);
+}
+.login-container {
+  flex-grow: 1;
+  background-image: url("../images/EDMSbkgrd.png");
+  position: relative;
+  background-size: 500px;
+  background-repeat: no-repeat;
+  background-position: center;
+  align-self: auto;
+}
+.login-panel {
+  width: 456px;
+  background-color: #fff;
+  box-sizing: border-box;
+  padding: 48px;
+  position: relative;
+}
+.logo-right {
+  position: relative;
+  background-image: url("../images/SCB_logo.svg");
+  width: 130px;
+  height: 48px;
+}
+.login-box {
+  box-sizing: border-box;
+  margin-top: 40%;
+  height: 254px;
+  width: 360px;
+}
+.login-box h3 {
+  font-family: Inter;
+  font-size: 30px;
+  font-weight: 800;
+  color: #172b4d;
+  padding: 0 0 16px 0;
+  margin: 0;
+}
+.login-box p {
+  color: #344456;
+  padding: 0 0 24px 0;
+  margin: 0;
+}
+.login-box p.msg-stage {
+  color: red;
+  padding: 0 0 12px 0;
+  margin-top: -10px;
+}
+.site-form-item-icon {
+  color: #485d75 !important;
+  opacity: 0.7;
+}
+.ant-form-item:first-child {
+  margin-bottom: 16px;
+}
+.ant-btn-lg {
+  font-size: 14px;
+}
+.need-help {
+  text-align: right;
+  float: right;
+  padding-right: 0;
+  margin-right: 0;
+}
+.btn-link {
+  font-size: 14px;
+  color: #007aff;
+  font-family: "Inter", sans-serif;
+}
+.login-quote {
+  width: 100%;
+  font-size: 20px;
+  color: #fff;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 3%;
+  text-align: center;
+}
+.logo-left {
+  padding: 48px 0 0 48px;
+}
+.logo-bg {
+  width: 240px;
+  height: 50px;
+  background-image: url("../images/EDP_logo_whiteText.svg");
+  border-radius: 0px;
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 16px;
+}
+.logo-left div {
+  display: inline-block;
+}
+.logo-left h4,
+.logo-left h3 {
+  padding: 0;
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+}
+.logo-left h4 {
+  font-weight: 200;
+  padding-top: 4px;
+}
+.logo-left h3 {
+  font-weight: 600;
+}
+.env-txt {
+  text-align: left;
+  color: #333;
+  font-size: 13px;
+  text-transform: capitalize;
+  padding-top: 10px;
+}
+
+@media screen and (min-width: 1400px) {
+  .login-box {
+    margin-top: 55%;
+  }
+  .login-quote {
+    font-size: 28px;
+  }
+}
+.env-left-logo {
+  display: flex;
+  justify-content: right;
+  align-items: left;
+  padding: 0px 0 0 0px;
+}
+.env-info {
+  flex: 1;
+}
+@media screen and (min-width: 1900px) {
+  .login-box {
+    margin-top: 80%;
+  }
+  .login-container {
+    flex-grow: 1;
+    background-image: url("../images/EDMSbkgrd.png");
+    position: relative;
+    background-size: 900px;
+    background-repeat: no-repeat;
+    background-position: center;
+    align-self: auto;
+  }
+}

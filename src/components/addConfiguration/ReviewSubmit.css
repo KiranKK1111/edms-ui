@@ -1,0 +1,38 @@
+.review-submit .sourcefolder .ant-form-item .ant-form-item-label {
+    max-width:20% !important;
+}
+
+.review-submit .sourcefolder .ant-form-item-control {
+    max-width: 80%;
+}
+
+.review-submit .storageLocation .ant-form-item .ant-form-item-label {
+    max-width:20% !important;
+}
+
+.review-submit .storageLocation .ant-form-item-control {
+    max-width: 80%;
+}
+
+
+.review-submit .ant-form-item-control-input-content {
+   /*padding: 4px 11px;*/
+   margin-top:4px;
+}
+
+.review-submit .ant-form-item-label > label {
+    font-family: "Inter-SemiBold" !important;
+    font-size: 14px !important;
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+.review-submit .label-wrap .ant-form-item-label {
+    padding-bottom: 0px; 
+}
+.review-submit .ant-form-item {
+    margin-bottom: 0px;
+}
+.review-submit .ant-form-item:first-child {
+    margin-bottom: 0px !important;
+}

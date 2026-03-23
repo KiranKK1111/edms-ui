@@ -1,0 +1,27 @@
+.flex-container {
+  display: flex;
+  height: 28rem;
+  justify-content: center;
+  align-items: center;
+}
+.entity-main .panel {
+  padding: 0 24px;
+}
+.entity-main .breadcrumb-area {
+  align-items: center;
+}
+.entity-main .ant-page-header {
+  padding-bottom: 24px;
+}
+
+.entity-main h3 {
+  padding:24px 0 0 48px;
+  margin: 0;
+  color: #0f1217;
+  font-family: Inter-SemiBold;
+  font-size: 16px;
+  font-weight: 500;
+}
+.entity-main .vendor-from {
+  padding: 0 24px 24px 24px;
+}

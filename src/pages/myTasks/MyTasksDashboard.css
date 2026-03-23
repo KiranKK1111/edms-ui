@@ -1,0 +1,99 @@
+.dashboard-layout {
+    box-sizing: border-box;
+    background-color: #FFFFFF;
+    margin-left: 24px;
+    margin-right: 24px;
+    margin-top: 24px;
+}
+
+.dashboard-header{
+    height: 130px;
+    background-color: #FFFFFF;
+    padding: 0 24px;
+  
+}
+.boxNumber {
+    height: 59px;
+    color: #0F1217;
+    font-family: Inter;
+    font-size: 48px;
+    letter-spacing: -1px;
+    line-height: 59px;
+    text-align: center;
+    position: absolute;
+    top: 45px;
+    left: 18px;
+}
+.card-main-blk{
+    padding: 24px 24px 0px 24px;
+    
+}
+
+.edms-card{
+    height: 135px;
+    color: #8C8C8C;
+    font-family: Inter;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.23px;
+    line-height: 17px;
+    background-color: white;
+    position: relative;
+    margin-right: 20px;
+    
+}
+
+.boxTitle{
+    padding: 20px;
+  color: #8C8C8C;
+  font-family: Inter;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.23px;
+  line-height: 17px;
+}
+
+.clr-red{
+    color: red;
+}
+
+.dashboard-header .ant-page-header {
+    padding: 0px !important;
+}
+
+button:disabled{
+    color: rgb(192, 188, 188);
+}
+.talign{
+    text-align: left;
+    word-break: break-all;
+}
+
+.sider-radio-group-button {
+    margin: 15px 0px 0px 0px; 
+    /*font-weight: 600;*/
+    font-size: 16px;
+    line-height: 32px;
+}
+
+.sider-radio-button {
+    font-size: 14px;
+    padding: 0px 10px 30px 9px;
+    height: 28px;
+    line-height: 32px;
+}
+
+.content-wrapper {
+    padding-bottom: 0px;
+}
+
+.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+    color: #fff;
+    background: #40a9ff;
+    border-color: #40a9ff;
+}
+
+.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled):hover {
+    border-color: #40a9ff;
+    color: #fff;
+}

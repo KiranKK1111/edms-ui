@@ -1,0 +1,10 @@
+/*.ant-form-item-explain.ant-form-item-explain-error {
+  margin-top: 15px;
+}*/
+
+.err-adjust .ant-form-item-explain-error {
+  margin-left: 50px;
+}
+.err1-adjust .ant-form-item-explain-error {
+  padding-top: 25px;
+}

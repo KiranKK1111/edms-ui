@@ -1,0 +1,48 @@
+.details-header-review {
+  height: 24px;
+  
+  color: #0f1217;
+  font-family: Inter;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 0;
+  line-height: 35px;
+}
+
+.change-review {
+  margin-left: "5px";
+  height: 16px;
+  width: 45px;
+  color: #007aff;
+  font-family: Inter;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 16px;
+}
+
+.label-review {
+  height: 24px;
+  margin-bottom: 0px;
+  color: #0f1217;
+  font-family: Inter;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 22px;
+}
+.name-review {
+  height: 22px;
+  
+  color: #344456;
+  font-family: Inter;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 22px;
+}
+.breadcrumb-area {
+  padding-bottom: 20px;
+}
+.pg-header .ant-page-header {
+  padding-left: 0 !important;
+}

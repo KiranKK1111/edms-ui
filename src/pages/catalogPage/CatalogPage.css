@@ -1,0 +1,78 @@
+.catalog-page .bg-white {
+  background-color: #ffffff;
+}
+
+.catalog-page .catalog-title {
+  font-size: 32px;
+  font-weight: bold;
+  letter-spacing: -0.53px;
+  line-height: 46px;
+}
+
+.catalog-page .content-title {
+  color: #212b36;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 20px;
+}
+
+/*
+ * Filter Form styles.
+ */
+.catalog-page .ant-form-item-control {
+  width: 100%;
+}
+
+/*
+ * Catalog Content styles.
+ */
+.catalog-card {
+  min-height: 265px;
+  position: relative;
+}
+.catalog-card .main-title,
+.catalog-card .catlog-dataset {
+  color: #0f1217 !important;
+  font-size: 12px;
+  letter-spacing: 0;
+  line-height: 15px;
+  font-family: "Inter-Medium";
+}
+
+.catalog-card .sub-title {
+  color: #0f1217;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 24px;
+}
+
+.catalog-card .description {
+  min-height: 45px;
+  color: #172b4d !important;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 22px;
+  margin-top: 14px;
+}
+.list-parent {
+  width: 100% !important;
+}
+.catalogue-status {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+}
+.para-break {
+  padding-top: 24px;
+}
+
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none; 
+   -khtml-user-select: none; 
+     -moz-user-select: none; 
+      -ms-user-select: none; 
+          user-select: none; 
+}

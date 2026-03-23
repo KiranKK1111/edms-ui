@@ -1,0 +1,54 @@
+.header-one{
+    box-sizing: border-box;
+    height: 129px; 
+    
+    border: 1px solid #DFE3E9;
+    border-radius: 4px;
+    background-color: #FFFFFF;
+    box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
+    padding: 0px 25px;
+}
+
+.reactangletwo{
+    box-sizing: border-box;
+    padding-left: 24px;
+    margin-left: -24px;
+    border-radius: 4px;
+    background-color: #FFFFFF;
+    box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
+    padding: 35px;
+      margin: 24px;
+      
+  }
+
+  .add-new-license-headers{
+    height: 28px;
+  width: 119px;
+  color: #0F1217;
+  font-family: Inter;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 28px;
+  }
+  .arrow-left{
+    height: 16px;
+    width: 16px;
+    color: #000000;
+    margin-right: 7px;
+  }
+
+  .alert-header{
+      margin: 24px;
+      box-sizing: border-box;
+  height: 38px;
+ 
+  border: 1px solid #FFEEBB;
+  border-radius: 4px;
+  background-color: #FFF9E7;
+  box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
+  }
+  .home-page{
+    margin-left: -25px;
+    margin-top: -13px;
+  }

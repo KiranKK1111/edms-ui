@@ -1,0 +1,328 @@
+@font-face {
+  font-family: "Inter-Bold";
+  src: url("./fonts/Inter-Bold.eot");
+  src: url("./fonts/Inter-Bold.eot?#iefix") format("embedded-opentype"),
+    url("./fonts/Inter-Bold.woff2") format("woff2"),
+    url("./fonts/Inter-Bold.woff") format("woff"),
+    url("./fonts/Inter-Bold.ttf") format("truetype"),
+    url("./fonts/Inter-Bold.svg#Inter-Bold") format("svg");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter-Medium";
+  src: url("./fonts/Inter-Medium.eot");
+  src: url("./fonts/Inter-Medium.eot?#iefix") format("embedded-opentype"),
+    url("./fonts/Inter-Medium.woff2") format("woff2"),
+    url("./fonts/Inter-Medium.woff") format("woff"),
+    url("./fonts/Inter-Medium.ttf") format("truetype"),
+    url("./fonts/Inter-Medium.svg#Inter-Medium") format("svg");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter-Light";
+  src: url("./fonts/Inter-Light.eot");
+  src: url("./fonts/Inter-Light.eot?#iefix") format("embedded-opentype"),
+    url("./fonts/Inter-Light.woff2") format("woff2"),
+    url("./fonts/Inter-Light.woff") format("woff"),
+    url("./fonts/Inter-Light.ttf") format("truetype"),
+    url("./fonts/Inter-Light.svg#Inter-Light") format("svg");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter-SemiBold";
+  src: url("./fonts/Inter-SemiBold.eot");
+  src: url("./fonts/Inter-SemiBold.eot?#iefix") format("embedded-opentype"),
+    url("./fonts/Inter-SemiBold.woff2") format("woff2"),
+    url("./fonts/Inter-SemiBold.woff") format("woff"),
+    url("./fonts/Inter-SemiBold.ttf") format("truetype"),
+    url("./fonts/Inter-SemiBold.svg#Inter-SemiBold") format("svg");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./fonts/Inter-Regular.eot");
+  src: url("./fonts/Inter-Regular.eot?#iefix") format("embedded-opentype"),
+    url("./fonts/Inter-Regular.woff2") format("woff2"),
+    url("./fonts/Inter-Regular.woff") format("woff"),
+    url("./fonts/Inter-Regular.ttf") format("truetype"),
+    url("./fonts/Inter-Regular.svg#Inter-Regular") format("svg");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #212b36;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: normal;
+  background-color: #f4f6f8;
+}
+
+code {
+  font-family: "Inter", sans-serif;
+}
+
+input,
+.ant-input-lg,
+.ant-pagination-item-active,
+.ant-pagination-item {
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #212b36;
+  font-weight: 400;
+}
+::-webkit-input-placeholder {
+  /* Edge */
+  color: #485d75;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+}
+
+:-ms-input-placeholder {
+  /* Internet Explorer 10-11 */
+  color: #485d75;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+::placeholder {
+  color: #485d75;
+  font-family: "Inter", sans-serif;
+  font-size: 14px !important;
+}
+.error-text {
+  color: #0f1217;
+  font-weight: 400;
+  font-size: 14px;
+}
+.content-area {
+  padding: 24px;
+}
+.content-wrapper {
+  padding: 24px;
+  background-color: #fff;
+  box-sizing: border-box;
+}
+.ant-steps-small .ant-steps-item-title {
+  font-weight: 600;
+}
+.ant-steps {
+  padding: 16px 0;
+}
+.steps-content {
+  padding: 24px 0 24px;
+  box-sizing: border-box;
+}
+.steps-action button:first-child {
+  margin-left: 0 !important;
+}
+.ant-form-item-explain {
+  font-size: 12px !important;
+}
+.review-submit h3 {
+  padding: 0;
+  margin: 0;
+  padding-bottom: 16px;
+  color: #0f1217;
+  font-family: Inter-SemiBold;
+  font-size: 16px;
+  font-weight: 500;
+}
+.review-submit h3 span {
+  font-size: 14px;
+  font-weight: 400;
+  border: 1px solid #1890ff;
+  padding: 5px 20px;
+  margin: 0 10px;
+  display: inline-block;
+  text-align: left;
+  box-sizing: border-box;
+}
+.label-review {
+  color: #0f1217;
+  font-family: "Inter-SemiBold" !important;
+  font-size: 14px !important;
+  padding: 0 5px 10px 0 !important;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+.inactive{
+  text-decoration-color: darkgrey;
+}
+.deactivate-model{
+  margin-left: -2.2rem;
+}
+.deactivate-margin{
+  margin-top: 1.5rem;
+}
+.btn-parent .ant-btn-primary {
+  margin-left: 10px !important;
+}
+.ant-form-item-label > label {
+  font-weight: 500;
+}
+.spin-container {
+  position: fixed;
+  left: 0;
+  top: 260px;
+  right: 0;
+  bottom: 0;
+  background-color: #fff;
+  z-index: 99;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  display: none;
+}
+input,
+input[type="text"]:disabled,
+select:disabled {
+  color: rgba(0, 0, 0, 0.85);
+}
+.accepted-parent {
+  display: flex;
+  justify-content: space-between;
+}
+.result-head {
+  padding: 0;
+  margin: 0;
+  font-size: 20px;
+  font-family: "Inter-SemiBold";
+  color: #0f1217;
+}
+.result-text {
+  padding: 0;
+  margin: 0;
+  color: #344357;
+  line-height: 20px;
+  text-align: center;
+}
+.ant-result-extra {
+  max-width: 300px;
+  margin: 10px auto;
+}
+
+.terms-conditions h3 {
+  color: #0f1217;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.terms-conditions .terms {
+  padding: 16px 16px 5px 16px;
+  border: 1px solid #d9d9d9;
+  line-height: 22px;
+  font-size: 14px;
+  font-weight: 400;
+  box-sizing: border-box;
+}
+.terms-conditions .terms h4 {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0f1217;
+}
+
+.link-button {
+  border: none;
+  cursor: pointer;
+  color: #1890ff;
+  text-decoration: none;
+  background-color: transparent;
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+.link-button:hover,
+.link-button:focus,
+.link-button:active {
+  text-decoration: none;
+  border: none;
+  outline-color: none !important;
+}
+.ant-list-item-meta-title {
+  font-size: 14px;
+  color: #0f1217;
+  font-family: "Inter-SemiBold";
+}
+.ant-list-item-meta-description {
+  color: #172b4d;
+}
+
+.capitalize-text {
+  text-transform: capitalize !important;
+}
+
+.ant-form-item-explain {
+  min-height: 0;
+}
+.EVENT_CANCEL {
+  pointer-events: none;
+}
+table th {
+  font-family: "Inter-SemiBold";
+}
+.label-bold {
+  font-family: "Inter-Medium";
+}
+
+h3.content-header {
+  font-family: "Inter-Medium";
+  font-size: 16px;
+  padding: 0;
+  margin: 0;
+  color: #0f1217;
+}
+.fontStyleMed {
+  font-family: "Inter-Medium";
+}
+.list-label {
+  font-weight: 600;
+  padding: 0 5px 8px 0;
+  display: inline-block;
+}
+.asterisk-custom:before {
+  display: inline-block;
+  margin-right: 4px;
+  color: #ff4d4f;
+  font-size: 14px;
+  font-family: SimSun, sans-serif;
+  line-height: 1;
+  content: "*";
+}
+
+.breadcrumb-parent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.btn-top-parent {
+  padding: 10px 0;
+}
+.btn-top-parent button {
+  margin-left: 10px;
+}
+.modal-head {
+  font-family: "Inter-SemiBold" !important;
+}

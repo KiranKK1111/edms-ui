@@ -1,0 +1,75 @@
+.label-wrap .ant-form-item-label {
+    /* overflow-wrap: break-word !important; */
+    /* word-wrap: break-word !important; */
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+    
+}
+
+.required-span:not(.ant-form-item-required-mark-optional)::before {
+    display: inline-block !important ;
+    margin-right: 4px !important;
+    color: #ff4d4f !important;
+    font-size: 14px !important;
+    font-family: SimSun, sans-serif !important;
+    line-height: 1 !important;
+    content: '*' !important;
+}
+
+
+/*.ant-from-sourceProperty .ant-form-item-label > label {
+    display: inline !important;
+}*/
+
+
+.label-wrap .ant-form-item-label {
+    text-align: left ;
+}
+
+.listFiles .ant-form-item .ant-form-item-label {
+    max-width:20.5% !important;
+}
+
+.listFiles .ant-form-item-control {
+    max-width: 79.5% !important;
+}
+
+.histsourcefolder .ant-form-item .ant-form-item-label {
+    max-width:20.5% !important;
+}
+
+.histsourcefolder .ant-form-item-control {
+    max-width: 100%;
+}
+
+.sourcefolder .ant-form-item .ant-form-item-label {
+    max-width:20% !important;
+}
+
+.sourcefolder .ant-form-item-control {
+    max-width: 80%;
+}
+
+.storageLocation .ant-form-item .ant-form-item-label {
+    max-width:20% !important;
+}
+
+.storageLocation .ant-form-item-control {
+    max-width: 80%;
+}
+
+
+@media  only screen and (min-width: 1920px) {
+    .label-wrap .ant-form-item-label {
+        text-align: left !important;
+        
+    }
+    /*.ant-from-sourceProperty .ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+        margin-right: 4px !important;
+        display: inline !important;
+        
+        flex: 0 0 20.3%!important;
+    
+    }*/
+}

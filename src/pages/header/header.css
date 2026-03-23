@@ -1,0 +1,92 @@
+/* Formatting the Menu height and highlight */
+.ant-layout-header {
+  height: 56px;
+}
+.ant-layout-header .ant-menu {
+  line-height: 56px;
+  background-color: #0f1217;
+}
+.Main-header {
+  background-color: #0f1217;
+  cursor: none;
+}
+.ant-menu-dark.ant-menu-horizontal > .ant-menu-item:hover {
+  background-color: #0f1217;
+}
+.page-selected {
+  background-color: #1890ff;
+  height: 56px;
+  padding: 20px;
+  margin: 2px;
+  box-sizing: border-box;
+}
+
+/* Logo Styles */
+.logo {
+  height: 56px;
+  float: left;
+}
+.logo img {
+  margin-top: -10px;
+  margin-left: -24px;
+}
+
+.header-menu-items {
+  margin: 5px;
+}
+/* Right side Menu Items */
+.right-item-1,
+.right-item-2 {
+  /*  left: 55%;*/
+  float: right;
+  margin: 0px;
+  padding: 0px;
+}
+.right-item-1 {
+  width: 60px;
+}
+
+.right-item-2 {
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.header-notification-menu {
+  width: 256px;
+  padding: 24px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+    0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+}
+
+.header-notification-menu .header-menu-item-1 {
+  color: #0f1217;
+  font-family: Inter;
+  white-space: normal;
+  height: auto;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 22px;
+}
+
+.header-notification-menu .header-menu-item-2 {
+  line-height: 22px;
+  width: 120px;
+  padding: 0px;
+  margin-bottom: 16px;
+  margin-top: 16px;
+  margin-left: 0px;
+  background-color: white;
+  font-family: Inter;
+  font-size: 14px;
+  letter-spacing: 0;
+  cursor: pointer;
+  vertical-align: baseline;
+}
+
+.icon-style {
+  padding: 0px;
+  color: #7890ac;
+}

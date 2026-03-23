@@ -1,0 +1,27 @@
+.pt-head {
+    padding-top: 16px;
+}
+
+.ant-descriptions-small .ant-descriptions-row>td, .ant-descriptions-small .ant-descriptions-row>th {
+    padding-left: 10px;
+}
+
+.dashboard-vendors-descriptions{
+    margin: 0 !important;
+    border-bottom: none !important;
+    
+}
+
+/*.dashboard-configurations {
+    border: 1px solid #f1eded;
+    padding:10px;  
+}*/
+
+.steps-content {
+    border: 1px solid #f1eded;
+    padding:10px;  
+}
+
+.content-wrapper{
+    padding-bottom: 40px;
+}

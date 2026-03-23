@@ -1,0 +1,82 @@
+export const API_DATA_FAMILY_URL = process.env.REACT_APP_API_DATA_ENTITY_URL;
+
+export const API_LICENSE_MANAGER_URL =
+  process.env.REACT_APP_API_LICENSE_MANAGER_URL;
+
+export const API_CONTRACT_MANAGEMENT_URL =
+  process.env.REACT_APP_API_CONTRACT_MANAGEMENT_URL;
+
+export const API_VENDOR_URL = process.env.REACT_APP_API_VENDOR_URL;
+
+export const API_SQL_RECORDS_URL = process.env.REACT_APP_API_SQL_RECORDS_URL;
+
+export const API_BASE_ENDPOINT = process.env.REACT_APP_API_BASE_ENDPOINT;
+
+export const API_USER_PROFILE_URL = process.env.REACT_APP_API_USER_PROFILE_URL;
+
+export const API_LOGIN_URL = process.env.REACT_APP_API_LOGIN_URL;
+
+export const API_USER_SUBSCRIPTION_MANAGEMENT_URL =
+  process.env.REACT_APP_API_USER_SUBSCRIPTION_MANAGEMENT_URL;
+
+export const API_TECHNICAL_DETAILS_URL =
+  process.env.REACT_APP_API_TECHNICAL_DETAILS_URL;
+
+export const API_SCB_LOGIN_URL = process.env.REACT_APP_SCB_API_LOGIN_URL;
+
+export const API_SCB_ROLE_ENDPOINT =
+  process.env.REACT_APP_SCB_API_ROLE_ENDPOINT;
+
+export const API_SCB_BASE_ENDPOINT =
+  process.env.REACT_APP_SCB_API_BASE_ENDPOINT;
+
+export const API_TEMP_URL = process.env.REACT_APP_API_TEMP_URL;
+
+export const EDMS_ACCESS_API_ENDPOINT =
+  process.env.REACT_APP_EDMS_ACCESS_API_ENDPOINT;
+export const EDMS_ACCESS_API_ACCESS_ENDPOINT =
+  process.env.REACT_APP_EDMS_ACCESS_API_ACCESS_ENDPOINT;
+
+export const API_RECURRENCE_SCHEDULER_URL =
+  process.env.REACT_APP_API_RECURRENCE_SCHEDULER_URL;
+
+export const API_FILE_FORMAT_URL = process.env.REACT_APP_API_FILE_FORMAT_URL;
+export const API_ADD_FILE_URL = process.env.REACT_APP_API_ADD_FILE_URL;
+export const FILE_BASE_ENDPOINT = process.env.REACT_APP_FILE_BASE_ENDPOINT;
+
+export const API_ADD_ROLE_URL = process.env.REACT_APP_API_ADD_ROLE_URL;
+export const API_DATA_ENTITY_URL = process.env.REACT_APP_API_DATA_ENTITY_URL;
+export const API_SUBSCRIPTION_URL = process.env.REACT_APP_API_SUBSCRIPTION_URL;
+export const API_AGREEMENT_URL = process.env.REACT_APP_API_AGREEMENT_URL;
+export const API_SCHEMAS_URL = process.env.REACT_APP_API_SCHEMAS_URL;
+export const API_DATAFLOW_URL = process.env.REACT_APP_API_DATAFLOW_URL;
+export const API_TASKLIST_URL = process.env.REACT_APP_API_TASKLIST_URL;
+
+export const API_FORGEROCK_URL = process.env.REACT_APP_API_FORGEROCK_URL;
+export const API_AUTH_URL = process.env.REACT_APP_API_AUTH_URL;
+
+export const API_FOR_ENTITY = process.env.REACT_APP_API_FOR_ENTITY;
+export const API_FOR_SUBSCRIPTION = process.env.REACT_APP_API_FOR_SUBSCRIPTION;
+export const API_FOR_DATAFLOW = process.env.REACT_APP_API_FOR_DATAFLOW;
+export const API_FOR_AGREEMENT = process.env.REACT_APP_API_FOR_AGREEMENT;
+export const API_FOR_AUTH = process.env.REACT_APP_API_FOR_AUTH;
+export const API_FOR_ENTITLEMENT = process.env.REACT_APP_API_FOR_ENTITLEMENT;
+export const API_FOR_CHANGE = process.env.REACT_APP_API_FOR_CHANGE;
+export const API_FOR_SCHEMAS = process.env.REACT_APP_API_FOR_SCHEMAS;
+
+export const API_FORGEROCK_PROD_URL =
+  process.env.REACT_APP_API_FORGEROCK_PROD_URL;
+
+export const API_TOKENURL = process.env.REACT_APP_API_TOKENURL;
+
+export const BUILD_ID = process.env.REACT_APP_BUILD_ID;
+
+export const API_MS_ENTRA_URL = process.env.REACT_APP_API_MS_ENTRA_URL;
+
+export const API_MS_ENTRA_URL_PROD = process.env.REACT_APP_API_MS_ENTRA_URL_PROD;
+
+export const API_EDP_PROD_URL = process.env.REACT_APP_EDP_PROD_URL;
+
+export const API_MS_ENTRA_CLIENT_ID = process.env.REACT_APP_MS_ENTRA_CLIENT_ID;
+
+export const API_MS_ENTRA_CLIENT_ID_PROD = process.env.REACT_APP_MS_ENTRA_CLIENT_ID_PROD

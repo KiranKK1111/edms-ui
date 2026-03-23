@@ -1,0 +1,41 @@
+.dashboard-table .ant-table {
+  height: auto;
+  width: auto;
+  font-size: 14px;
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 1px 0 0 #efefef;
+  box-sizing: border-box;
+}
+
+.inactive-tag {
+  color: #FA8C16;
+  background-color: #FFF7E6;
+  border: 1px solid #FFD591
+}
+
+.num-styling,
+.value-styling {
+  text-align: right;
+}
+.linkButton {
+  padding-left: 0px;
+}
+
+.disabled-value {
+  color: rgb(168, 164, 164);
+}
+.thick {
+  font-weight: bold;
+  font-family: "Inter-SemiBold";
+  color: #000;
+}
+
+.blue-menu {
+  color: #1890ff;
+  display: flex;
+}
+
+.warn-menu {
+  color: red;
+  display: flex;
+}

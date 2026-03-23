@@ -1,0 +1,23 @@
+.subHeader {
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 32px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin-bottom: 25px
+}
+
+.ant-picker {
+    width: 100%;
+}
+.label-review{
+   margin-bottom: 0px;
+    color: #0F1217;
+    font-family: Inter;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 30px;
+  }

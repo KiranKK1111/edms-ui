@@ -1,0 +1,29 @@
+.panel {
+  background-color: #fff;
+  padding: 16px 24px;
+}
+.panel h3 {
+  color: #0f1217;
+  font-family: Inter-SemiBold;
+  font-size: 20px;
+  font-weight: 500;
+  padding: 10px 0 24px 0;
+  margin-bottom: 0;
+}
+.panel h3 span {
+  padding-right: 12px;
+  font-weight: 600;
+}
+.panel .ant-list-item {
+  margin-bottom: 0 !important;
+}
+.breadcrumb-area {
+  display: flex;
+  justify-content: space-between;
+}
+.m-l-10 {
+  margin-left: 10px;
+}
+.panel .ant-page-header {
+  padding: 0 !important;
+}

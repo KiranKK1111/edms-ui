@@ -1,0 +1,17 @@
+.label-wrap .ant-form-item-label {
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+    padding-bottom:5px;
+}
+
+.label-wrap .ant-form-item-label {
+    text-align: left ;
+}
+
+@media  only screen and (min-width: 1920px) {
+    .label-wrap .ant-form-item-label {
+        text-align: left !important;
+        
+    }
+}

@@ -1,0 +1,86 @@
+.dashboard-table .ant-table {
+  height: auto;
+  width: auto;
+  font-size: 14px;
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 1px 0 0 #efefef;
+  box-sizing: border-box;
+}
+
+.dashboard-contracts-license {
+  display: inline;
+
+  margin: 5px;
+  text-align: left;
+}
+
+.inactive-tag {
+  color: #FA8C16;
+  background-color: #FFF7E6;
+  border: 1px solid #FFD591
+}
+
+.license-nested-table {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  margin-left: 0px;
+}
+.value-label,
+.license-field {
+  text-align: right;
+}
+
+.num-styling,
+.value-styling {
+  text-align: right;
+}
+.linkButton {
+  padding-left: 0px;
+}
+
+.edit-menu {
+  display: flex;
+}
+.warn-menu {
+  color: red;
+  display: flex;
+}
+.blue-menu {
+  color: #1890ff;
+  display: flex;
+}
+
+.popconfirm-contract-suspend {
+  width: 200px;
+  background-color: green;
+}
+
+.warn-menu .menu-popconfirm {
+  background-color: yellow;
+}
+.disabled-value {
+  color: rgb(168, 164, 164);
+}
+.thick {
+  font-weight: bold;
+  font-family: "Inter-SemiBold";
+  color: #000;
+}
+
+.agreementname-disp {
+
+  padding-left: initial;
+}
+
+.datasetname-disp {
+
+  padding-left: initial;
+}
+
+.license-nested-table .ant-table-title {
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+
+.license-nested-table .ant-table-thead > tr > th {
+  background: #ffffff !important;
+}

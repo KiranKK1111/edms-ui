@@ -1,0 +1,125 @@
+.dataset-details .bg-white {
+  background: #ffffff;
+}
+
+.dataset-details .page-header-img {
+  margin-top: -3px;
+}
+
+.dataset-details .ant-descriptions-item-label {
+  color: #0f1217;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 22px;
+}
+
+.dataset-details .ant-descriptions-item-content {
+  color: #212b36;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 22px;
+}
+
+/* Tabs Styles */
+.dataset-details .ant-tabs-nav-wrap {
+  margin: 16px 24px 0 24px;
+}
+.dataset-details .ant-tabs-content-holder {
+  margin: 8px 24px 24px 24px;
+}
+.dataset-details .ant-tabs-nav {
+  background: #ffffff;
+}
+
+/* Content styles */
+.dataset-details .content-title {
+  color: #0f1217;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 24px;
+}
+
+.warn-banner {
+  margin: 0px 0px 20px 0px !important;
+}
+
+.info-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header .ant-card-head-title {
+  font-size: 14px;
+}
+
+.txtCLr {
+  color: #0f1217 !important;
+}
+ul.documents-download {
+  padding: 0;
+  margin: 0;
+}
+ul.documents-download li {
+  list-style: none;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f1f1;
+  display: flex;
+  justify-content: space-between;
+}
+ul.documents-download li span.file-name {
+  font-family: "Inter-SemiBold";
+  text-transform: capitalize;
+}
+ul.documents-download li a.link-download,
+ul.documents-download li a.link-download:visited {
+  color: #1890ff;
+  cursor: pointer;
+  padding-right: 20px;
+}
+.overview-content {
+  padding: 0 24px;
+  background-color: #fff;
+  min-height: 280px;
+}
+ul.left-list {
+  font-weight: normal;
+  padding-left: 0 !important;
+}
+
+ul.left-list li {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  padding-bottom: 10px;
+}
+.label-bold {
+  font-weight: bold;
+}
+.header-longName {
+  padding-bottom: 30px !important;
+  font-weight: bold;
+  font-family: "Inter-Medium";
+}
+.list-space {
+  padding: 20px 0 10px 0 !important;
+}
+.cont-parent {
+  display: block;
+  overflow: auto;
+}
+.cont-left {
+  width: 26%;
+  float: left;
+  padding-right: 10px;
+}
+.cont-right {
+  width: 74%;
+  float: right;
+  border-left: 1px solid #ccc;
+  padding-left: 20px;
+  margin-bottom: 20px;
+  font-weight: normal;
+}
