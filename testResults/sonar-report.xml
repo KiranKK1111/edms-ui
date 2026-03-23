@@ -1,10 +1,497 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <unitTest version="1">
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\requestAccess\Panel.test.js">
+        <testCase name="wrapper" duration="3"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\MyTasksDashboardNew.test.js">
+        <testCase name="Parent Header panel" duration="4"/>
+        <testCase name="Parent Radio buttion simulation" duration="0"/>
+        <testCase name="Parent Simulate popup" duration="0"/>
+        <testCase name="Parent main" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\ViewDatafeed.test.js">
+        <testCase name="wrapper" duration="3"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\AddEditDocuments.test.js">
+        <testCase name="wrapper" duration="3"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\dataset\DocumentationTab.test.js">
+        <testCase name="Parent wrapper" duration="3"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\VendorData.test.js">
+        <testCase name="parent wrapper" duration="4"/>
+        <testCase name="parent table" duration="17"/>
+        <testCase name="parent table props" duration="3"/>
+        <testCase name="parent table props" duration="3"/>
+        <testCase name="parent Button click" duration="56"/>
+        <testCase name="parent Button event" duration="42"/>
+        <testCase name="parent Input event" duration="7"/>
+        <testCase name="parent Table Columns" duration="4"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\login\LoginForm.test.js">
+        <testCase name="Parent wrapper" duration="9"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\Login.test.js">
+        <testCase name="Login Page Logo presenting" duration="1"/>
+        <testCase name="Login Page should render the login page" duration="0"/>
+        <testCase name="Login Page should have a main container" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\RequestAccess.test.js">
+        <testCase name="wrapper" duration="2"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\license\ReviewSubmit.test.js">
+        <testCase name="wrapper" duration="2"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\DataSetData.test.js">
+        <testCase name="Parent wrapper" duration="1"/>
+        <testCase name="Parent Table" duration="13"/>
+        <testCase name="Parent Row expand" duration="8"/>
+        <testCase name="Parent Row length" duration="8"/>
+        <testCase name="Parent head length" duration="8"/>
+        <testCase name="Parent table prop" duration="7"/>
+        <testCase name="Parent should render expandedRowRender when row is expanded" duration="4"/>
+        <testCase name="Parent should render with matching datasetId in datafeedsInfo" duration="97"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addConfiguration\ApiConfiguration.test.js">
+        <testCase name="parent wrapper" duration="8"/>
+        <testCase name="parent should render Form.Item components" duration="2"/>
+        <testCase name="parent should exist as a component" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\App.test.js">
+        <testCase name="Parent Identify parent element" duration="7"/>
+        <testCase name="Parent Router testing" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\CatalogPage.test.js">
+        <testCase name="Parent Logo presenting" duration="1"/>
+        <testCase name="Parent Button filter" duration="3"/>
+        <testCase name="Parent should render the main container div" duration="0"/>
+        <testCase name="Parent should have filter button" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\dataset\DatasetPageHeader.test.js">
+        <testCase name="wrapper" duration="14"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\dataset\Overview.test.js">
+        <testCase name="wrapper" duration="3"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\catalog\Catalog.test.js">
+        <testCase name="Parent wrapper" duration="5"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\datafeed\FeedDetails.test.js">
+        <testCase name="parent wrapper" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\AddConfiguration.test.js">
+        <testCase name="AddConfiguration utility functions wrapper" duration="312"/>
+        <testCase name="AddConfiguration component interactions renders step buttons and navigates steps" duration="302"/>
+        <testCase name="AddConfiguration component interactions renders Cancel button and triggers cancelHandler" duration="136"/>
+        <testCase name="AddConfiguration component interactions renders Previous button after first step" duration="414"/>
+        <testCase name="AddConfiguration component interactions disables Submit button when not on last step" duration="130"/>
+        <testCase name="AddConfiguration component interactions renders correct step titles" duration="105"/>
+        <testCase name="AddConfiguration component interactions renders Descriptions with correct labels" duration="114"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\license\licenseDetailsApproveReject.test.js">
+        <testCase name="LicenseDetailsApproveReject should render the component" duration="0"/>
+        <testCase name="LicenseDetailsApproveReject should render the main div" duration="2"/>
+        <testCase name="LicenseDetailsApproveReject should render Approve button" duration="6"/>
+        <testCase name="LicenseDetailsApproveReject should render Reject button" duration="4"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addContract\ReviewSubmit.test.js">
+        <testCase name="wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addContract\ContractDetails.test.js">
+        <testCase name="Parent wrapper" duration="9"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\SubscriptionManagement.test.js">
+        <testCase name="Parent table" duration="13"/>
+        <testCase name="Parent should render the component" duration="0"/>
+        <testCase name="Parent capture data" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\requestAccess\BusinessRequirements.test.js">
+        <testCase name="ruleForSubscriptionFor wrapper" duration="4"/>
+        <testCase name="ruleForSubscriptionFor should reject when subFor is false and value is empty" duration="13"/>
+        <testCase name="ruleForSubscriptionFor should reject when subFor is false and value contains spaces" duration="0"/>
+        <testCase name="ruleForSubscriptionFor should resolve when subFor is false and value is valid" duration="1"/>
+        <testCase name="ruleForSubscriptionFor should resolve when subFor is true regardless of value" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\dataset\SubscribersTab.test.js">
+        <testCase name="Parent wrapper" duration="8"/>
+        <testCase name="Parent wrapper123" duration="5"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\license\OrderSteps.test.js">
+        <testCase name="Parent wrapper" duration="1"/>
+        <testCase name="Parent agreement status" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addContract\contractApproveRejectView.test.js">
+        <testCase name="wrapper" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\requestAccess\DisplayTC.test.js">
+        <testCase name="wrapper" duration="2"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\AddEntity.test.js">
+        <testCase name="Parent wrapper" duration="9"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\breadcrumb\Breadcrumb.test.js">
+        <testCase name="wrapper" duration="7"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\Header.test.js">
+        <testCase name="Parent Logo presenting" duration="2"/>
+        <testCase name="Parent Layout presenting" duration="6"/>
+        <testCase name="Parent Delete cookie" duration="0"/>
+        <testCase name="Parent should delete all cookies" duration="1"/>
+        <testCase name="Parent should clear localStorage on deleteAllCookiesAndSiteData" duration="0"/>
+        <testCase name="Parent should clear sessionStorage on deleteAllCookiesAndSiteData" duration="0"/>
+        <testCase name="Parent Delete cookie with empty hostname" duration="0"/>
+        <testCase name="Parent should render guest menu when guestRole is set" duration="2"/>
+        <testCase name="Parent should render logged-in menu when guestRole is not set" duration="4"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\datafeed\DatafeedDetails.test.js">
+        <testCase name="parent wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\MasterData.test.js">
+        <testCase name="Parent wrapper" duration="3"/>
+        <testCase name="Parent Input" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addConfiguration\SplittingConfiguration.test.js">
+        <testCase name="parent wrapper" duration="7"/>
+        <testCase name="parent Schema dropdown" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\license\LicenseLimitations.test.js">
+        <testCase name="wrapper" duration="15"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\vendors\NewVendorForm.test.js">
+        <testCase name="NewVendorForm should render the form container" duration="3"/>
+        <testCase name="NewVendorForm should render Form.Item components" duration="6"/>
+        <testCase name="NewVendorForm should have Entity ID field as disabled" duration="2"/>
+        <testCase name="NewVendorForm should render entity type select" duration="3"/>
+        <testCase name="NewVendorForm should have required validation on longName" duration="2"/>
+        <testCase name="NewVendorForm should have required validation on shortName" duration="3"/>
+        <testCase name="NewVendorForm should have required validation on entityDescription" duration="4"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\license\LicenseDetails.test.js">
+        <testCase name="LicenseDetails wrapper" duration="5"/>
+        <testCase name="LicenseDetails should render at least one Form.Item" duration="4"/>
+        <testCase name="LicenseDetails should be a shallow rendered component" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\requestAccess\TermsConditions.test.js">
+        <testCase name="wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\license\Dataset.test.js">
+        <testCase name="wrapper" duration="6"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\ApproveRejectModal.test.js">
+        <testCase name="wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\addContract.test.js">
+        <testCase name="AddContract should render the component" duration="1"/>
+        <testCase name="AddContract should render Breadcrumb" duration="15"/>
+        <testCase name="AddContract should render Cancel button" duration="5"/>
+        <testCase name="AddContract should render Submit button" duration="4"/>
+        <testCase name="AddContract Submit button should be disabled initially" duration="7"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addContract\VendorContacts.test.js">
+        <testCase name="Parent wrapper" duration="7"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\myTasks\RequestModal.test.js">
+        <testCase name="wrapper" duration="5"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\UserProfile.test.js">
+        <testCase name="wrapper" duration="2"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\dataset\DatasetBreadcrumb.test.js">
+        <testCase name="wrapper" duration="5"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\termsConditions\TCGeneralSubscription.test.js">
+        <testCase name="wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\vendors\NewVendorHead.test.js">
+        <testCase name="wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\login\protectedRoute.test.js">
+        <testCase name="Parent wrapper" duration="5"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\datafeed\ReviewSubmit.test.js">
+        <testCase name="parent wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\dataset\MetadataTab.test.js">
+        <testCase name="wrapper" duration="6"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\termsConditions\TCVendorRequestSubscription.test.js">
+        <testCase name="wrapper" duration="2"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\termsConditions\TCApplicationSubscription.test.js">
+        <testCase name="wrapper" duration="2"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\datasetForm\ReviewSubmit.test.js">
+        <testCase name="Parent wrapper" duration="2"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\headerPanel\HeaderPanel.test.js">
+        <testCase name="wrapper" duration="7"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\pages\ErrorPage.test.js">
+        <testCase name="ErrorPage should render a Result component" duration="5"/>
+        <testCase name="ErrorPage should display 404 status" duration="4"/>
+        <testCase name="ErrorPage should display 404 title" duration="3"/>
+        <testCase name="ErrorPage should display correct subtitle" duration="5"/>
+        <testCase name="ErrorPage should have an extra prop with a Button" duration="5"/>
+        <testCase name="ErrorPage should call history.replace with /catalog when button onClick is triggered" duration="4"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addConfiguration\GeneralConfiguration.test.js">
+        <testCase name="parent wrapper" duration="4"/>
+        <testCase name="parent wrapper" duration="9"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\requestAccess\Usage.test.js">
+        <testCase name="wrapper" duration="5"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\dataset\LicenceScope.test.js">
+        <testCase name="parent wrapper" duration="1"/>
+        <testCase name="parent table" duration="5"/>
+        <testCase name="parent table props" duration="3"/>
+        <testCase name="parent should render LSTable component" duration="3"/>
+        <testCase name="parent table should have dataSource prop" duration="3"/>
+        <testCase name="parent table should have columns prop" duration="3"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addConfiguration\ReviewSubmit.test.js">
+        <testCase name="parent wrapper" duration="5"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\accessMasterData.test.js">
+        <testCase name="isAcessMasterDataDisabled should return false when user is dataset delegate" duration="1"/>
+        <testCase name="isAcessMasterDataDisabled should return false when user is read only" duration="0"/>
+        <testCase name="isAcessMasterDataDisabled should return false when user is dataset owner" duration="1"/>
+        <testCase name="isAcessMasterDataDisabled should return true when user is admin" duration="0"/>
+        <testCase name="isAcessMasterDataDisabled should return true when user is consumer" duration="1"/>
+        <testCase name="isAcessMasterDataDisabled should return true when entitlementType is not set" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\vendors\ReviewSubmit.test.js">
+        <testCase name="wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\error\ErrorAlert.test.js">
+        <testCase name="ErrorAlert should render an Alert component" duration="6"/>
+        <testCase name="ErrorAlert should display the error message" duration="4"/>
+        <testCase name="ErrorAlert should have type error" duration="5"/>
+        <testCase name="ErrorAlert should show icon" duration="4"/>
+        <testCase name="ErrorAlert should handle empty message" duration="4"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\requestAccess\RequestFormSteps.test.js">
+        <testCase name="RequestFormSteps should render Steps component" duration="9"/>
+        <testCase name="RequestFormSteps should render 3 Step components" duration="5"/>
+        <testCase name="RequestFormSteps should render Next button initially" duration="4"/>
+        <testCase name="RequestFormSteps should not render Previous button on first step" duration="4"/>
+        <testCase name="RequestFormSteps should have step titles" duration="3"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\datasetForm\DatasetDetails.test.js">
+        <testCase name=" wrapper" duration="3"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addContract\RequestFormSteps.test.js">
+        <testCase name="wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\UserUtils.test.js">
+        <testCase name="getHardCodedRole should return Owner role for owner PSIDs" duration="0"/>
+        <testCase name="getHardCodedRole should return Consumer role for consumer PSIDs" duration="0"/>
+        <testCase name="getHardCodedRole should return Admin role for admin PSIDs" duration="1"/>
+        <testCase name="getHardCodedRole should return null for unknown PSIDs" duration="0"/>
+        <testCase name="getHardCodedRole should handle numeric PSID input by converting to string" duration="5"/>
+        <testCase name="setLocalStorage should set all local storage items" duration="1"/>
+        <testCase name="setLocalStorage should overwrite existing local storage items" duration="1"/>
+        <testCase name="createNewUserProfile should create a user profile object with correct fields" duration="2"/>
+        <testCase name="createNewUserProfile should set lastLogin and firstLogin to current date/time" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\warningUtils.test.js">
+        <testCase name="checkForString should return true when localStorage item contains the value" duration="1"/>
+        <testCase name="checkForString should return true for case-insensitive match" duration="0"/>
+        <testCase name="checkForString should return false when localStorage item does not contain value" duration="1"/>
+        <testCase name="checkForString should return falsy when localStorage item does not exist" duration="0"/>
+        <testCase name="checkForString should return true for partial match" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\stringConversion.enhanced.test.js">
+        <testCase name="camelize should convert space-separated text to camelCase" duration="1"/>
+        <testCase name="camelize should convert dash-separated text to camelCase" duration="0"/>
+        <testCase name="camelize should convert underscore-separated text to camelCase" duration="0"/>
+        <testCase name="camelize should convert dot-separated text to camelCase" duration="0"/>
+        <testCase name="camelize should handle single word" duration="1"/>
+        <testCase name="camelize should handle multiple separators" duration="0"/>
+        <testCase name="normalText should add space before uppercase letters and capitalize first letter" duration="0"/>
+        <testCase name="normalText should handle single word" duration="0"/>
+        <testCase name="normalText should handle already capitalized text" duration="0"/>
+        <testCase name="normalLabel should convert camelCase to normal label" duration="0"/>
+        <testCase name="normalLabel should handle single word" duration="1"/>
+        <testCase name="normalLabel should convert helloWorld to Hello world" duration="0"/>
+        <testCase name="camelText should capitalize first letter and lowercase rest" duration="0"/>
+        <testCase name="camelText should handle already formatted text" duration="0"/>
+        <testCase name="camelText should handle single character" duration="0"/>
+        <testCase name="camelText should handle null/undefined" duration="1"/>
+        <testCase name="checkUrlSlash should replace forward slash with %2F" duration="0"/>
+        <testCase name="checkUrlSlash should return original string when no slashes" duration="0"/>
+        <testCase name="checkUrlSlash should return undefined for &apos;re&apos; (case-insensitive)" duration="1"/>
+        <testCase name="checkUrlSlash should handle null/undefined" duration="0"/>
+        <testCase name="getCustomLabels should replace &apos;id&apos; with &apos;ID&apos; in labels" duration="0"/>
+        <testCase name="getCustomLabels should return normal label for regular text" duration="1"/>
+        <testCase name="getObjFromSubscription should return value from business requirements" duration="0"/>
+        <testCase name="getObjFromSubscription should return undefined when subscription is null" duration="0"/>
+        <testCase name="getObjFromSubscription should return undefined when businessRequirements is empty" duration="0"/>
+        <testCase name="getObjFromSubscription should return undefined when businessRequirements is missing" duration="1"/>
+        <testCase name="getObjFromSubscription should return undefined for non-existent key" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\unsubscribeCatalog.test.js">
+        <testCase name="isUnsubscribeDisabled should return true when user is dataset owner" duration="1"/>
+        <testCase name="isUnsubscribeDisabled should return true when user is read only" duration="0"/>
+        <testCase name="isUnsubscribeDisabled should return false when user is admin" duration="1"/>
+        <testCase name="isUnsubscribeDisabled should return false when user is consumer" duration="0"/>
+        <testCase name="isUnsubscribeDisabled should return false when entitlementType is not set" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addContract\validationsRequestAccess.test.js">
+        <testCase name="Contract modify should modify existing property error and message" duration="1"/>
+        <testCase name="Contract modify should return undefined when property does not exist" duration="0"/>
+        <testCase name="Contract modify should return a new object reference" duration="1"/>
+        <testCase name="Contract clarityIdValidation should return error when value is empty string" duration="0"/>
+        <testCase name="Contract clarityIdValidation should return error when value length is greater than 8" duration="0"/>
+        <testCase name="Contract clarityIdValidation should clear error when value is valid" duration="1"/>
+        <testCase name="Contract clarityIdValidation should accept value of exactly 8 characters" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\accessPageCheck.test.js">
+        <testCase name="isAccesPageDisabled should return true (disabled) when objectMatrix is empty" duration="1"/>
+        <testCase name="isAccesPageDisabled should return true (disabled) when objectMatrix is not set" duration="0"/>
+        <testCase name="isAccesPageDisabled should return false (enabled) for Main Page with RW permission" duration="1"/>
+        <testCase name="isAccesPageDisabled should return false (enabled) for Main Page with R permission" duration="0"/>
+        <testCase name="isAccesPageDisabled should return true (disabled) for non-Main Page objName" duration="0"/>
+        <testCase name="isAccesPageDisabled should return true when no matching entry found" duration="0"/>
+        <testCase name="isAccesPageDisabled should match category case-insensitively but objectName exactly" duration="0"/>
+        <testCase name="isAccesPageDisabled should return true for Main Page with unknown permission" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\useAccessRights.test.js">
+        <testCase name="useAccessRights should return read permission for Read only role on myTasks page" duration="1"/>
+        <testCase name="useAccessRights should return read permission for Read only role on userManagement page" duration="0"/>
+        <testCase name="useAccessRights should return no read permission for Read only role on catalogue page" duration="1"/>
+        <testCase name="useAccessRights should return read permission for dataset delegate on userManagement" duration="0"/>
+        <testCase name="useAccessRights should return none permission for subscriber on myTasks page" duration="1"/>
+        <testCase name="useAccessRights should return none permission for subscriber on userManagement page" duration="0"/>
+        <testCase name="useAccessRights should return read permission for guest on catalogue page" duration="1"/>
+        <testCase name="useAccessRights should return none permission for guest on requestAccess page" duration="0"/>
+        <testCase name="useAccessRights should return none permission for guest on myTasks page" duration="1"/>
+        <testCase name="useAccessRights should return empty object for unrecognized role" duration="1"/>
+    </file>
     <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\login\loginValidation.test.js">
-        <testCase name="loginValidation should return error for username with invalid characters" duration="1"/>
-        <testCase name="loginValidation should accept username with allowed special characters" duration="1"/>
+        <testCase name="loginValidation should return error for username with invalid characters" duration="0"/>
+        <testCase name="loginValidation should accept username with allowed special characters" duration="3"/>
         <testCase name="loginValidation should accept numeric username" duration="0"/>
-        <testCase name="serverValidation should return error when value is defined with message" duration="0"/>
-        <testCase name="serverValidation should return no error when value is undefined" duration="1"/>
+        <testCase name="serverValidation should return error when value is defined with message" duration="1"/>
+        <testCase name="serverValidation should return no error when value is undefined" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\license\bindData.test.js">
+        <testCase name="License bindData should call resetFields when data is empty" duration="1"/>
+        <testCase name="License bindData should call resetFields when data is null" duration="1"/>
+        <testCase name="License bindData should call setFieldsValue for regular fields" duration="0"/>
+        <testCase name="License bindData should convert boolean-like string fields to lowercase" duration="1"/>
+        <testCase name="License bindData should convert expirationDate to moment" duration="3"/>
+        <testCase name="License bindData should handle multiple known boolean fields" duration="1"/>
+        <testCase name="License bindData should not convert non-string boolean fields" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\stringConversion.test.js">
+        <testCase name=" wrapper" duration="0"/>
+        <testCase name=" wrapper" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\requestAccess\bindData.test.js">
+        <testCase name="RequestAccess bindData should not call setFieldsValue when data is empty" duration="1"/>
+        <testCase name="RequestAccess bindData should map reason field to reasonForSubscription" duration="1"/>
+        <testCase name="RequestAccess bindData should map licensesSubscribed to numberOfEndUserSubscriptions" duration="0"/>
+        <testCase name="RequestAccess bindData should map subscriptionStatus to status" duration="0"/>
+        <testCase name="RequestAccess bindData should also set the original field value" duration="1"/>
+        <testCase name="RequestAccess bindData should handle multiple items in data array" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\accessButtonCheck.test.js">
+        <testCase name="isButtonObject should return true (disabled) when objectMatrix is empty" duration="1"/>
+        <testCase name="isButtonObject should return true (disabled) when objectMatrix is not set" duration="0"/>
+        <testCase name="isButtonObject should return true for Main Page with RW permission" duration="1"/>
+        <testCase name="isButtonObject should return false for Main Page with R permission" duration="0"/>
+        <testCase name="isButtonObject should return false for non-Main Page with RW permission" duration="0"/>
+        <testCase name="isButtonObject should return true for non-Main Page with R permission" duration="1"/>
+        <testCase name="isButtonObject should return true when no matching entry found" duration="0"/>
+        <testCase name="isButtonObject should match case-insensitively" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\accessRequestCatelog.test.js">
+        <testCase name="isCatelogueAccessDisabled should return true when user is dataset delegate" duration="1"/>
+        <testCase name="isCatelogueAccessDisabled should return true when user is dataset owner" duration="0"/>
+        <testCase name="isCatelogueAccessDisabled should return true when user is read only" duration="1"/>
+        <testCase name="isCatelogueAccessDisabled should return false when user is admin" duration="0"/>
+        <testCase name="isCatelogueAccessDisabled should return false when user is consumer" duration="0"/>
+        <testCase name="isCatelogueAccessDisabled should return false when entitlementType is not set" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\requestAccess\validationsRequestAccess.test.js">
+        <testCase name="modify should modify existing property error and message" duration="1"/>
+        <testCase name="modify should return undefined when property does not exist" duration="0"/>
+        <testCase name="modify should return a new object reference" duration="0"/>
+        <testCase name="clarityIdValidation should set error when idExist is true" duration="0"/>
+        <testCase name="clarityIdValidation should clear error when idExist is false" duration="1"/>
+        <testCase name="itamIdValidation should set error when idExist is true" duration="0"/>
+        <testCase name="itamIdValidation should clear error when idExist is false" duration="0"/>
+        <testCase name="mandatoryFields should enable all when both clarityId and itamId have values" duration="1"/>
+        <testCase name="mandatoryFields should enable only itamId related when only itamId has value" duration="0"/>
+        <testCase name="mandatoryFields should enable only clarityId related when only clarityId has value" duration="1"/>
+        <testCase name="mandatoryFields should return defaults when both are empty" duration="0"/>
+        <testCase name="mandatoryFields should return defaults when both are undefined" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\validations\commonValidations.test.js">
+        <testCase name="isNumber should return true for digit key (0-9)" duration="0"/>
+        <testCase name="isNumber should return false for alphabetic key" duration="1"/>
+        <testCase name="isNumber should return true for control keys (charCode &lt;= 31)" duration="0"/>
+        <testCase name="isNumber should return false for special character keys" duration="0"/>
+        <testCase name="isNumber should use keyCode when which is not available" duration="1"/>
+        <testCase name="isNumber should use window.event when evt is falsy" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\accessSubscribersTab.test.js">
+        <testCase name="isSubscribersTabVisible should return true when user is IAM Admin" duration="1"/>
+        <testCase name="isSubscribersTabVisible should return false when user is Admin" duration="0"/>
+        <testCase name="isSubscribersTabVisible should return false when user is Consumer" duration="4"/>
+        <testCase name="isSubscribersTabVisible should return false when entitlementType is not set" duration="0"/>
+        <testCase name="isSubscribersTabVisible should match case-insensitively for IAM Admin" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\accessUserManagement.test.js">
+        <testCase name="isUserManagementDisabled should return false when objectMatrix is empty" duration="0"/>
+        <testCase name="isUserManagementDisabled should return true when Main Page is not disabled but Edit Button is disabled" duration="0"/>
+        <testCase name="isUserManagementDisabled should return false when Main Page is disabled and Edit Button is not disabled" duration="1"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\addContract\bindData.test.js">
+        <testCase name="Contract bindData should not call setFieldsValue when data is null" duration="0"/>
+        <testCase name="Contract bindData should not call setFieldsValue when data is empty array" duration="5"/>
+        <testCase name="Contract bindData should call setFieldsValue for regular fields" duration="1"/>
+        <testCase name="Contract bindData should convert signedOn to moment date" duration="1"/>
+        <testCase name="Contract bindData should convert startDate to moment date" duration="0"/>
+        <testCase name="Contract bindData should convert expirationDate to moment date" duration="0"/>
+        <testCase name="Contract bindData should handle multiple fields in one data item" duration="1"/>
+        <testCase name="Contract bindData should filter out undefined elements from data array" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\dataset\UnsubscribeModal.test.js">
+        <testCase name="UnsubscribeModal confirm should call Modal.confirm when invoked" duration="2"/>
+        <testCase name="UnsubscribeModal confirm should pass correct title" duration="0"/>
+        <testCase name="UnsubscribeModal confirm should pass correct okText" duration="1"/>
+        <testCase name="UnsubscribeModal confirm should pass correct cancelText" duration="0"/>
+        <testCase name="UnsubscribeModal confirm should set ok button as primary danger" duration="0"/>
+        <testCase name="UnsubscribeModal confirm should call unsubscribeHandler on OK" duration="1"/>
+        <testCase name="UnsubscribeModal confirm should not throw on cancel" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\FileUtils.test.js">
+        <testCase name="getUniqueFileName should return timestamp with filename when fileObj has name" duration="1"/>
+        <testCase name="getUniqueFileName should return timestamp with .pdf extension when fileObj has no name" duration="0"/>
+        <testCase name="getUniqueFileName should return timestamp with .pdf extension when fileObj is null" duration="0"/>
+        <testCase name="getUniqueFileName should return timestamp with .pdf extension when fileObj is undefined" duration="1"/>
+        <testCase name="getUniqueFileName should generate unique filenames for different calls" duration="0"/>
+        <testCase name="getUniqueFileName should handle filenames with special characters" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\Constants.test.js">
+        <testCase name="Constants should export HTTP methods" duration="0"/>
+        <testCase name="Constants should export content type" duration="1"/>
+        <testCase name="Constants should export role constants" duration="0"/>
+        <testCase name="Constants should export OWNER_ROLES as an array" duration="0"/>
+        <testCase name="Constants should export CONSUMER_ROLES as an array" duration="1"/>
+        <testCase name="Constants should export ADMIN_ROLES as an array" duration="0"/>
+        <testCase name="Constants should export local storage key constants" duration="0"/>
+        <testCase name="Constants should export page constants" duration="0"/>
+    </file>
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\utils\accessObject.test.js">
+        <testCase name="getPermissionObject should return undefined when objectMatrix is empty" duration="1"/>
+        <testCase name="getPermissionObject should return undefined when objectMatrix is not set" duration="0"/>
+        <testCase name="getPermissionObject should return matching object when category and objectName match" duration="1"/>
+        <testCase name="getPermissionObject should match case-insensitively" duration="0"/>
+        <testCase name="getPermissionObject should return undefined when no match is found" duration="0"/>
+        <testCase name="getPermissionObject should handle items with null category or objectName" duration="1"/>
+        <testCase name="getPermissionObject should return the first matching object when multiple matches exist" duration="0"/>
     </file>
 </unitTest>

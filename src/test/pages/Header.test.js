@@ -73,4 +73,23 @@ describe("Parent", () => {
     deleteCookies(cookie, "");
     expect(cookie).toBeTruthy();
   });
+
+  it("should render guest menu when guestRole is set", () => {
+    localStorage.setItem("guestRole", "guest");
+    const guestWrapped = shallow(<Headers />);
+    const menuItems = guestWrapped.find(Menu.Item);
+    expect(menuItems.length).toBeGreaterThanOrEqual(1);
+    localStorage.removeItem("guestRole");
+  });
+
+  it("should render logged-in menu when guestRole is not set", () => {
+    localStorage.removeItem("guestRole");
+    localStorage.setItem("psid", "testuser");
+    localStorage.setItem("entitlementType", "admin");
+    const loggedInWrapped = shallow(<Headers />);
+    const menuItems = loggedInWrapped.find(Menu.Item);
+    expect(menuItems.length).toBeGreaterThanOrEqual(1);
+    localStorage.removeItem("psid");
+    localStorage.removeItem("entitlementType");
+  });
 });

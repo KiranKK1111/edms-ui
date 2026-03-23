@@ -33,6 +33,10 @@ describe("Parent", () => {
     expect(element.length).toBe(1);
   });
 
+  it("should render the component", () => {
+    expect(wrapped.exists()).toBe(true);
+  });
+
   it("capture data", () => {
     const list = {
       agreementMgrBankIds: [
