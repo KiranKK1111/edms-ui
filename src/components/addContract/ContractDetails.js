@@ -194,9 +194,10 @@ const ContractDetails = (props) => {
         contractList.find((ele) => {
           if (ele.contractName.toLowerCase() === inputValue.toLowerCase()) {
             setNameFound(true);
-            return ele.contractName;
+            return true;
           } else {
             setNameFound(false);
+            return false;
           }
         });
       } else {

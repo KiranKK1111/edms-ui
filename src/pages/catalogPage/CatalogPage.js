@@ -327,12 +327,12 @@ const CatalogPage = (props) => {
       catalogueList.catalogueList &&
       catalogueList.catalogueList.filter(
         (u) =>
-          u.entityShortName && u.entityShortName.toLowerCase().includes(searchText) ||
-          u.datasetShortName && u.datasetShortName.toLowerCase().includes(searchText) ||
-          u.dataFeedLongName && u.dataFeedLongName.toLowerCase().includes(searchText) ||
-          u.dataFeedDescription && u.dataFeedDescription.toLowerCase().includes(searchText) ||
-          u.dataFeedId && u.dataFeedId.toLowerCase().includes(searchText) ||
-          u.dataFeedShortName && u.dataFeedShortName.toLowerCase().includes(searchText)
+          (u.entityShortName && u.entityShortName.toLowerCase().includes(searchText)) ||
+          (u.datasetShortName && u.datasetShortName.toLowerCase().includes(searchText)) ||
+          (u.dataFeedLongName && u.dataFeedLongName.toLowerCase().includes(searchText)) ||
+          (u.dataFeedDescription && u.dataFeedDescription.toLowerCase().includes(searchText)) ||
+          (u.dataFeedId && u.dataFeedId.toLowerCase().includes(searchText)) ||
+          (u.dataFeedShortName && u.dataFeedShortName.toLowerCase().includes(searchText))
       );
     const revisedNewList = {
       ...catalogueNewList,

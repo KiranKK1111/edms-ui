@@ -32,11 +32,11 @@ export const deleteCookies = (cookie, hostname) => {
           .split(".")
           .reverse()
           .reduce(
-              (domain) => (
-                  (domain = domain.replace(/^\.?[^.]+/, "")),
-                  (document.cookie = `${name}=;max-age=0;path=/;domain=${domain}`),
-                  domain
-              ),
+              (domain) => {
+                  domain = domain.replace(/^\.?[^.]+/, "");
+                  document.cookie = `${name}=;max-age=0;path=/;domain=${domain}`;
+                  return domain;
+              },
               hostname
           )
   );
@@ -90,13 +90,13 @@ function Headers() {
         <Menu.Divider />
 
         <Menu.Item key="4" className="header-menu-item-2">
-          <a onClick={() => redirectToEntraLogoutScreen()}>
+          <span role="button" style={{ cursor: "pointer" }} onClick={() => redirectToEntraLogoutScreen()}>
             <LoginOutlined
               className="icon-style"
               style={{ fontSize: "18px" }}
             />
             Login
-          </a>
+          </span>
         </Menu.Item>
       </Menu>
     );
@@ -135,13 +135,13 @@ function Headers() {
         <Menu.Divider />
 
         <Menu.Item key="4" className="header-menu-item-2">
-          <a onClick={() => redirectToEntraLogoutScreen()}>
+          <span role="button" style={{ cursor: "pointer" }} onClick={() => redirectToEntraLogoutScreen()}>
             <LogoutOutlined
               className="icon-style"
               style={{ fontSize: "18px" }}
             />{" "}
             Log out{" "}
-          </a>
+          </span>
         </Menu.Item>
       </Menu>
     );

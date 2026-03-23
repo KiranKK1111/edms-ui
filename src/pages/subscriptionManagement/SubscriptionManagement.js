@@ -79,7 +79,7 @@ const SubscriptionManagement = () => {
     if (res) {
       if (res.subscriptions) {
         res.subscriptions = res.subscriptions.map(subscription => {
-          var result = {} = subscription;
+          var result = { ...subscription };
           result.dataOwner = getData(dataOwners.agreementMgrBankIds, subscription.dataFeedId, "agreementScbAgreementMgrBankId");
           result.datafeedName = getData(dataOwners.agreementMgrBankIds, subscription.dataFeedId, "datafeedShortName");
           return result;
@@ -113,8 +113,7 @@ const SubscriptionManagement = () => {
     let storingId = 0;
     const columns = [];
     return {};
-    {
-      /*<Table
+    /*<Table
         columns={columns}
         className="license-nested-table"
         dataSource={[]}//{agreementLicenses}
@@ -136,7 +135,6 @@ const SubscriptionManagement = () => {
           return <b>{"Expend Data"}</b>;
         }}
       />*/
-    }
   };
   const searchInput = useRef(null);
   const handleSearch = (selectedKeys, confirm, dataIndex) => {

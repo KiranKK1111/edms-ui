@@ -4,6 +4,8 @@ const isAccesPageDisabled = (categoryName, objName) => {
   if (objectMatrix && objectMatrix.length > 0) {
     const singleRow = objectMatrix.filter(
       (item) =>
+        item.category &&
+        item.objectName &&
         item.category.toLowerCase().includes(categoryName.toLowerCase()) &&
         item.objectName.toLowerCase() === objName.toLowerCase()
     );

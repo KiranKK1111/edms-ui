@@ -26,4 +26,12 @@ describe("Parent", () => {
     wrapped.find("#btn-filter").simulate("click", e);
     expect(e.preventDefault).toBeCalled();
   });
+
+  it("should render the main container div", () => {
+    expect(wrapped.find("#main").exists()).toBe(true);
+  });
+
+  it("should have filter button", () => {
+    expect(wrapped.find("#btn-filter").exists()).toBe(true);
+  });
 });

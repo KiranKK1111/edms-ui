@@ -634,19 +634,23 @@ const DataSetData = (props) => {
         ? searchDatafeedValues.filter((feed, i) => {
           if (feed.datasetId === row.datasetId) {
             setSearchRowEpandable(true);
-            return updatedDatafeedsInfo.push({
+            updatedDatafeedsInfo.push({
               ...feed,
               key: i,
             });
+            return true;
           }
+          return false;
         })
         : props.datafeedsInfo.filter((feed, i) => {
           if (feed.datasetId === row.datasetId) {
-            return updatedDatafeedsInfo.push({
+            updatedDatafeedsInfo.push({
               ...feed,
               key: i,
             });
+            return true;
           }
+          return false;
         })
       : [];
     return (
@@ -906,7 +910,7 @@ const DataSetData = (props) => {
     },
   ];
 
-  const myDatasets = props.datasetsInfo.filter((ele, i) => {
+  const myDatasets = props.datasetsInfo.forEach((ele, i) => {
     let dataFeedNsetCount;
     if (props.datafeedsInfo) {
       dataFeedNsetCount = props.datafeedsInfo.filter(
@@ -917,7 +921,7 @@ const DataSetData = (props) => {
     const licensesList = props.licenses;
     if (ele.entityId === dataSetEntityId) {
       licensesList &&
-        licensesList.filter((license) => {
+        licensesList.forEach((license) => {
           if (license.licenseId === ele.licenseId) {
             datasetDisp.push({
               ...ele,
@@ -931,7 +935,6 @@ const DataSetData = (props) => {
             });
           }
         });
-    } else {
     }
   });
 

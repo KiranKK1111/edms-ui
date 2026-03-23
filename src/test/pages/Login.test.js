@@ -22,7 +22,17 @@ jest.mock("react-redux", () => {
 });
 const wrapped = shallow(<Login />);
 
-it("Logo presenting", () => {
-  const element = wrapped.find("#main");
-  expect(element.length).toBe(1);
+describe("Login Page", () => {
+  it("Logo presenting", () => {
+    const element = wrapped.find("#main");
+    expect(element.length).toBe(1);
+  });
+
+  it("should render the login page", () => {
+    expect(wrapped.exists()).toBe(true);
+  });
+
+  it("should have a main container", () => {
+    expect(wrapped.find("#main").exists()).toBe(true);
+  });
 });

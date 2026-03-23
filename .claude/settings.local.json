@@ -2,6 +2,10 @@
   "permissions": {
     "allow": [
       "Read(//d/SDM GENAI/EDMS/edms-backend/data/**)"
+    ],
+    "additionalDirectories": [
+      "D:\\SDM GENAI\\EDMS\\edms-backend\\entity-service\\src\\main\\java\\com\\edms\\entity\\controller",
+      "D:\\SDM GENAI\\EDMS\\edms-backend\\schemas-service\\src\\main\\java\\com\\edms\\schemas\\controller"
     ]
   }
 }

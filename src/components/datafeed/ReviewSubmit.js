@@ -16,7 +16,7 @@ const ReviewSubmit = (props) => {
     feedDescription: description,
     feedId: dataFeedId,
     feedStatus: status,
-    dataFeedConfiguration: dataFeedConfiguration,
+    dataFeedConfiguration,
     personalData: personalDataType,
     dataConfidentiality,
     longName,
@@ -128,9 +128,9 @@ const ReviewSubmit = (props) => {
                         }
                       </Descriptions>
                     ) : (
-                      <a style={{ marginLeft: "1rem", fontSize: 16 }}>
+                      <span role="link" style={{ marginLeft: "1rem", fontSize: 16, cursor: "pointer", color: "#1890ff" }}>
                         {normalText(item)}
-                      </a>
+                      </span>
                     )
                   ) : (
                     <>

@@ -77,7 +77,7 @@ const Licensedetails = (props) => {
       "YYYY-MM-DD[T]HH:mm:ss"
     );
     formRef.current.setFieldsValue({
-      ["Subscription ID"]: "e6cddc38-674c-4c85-860d-5b2a873fd667",
+      "Subscription ID": "e6cddc38-674c-4c85-860d-5b2a873fd667",
       contractId: props.contractId,
       licenseStatus: props.licenseStatus,
       expirationDate:
@@ -180,12 +180,13 @@ const Licensedetails = (props) => {
               if (typeof e !== "string") {
                 props.handleChange(e);
               }
-              return ele.licenseName;
+              return true;
             } else {
               setNameFound(false);
               if (typeof e !== "string") {
                 props.handleChange(e);
               }
+              return false;
             }
           });
         } else {

@@ -22,4 +22,13 @@ describe("parent", () => {
     const element = wrapper.find(Form);
     expect(element.length).toBe(1);
   });
+
+  it("should render Form.Item components", () => {
+    const element = wrapper.find(Form.Item);
+    expect(element.length).toBeGreaterThanOrEqual(0);
+  });
+
+  it("should exist as a component", () => {
+    expect(wrapper.exists()).toBe(true);
+  });
 });

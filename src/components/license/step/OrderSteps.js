@@ -97,12 +97,6 @@ const OrderStep = (props) => {
 
   const history = useHistory();
 
-  String.prototype.capitalize = function () {
-    return this.replace(/(^|\s)([a-z])/g, function (m, p1, p2) {
-      return p1 + p2.toUpperCase();
-    });
-  };
-
   const handleTechnicalDocument = (e) => {
     setState((prevState) => ({
       ...prevState,
@@ -244,7 +238,7 @@ const OrderStep = (props) => {
       dispatch(setSelectedLicense(selectedLicenseItem));
       if (selectedLicenseItem[0] && selectedLicenseItem[0].technicalDocument) {
         const list = [];
-        selectedLicenseItem[0].technicalDocument.split(",").map((name) => {
+        selectedLicenseItem[0].technicalDocument.split(",").forEach((name) => {
           list.push({ name });
         });
         dispatch(upload(list));

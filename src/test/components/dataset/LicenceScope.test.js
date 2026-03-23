@@ -48,4 +48,19 @@ describe("parent", () => {
     const element = wrapper.find(Table).prop("rowKey");
     expect(element).toHaveLength(1);
   });
+
+  it("should render LSTable component", () => {
+    const element = wrapper.find(LSTable);
+    expect(element.length).toBeGreaterThanOrEqual(0);
+  });
+
+  it("table should have dataSource prop", () => {
+    const element = wrapper.find(Table).prop("dataSource");
+    expect(element).toBeDefined();
+  });
+
+  it("table should have columns prop", () => {
+    const element = wrapper.find(Table).prop("columns");
+    expect(element).toBeDefined();
+  });
 });

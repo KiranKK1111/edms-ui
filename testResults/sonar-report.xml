@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unitTest version="1">
+    <file path="D:\SDM GENAI\EDMS\edms-ui\src\test\components\login\loginValidation.test.js">
+        <testCase name="loginValidation should return error for username with invalid characters" duration="1"/>
+        <testCase name="loginValidation should accept username with allowed special characters" duration="1"/>
+        <testCase name="loginValidation should accept numeric username" duration="0"/>
+        <testCase name="serverValidation should return error when value is defined with message" duration="0"/>
+        <testCase name="serverValidation should return no error when value is undefined" duration="1"/>
+    </file>
+</unitTest>

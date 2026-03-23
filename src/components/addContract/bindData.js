@@ -9,8 +9,8 @@ export const bindData = (data1, form1) => {
     });
   if (data && data.length) {
     
-    data.map((item) => {
-      Object.keys(item).map((subItem) => {
+    data.forEach((item) => {
+      Object.keys(item).forEach((subItem) => {
         if (subItem === "signedOn") {
           form1.setFieldsValue({
             signedOn: moment(new Date(item[subItem])),

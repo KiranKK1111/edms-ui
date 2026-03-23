@@ -3,8 +3,8 @@ import moment from "moment";
 export const bindData = (data, form1) => {
   if (data && data.length > 0) {
     
-    data.map((item) => {
-      Object.keys(item).map((subItem) => {
+    data.forEach((item) => {
+      Object.keys(item).forEach((subItem) => {
         
 
         if (

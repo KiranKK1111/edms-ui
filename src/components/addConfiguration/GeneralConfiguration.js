@@ -65,7 +65,7 @@ const GeneralConfiguration = (props) => {
   const bindData = (data) => {
     const items = Object.keys(data);
     if (items.length) {
-      items.map((subItem) => {
+      items.forEach((subItem) => {
         if (subItem === "startDate" || subItem === "expiryDate") {
           formRef.current.setFieldsValue({
             [subItem]: moment(new Date(data[subItem])),
@@ -130,7 +130,6 @@ const GeneralConfiguration = (props) => {
       sourceFolder: "",
       destinationExpression: "",
       keyLocation: "",
-      routeName: "",
       proxyHostname: "",
       proxyPort: "",
       isChecksum: false,
@@ -415,7 +414,6 @@ const GeneralConfiguration = (props) => {
             rules={[
               { required: true, message: "Source hostname is mandatory !" },
               {
-                pattern: new RegExp(/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$/),
                 pattern: new RegExp(
                   "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(https?:\\/\\/)?(www\\.|ftp\\.|sftp\\.)?[a-zA-Z0-9](?:[a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z]{2,})+(\\/[a-zA-Z0-9\\-_.~+\\/=?]*)?$",
                   "i"

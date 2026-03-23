@@ -84,7 +84,7 @@ const ApiConfiguration = (props) => {
   const bindData = (data) => {
     const items = Object.keys(data);
     if (items.length) {
-      items.map((subItem) => {
+      items.forEach((subItem) => {
         if (subItem == "requestBodyObj") {
           setRequestBodyObj(data[subItem]);
           setShowFileNew(true);

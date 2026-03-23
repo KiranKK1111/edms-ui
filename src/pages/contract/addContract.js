@@ -73,11 +73,6 @@ const AddContract = (props) => {
     }
   }, [sel]);
 
-  String.prototype.capitalize = function () {
-    return this.replace(/(^|\s)([a-z])/g, function (m, p1, p2) {
-      return p1 + p2.toUpperCase();
-    });
-  };
   const url = history.location.pathname;
   const contains = url.includes("modifyAgreement");
   useEffect(() => {

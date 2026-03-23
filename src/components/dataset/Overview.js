@@ -81,7 +81,7 @@ const Overview = (props) => {
     datasetId,
     longName: datasetLongName,
     shortName: datasetShortName,
-    datasetDescription: datasetDescription,
+    datasetDescription,
     datasetStatus,
     licenseId: datasetLicenseId,
   } = datasetInfo;

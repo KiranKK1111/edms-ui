@@ -112,7 +112,7 @@ const SplittingConfiguration = (props) => {
   const bindData = (data) => {
     const items = Object.keys(data);
     if (items.length) {
-      items.map((subItem) => {
+      items.forEach((subItem) => {
         if (subItem == "schemaDataObj") {
           setSchemaDataObj(data[subItem]);
           setShowSchemaDataFileNew(true);

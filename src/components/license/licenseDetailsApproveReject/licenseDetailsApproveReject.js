@@ -175,7 +175,7 @@ const LicenseDetailsApproveReject = (props) => {
     const documents = [];
 
     if (technicalDocument && technicalDocument.length) {
-      technicalDocument.split(",").map((name) => {
+      technicalDocument.split(",").forEach((name) => {
         documents.push({ name });
       });
     }

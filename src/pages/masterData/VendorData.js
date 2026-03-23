@@ -584,7 +584,9 @@ const VendorData = (props) => {
             key: i,
             datasets: licenseCount,
           });
+          return true;
         }
+        return false;
       })
       : [];
 
@@ -857,7 +859,7 @@ const VendorData = (props) => {
     },
   ];
 
-  const dataMyContract = props.contracts[0].filter((ele, i) => {
+  props.contracts[0].forEach((ele, i) => {
     let agreementLicenceCount = 0;
     //console.log("Props.Licenses = ",props.licenses);
     //console.log("Props = ",props)

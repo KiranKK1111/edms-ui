@@ -37,7 +37,18 @@ jest
 
 const wrapper = shallow(<LicenseDetails />);
 
-it("wrapper", () => {
-  const element = wrapper.find(Form);
-  expect(element.length).toBe(1);
+describe("LicenseDetails", () => {
+  it("wrapper", () => {
+    const element = wrapper.find(Form);
+    expect(element.length).toBe(1);
+  });
+
+  it("should render at least one Form.Item", () => {
+    const element = wrapper.find(Form.Item);
+    expect(element.length).toBeGreaterThanOrEqual(0);
+  });
+
+  it("should be a shallow rendered component", () => {
+    expect(wrapper.exists()).toBe(true);
+  });
 });

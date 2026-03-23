@@ -56,4 +56,21 @@ describe("Parent", () => {
     deleteAllCookiesAndSiteData();
     expect(document.cookie).toBe("");
   });
+
+  it("should clear localStorage on deleteAllCookiesAndSiteData", () => {
+    localStorage.setItem("test", "value");
+    deleteAllCookiesAndSiteData();
+    expect(Storage.prototype.clear).toHaveBeenCalled();
+  });
+
+  it("should clear sessionStorage on deleteAllCookiesAndSiteData", () => {
+    sessionStorage.setItem("test", "value");
+    deleteAllCookiesAndSiteData();
+    expect(Storage.prototype.clear).toHaveBeenCalled();
+  });
+
+  it("Delete cookie with empty hostname", () => {
+    deleteCookies(cookie, "");
+    expect(cookie).toBeTruthy();
+  });
 });

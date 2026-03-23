@@ -5,6 +5,8 @@ const getPermissionObject = (categoryName, objName) => {
   if (objectMatrixRow && objectMatrixRow.length > 0) {
     const singleRow = objectMatrixRow.filter(
       (item) =>
+        item.category &&
+        item.objectName &&
         item.category.toLowerCase().includes(categoryName.toLowerCase()) &&
         item.objectName.toLowerCase() === objName.toLowerCase()
     );
