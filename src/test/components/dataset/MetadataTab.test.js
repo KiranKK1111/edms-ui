@@ -1,7 +1,6 @@
 import * as redux from "react-redux";
 import { configure, shallow } from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
-
 import { Card } from "antd";
 import MetadataTab from "../../../components/dataset/MetadataTab";
 
@@ -12,22 +11,53 @@ jest.mock("react-redux", () => ({
   useSelector: jest.fn(),
   useDispatch: () => mockDispatch,
 }));
-const datafeedInfo = {
-  metadatadetail: {
-    data: {
-      schemaString: "",
-      type: "",
+
+const setupSelector = (metadatadetail = {}) => {
+  const state = {
+    datafeedInfo: {
+      metadatadetail: metadatadetail,
     },
-  },
+  };
+  redux.useSelector.mockImplementation((cb) => cb(state));
 };
-const state = { datafeedInfo };
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
-const wrapper = shallow(<MetadataTab />);
+describe("MetadataTab", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-it("wrapper", () => {
-  const element = wrapper.find(Card);
-  expect(element.length).toBe(1);
+  it("should render Card component", () => {
+    setupSelector({ data: { schemaString: "", type: "" } });
+    const wrapper = shallow(<MetadataTab />);
+    expect(wrapper.find(Card).length).toBe(1);
+  });
+
+  it("should render with schema data", () => {
+    setupSelector({
+      data: {
+        schemaString: '{"type":"object","properties":{}}',
+        type: "json",
+      },
+    });
+    const wrapper = shallow(<MetadataTab />);
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with empty schema string", () => {
+    setupSelector({ data: { schemaString: "", type: "" } });
+    const wrapper = shallow(<MetadataTab />);
+    expect(wrapper.find(Card).length).toBe(1);
+  });
+
+  it("should render with null metadata", () => {
+    setupSelector({ data: null });
+    const wrapper = shallow(<MetadataTab />);
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with undefined metadata", () => {
+    setupSelector({});
+    const wrapper = shallow(<MetadataTab />);
+    expect(wrapper.exists()).toBe(true);
+  });
 });

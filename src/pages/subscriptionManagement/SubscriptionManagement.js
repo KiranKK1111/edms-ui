@@ -79,7 +79,7 @@ const SubscriptionManagement = () => {
     if (res) {
       if (res.subscriptions) {
         res.subscriptions = res.subscriptions.map(subscription => {
-          var result = { ...subscription };
+          let result = { ...subscription };
           result.dataOwner = getData(dataOwners.agreementMgrBankIds, subscription.dataFeedId, "agreementScbAgreementMgrBankId");
           result.datafeedName = getData(dataOwners.agreementMgrBankIds, subscription.dataFeedId, "datafeedShortName");
           return result;

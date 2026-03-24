@@ -30,4 +30,26 @@ describe("ErrorAlert", () => {
     const wrapper = shallow(<ErrorAlert message="" />);
     expect(wrapper.find(Alert).prop("message")).toBe("");
   });
+
+  it("should handle long error message", () => {
+    const longMsg = "A".repeat(500);
+    const wrapper = shallow(<ErrorAlert message={longMsg} />);
+    expect(wrapper.find(Alert).prop("message")).toBe(longMsg);
+  });
+
+  it("should handle special characters in message", () => {
+    const msg = "Error: field <name> is required & must be valid";
+    const wrapper = shallow(<ErrorAlert message={msg} />);
+    expect(wrapper.find(Alert).prop("message")).toBe(msg);
+  });
+
+  it("should handle undefined message", () => {
+    const wrapper = shallow(<ErrorAlert />);
+    expect(wrapper.find(Alert).prop("message")).toBeUndefined();
+  });
+
+  it("should render without crashing when no props", () => {
+    const wrapper = shallow(<ErrorAlert />);
+    expect(wrapper.exists()).toBe(true);
+  });
 });

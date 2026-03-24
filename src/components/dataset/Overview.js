@@ -207,21 +207,16 @@ const Overview = (props) => {
   };
 
   const getFileFormat = (val) => {
-    let fileFormat = "NA";
-    if (
-      val.includes("FundamentalsRoute") ||
-      val.includes("XpathSplitValidateRoute")
-    ) {
-      fileFormat = "xml";
-    } else if (
-      val.includes("JSONSplitValidateRoute")||
-      val.includes("JSONLValidateRoute")
-    ) {
-      fileFormat = "json";
-    } else if (val.includes("CSVInitialRoute")) {
-      fileFormat = "csv";
+    if (val.includes("FundamentalsRoute") || val.includes("XpathSplitValidateRoute")) {
+      return "xml";
     }
-    return fileFormat;
+    if (val.includes("JSONSplitValidateRoute") || val.includes("JSONLValidateRoute")) {
+      return "json";
+    }
+    if (val.includes("CSVInitialRoute")) {
+      return "csv";
+    }
+    return "NA";
   };
 
   const columns = [
@@ -295,6 +290,34 @@ const Overview = (props) => {
       },
     },
   ];
+
+  const getSourceProtocol = () => {
+    if (!metadataInfo || !metadataInfo.sourceProcessor) return "NA";
+    return metadataInfo.sourceProcessor === "sftpProcessor" ? "SFTP" : "HTTPS";
+  };
+
+  const getDataFormat = () => {
+    if (!metadataInfo || !metadataInfo.splittingCanonicalClass) return "NA";
+    return getFileFormat(metadataInfo.splittingCanonicalClass);
+  };
+
+  const getStartDate = () => {
+    if (!metadataInfo || !metadataInfo.start) return "NA";
+    return moment(metadataInfo.start).format("DD MMM YYYY");
+  };
+
+  const getCronDisplay = (displayFn) => {
+    if (!metadataInfo || !metadataInfo.cronExpression) return "NA";
+    if (metadataInfo.cronExpression === "livestreaming") return "livestreaming";
+    return displayFn(metadataInfo.cronExpression);
+  };
+
+  const getConfigStatusDisplay = () => {
+    if (!metadataInfo || Object.keys(metadataInfo).length === 0 || metadataInfo.isEnabled == undefined) {
+      return "NA";
+    }
+    return <Badge status={getConfigStatus(metadataInfo.isEnabled)} text={metadataInfo.isEnabled ? "Active" : "Inactive"} />;
+  };
 
   const labelTooltip = (lable, tooltipTxt) => {
     return (
@@ -374,63 +397,37 @@ const Overview = (props) => {
                 label="Configuration status"
                 labelStyle={{ fontFamily: "Inter-Medium" }}
               >
-                {metadataInfo &&
-                Object.keys(metadataInfo).length > 0 &&
-                metadataInfo.isEnabled != undefined ? (
-                  <Badge
-                    status={getConfigStatus(metadataInfo.isEnabled)}
-                    text={metadataInfo.isEnabled ? "Active" : "Inactive"}
-                  />
-                ) : (
-                  "NA"
-                )}
-                 
+                {getConfigStatusDisplay()}
               </Descriptions.Item>
               <Descriptions.Item
                 label="Source protocol"
                 labelStyle={{ fontFamily: "Inter-Medium" }}
               >
-                {metadataInfo && metadataInfo.sourceProcessor
-                  ? metadataInfo.sourceProcessor === "sftpProcessor"
-                    ? "SFTP"
-                    : "HTTPS"
-                  : "NA"}
+                {getSourceProtocol()}
               </Descriptions.Item>
               <Descriptions.Item
                 label="Data format"
                 labelStyle={{ fontFamily: "Inter-Medium" }}
               >
-                {metadataInfo && metadataInfo.splittingCanonicalClass
-                  ? getFileFormat(metadataInfo.splittingCanonicalClass)
-                  : "NA"}
+                {getDataFormat()}
               </Descriptions.Item>
               <Descriptions.Item
                 label="Start date"
                 labelStyle={{ fontFamily: "Inter-Medium" }}
               >
-                {metadataInfo && metadataInfo.start
-                  ? moment(metadataInfo.start).format("DD MMM YYYY")
-                  : "NA"}
+                {getStartDate()}
               </Descriptions.Item>
               <Descriptions.Item
                 label="Scheduled data update GMT"
                 labelStyle={{ fontFamily: "Inter-Medium" }}
               >
-                {metadataInfo && metadataInfo.cronExpression
-                  ? metadataInfo.cronExpression === "livestreaming"
-                    ?"livestreaming"
-                    : getScheduledTime(metadataInfo.cronExpression)
-                  : "NA"}
+                {getCronDisplay(getScheduledTime)}
               </Descriptions.Item>
               <Descriptions.Item
                 label="Frequency"
                 labelStyle={{ fontFamily: "Inter-Medium" }}
               >
-                {metadataInfo && metadataInfo.cronExpression
-                   ? metadataInfo.cronExpression === "livestreaming"
-                     ?"livestreaming"
-                     : getFrequency(metadataInfo.cronExpression)
-                  : "NA"}
+                {getCronDisplay(getFrequency)}
               </Descriptions.Item>
             </Descriptions>
           </Col>
