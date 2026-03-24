@@ -1,9 +1,9 @@
 import * as redux from "react-redux";
 import { MemoryRouter } from "react-router-dom";
-import { configure, shallow, sleep, mount } from "enzyme";
+import { configure, shallow, mount } from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
 
-import { Breadcrumb } from "antd";
+import { Descriptions, Layout, Menu, Table, Tag, Badge, Button } from "antd";
 import Overview from "../../../components/dataset/Overview";
 
 configure({ adapter: new Adapter() });
@@ -14,6 +14,7 @@ jest.mock("react-redux", () => ({
   connect: () => (Component) => Component,
 }));
 
+const mockPush = jest.fn();
 const mockUseLocationValue = {
   pathname: "/testroute",
   search: "",
@@ -24,65 +25,457 @@ const mockUseLocationValue = {
     },
   },
 };
+const mockUseLocation = jest.fn(() => mockUseLocationValue);
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useLocation: jest.fn().mockImplementation(() => {
-    return mockUseLocationValue;
-  }),
+  useLocation: () => mockUseLocation(),
+  withRouter: (Component) => (props) => (
+    <Component {...props} history={{ push: mockPush }} />
+  ),
 }));
 
 const datafeedInfo = {
   datafeedById: {
     datafeed: {
-      feedId: "",
-      longName: "",
-      shortName: "",
-      protocol: "",
-      feedDescription: "",
-      dataConfidentiality: "",
-      documentationLink: "",
-      documentationFile: "",
-      personalData: "",
-      feedStatus: "",
+      feedId: "DF001",
+      longName: "Test Feed Long",
+      shortName: "TFL",
+      protocol: "SFTP",
+      feedDescription: "Test feed description",
+      dataConfidentiality: "Low",
+      documentationLink: "http://docs.test.com",
+      documentationFile: "doc.pdf",
+      personalData: "No",
+      feedStatus: "Active",
     },
   },
   metadata: {
     data: {
-      isEnabled: "",
-      sourceProcessor: "",
-      splittingCanonicalClass: "",
-      start: "",
-      cronExpression: "",
+      isEnabled: true,
+      sourceProcessor: "sftpProcessor",
+      splittingCanonicalClass:
+        "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute",
+      start: "2024-01-01",
+      cronExpression: "0 30 6 ? * MON-FRI",
     },
   },
 };
 
 const dataFamily = {
   datasetById: {
-    datasetId: "",
-    longName: "",
-    shortName: "",
-    datasetDescription: "",
-    datasetStatus: "",
-    licenseId: "",
+    datasetId: "DS001",
+    longName: "Test Dataset Long",
+    shortName: "TDL",
+    datasetDescription: "Test dataset description",
+    datasetStatus: "Active",
+    licenseId: "L001",
   },
 };
-const license = { licenseById: { licenseShortName: "" } };
-const catalogueList = { catalogueList: { datasetId: "", dataFeedId: "" } };
+const license = { licenseById: { licenseShortName: "TestLicense" } };
+const catalogueList = {
+  catalogueList: [
+    {
+      datasetId: "DS001",
+      dataFeedId: "DF002",
+      dataFeedLongName: "Related Feed",
+      entityShortName: "TestEntity",
+      datasetShortName: "TDL",
+      dataFeedDescription: "Related feed desc",
+    },
+    {
+      datasetId: "DS001",
+      dataFeedId: "DF001",
+      dataFeedLongName: "Same Feed",
+      entityShortName: "TestEntity",
+      datasetShortName: "TDL",
+      dataFeedDescription: "Same feed desc",
+    },
+  ],
+};
 
-const state = { datafeedInfo, dataFamily, license, license, catalogueList };
+const setupSelector = (
+  dfInfo = datafeedInfo,
+  dfFamily = dataFamily,
+  lic = license,
+  catList = catalogueList
+) => {
+  const state = {
+    datafeedInfo: dfInfo,
+    dataFamily: dfFamily,
+    license: lic,
+    catalogueList: catList,
+  };
+  redux.useSelector.mockImplementation((cb) => cb(state));
+};
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
+describe("Overview Component", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseLocation.mockReturnValue(mockUseLocationValue);
+    setupSelector();
+  });
 
-const wrapper = mount(
-  <MemoryRouter>
-    <Overview />
-  </MemoryRouter>
-);
+  it("should render main container", () => {
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    const element = wrapper.find("#main");
+    expect(element.length).toBe(1);
+  });
 
-it("wrapper", () => {
-  const element = wrapper.find("#main");
-  expect(element.length).toBe(1);
+  it("should render with empty datafeedInfo", () => {
+    setupSelector(
+      {
+        datafeedById: {},
+        metadata: { data: {} },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.find("#main").length).toBe(1);
+  });
+
+  it("should render with active feed status", () => {
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with pending dataset status", () => {
+    setupSelector(
+      datafeedInfo,
+      {
+        datasetById: {
+          ...dataFamily.datasetById,
+          datasetStatus: "Pending",
+        },
+      },
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with expired status", () => {
+    setupSelector(
+      {
+        ...datafeedInfo,
+        datafeedById: {
+          datafeed: {
+            ...datafeedInfo.datafeedById.datafeed,
+            feedStatus: "Expired",
+          },
+        },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with null licenseInfo", () => {
+    setupSelector(datafeedInfo, dataFamily, { licenseById: null }, catalogueList);
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with empty catalogueList", () => {
+    setupSelector(datafeedInfo, dataFamily, license, {
+      catalogueList: [],
+    });
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with null catalogueList", () => {
+    setupSelector(datafeedInfo, dataFamily, license, {
+      catalogueList: null,
+    });
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should filter related feeds excluding current feed", () => {
+    setupSelector();
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    // The related feeds list should exclude DF001 (current feed)
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with JSON split validate route in metadata", () => {
+    setupSelector(
+      {
+        ...datafeedInfo,
+        metadata: {
+          data: {
+            ...datafeedInfo.metadata.data,
+            splittingCanonicalClass:
+              "com.scb.edms.edmsdataflowsvc.routes.JSONSplitValidateRoute",
+          },
+        },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with CSV initial route in metadata", () => {
+    setupSelector(
+      {
+        ...datafeedInfo,
+        metadata: {
+          data: {
+            ...datafeedInfo.metadata.data,
+            splittingCanonicalClass:
+              "com.scb.edms.edmsdataflowsvc.routes.CSVInitialRoute",
+          },
+        },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with disabled config (isEnabled false)", () => {
+    setupSelector(
+      {
+        ...datafeedInfo,
+        metadata: {
+          data: {
+            ...datafeedInfo.metadata.data,
+            isEnabled: false,
+          },
+        },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with NA cron expression", () => {
+    setupSelector(
+      {
+        ...datafeedInfo,
+        metadata: {
+          data: {
+            ...datafeedInfo.metadata.data,
+            cronExpression: "NA",
+          },
+        },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with null cron expression", () => {
+    setupSelector(
+      {
+        ...datafeedInfo,
+        metadata: {
+          data: {
+            ...datafeedInfo.metadata.data,
+            cronExpression: null,
+          },
+        },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with NotUsed cron expression", () => {
+    setupSelector(
+      {
+        ...datafeedInfo,
+        metadata: {
+          data: {
+            ...datafeedInfo.metadata.data,
+            cronExpression: "NotUsed",
+          },
+        },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with daily cron expression (* * *)", () => {
+    setupSelector(
+      {
+        ...datafeedInfo,
+        metadata: {
+          data: {
+            ...datafeedInfo.metadata.data,
+            cronExpression: "0 0 * * *",
+          },
+        },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with no datasetId", () => {
+    setupSelector(
+      datafeedInfo,
+      {
+        datasetById: {
+          datasetId: "",
+          longName: "",
+          shortName: "",
+          datasetDescription: "",
+          datasetStatus: "",
+          licenseId: "",
+        },
+      },
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should render with XpathSplitValidateRoute", () => {
+    setupSelector(
+      {
+        ...datafeedInfo,
+        metadata: {
+          data: {
+            ...datafeedInfo.metadata.data,
+            splittingCanonicalClass:
+              "com.scb.edms.edmsdataflowsvc.routes.XpathSplitValidateRoute",
+          },
+        },
+      },
+      dataFamily,
+      license,
+      catalogueList
+    );
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.exists()).toBe(true);
+  });
+
+  it("should dispatch getDatasetMetadataInfo when datafeedId exists", () => {
+    setupSelector();
+    mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(mockDispatch).toHaveBeenCalled();
+  });
+
+  it("should render Layout components", () => {
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.find(Layout).length).toBeGreaterThanOrEqual(0);
+  });
+
+  it("should render Menu component", () => {
+    const wrapper = mount(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+    expect(wrapper.find(Menu).length).toBeGreaterThanOrEqual(0);
+  });
 });

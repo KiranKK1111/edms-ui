@@ -1,8 +1,8 @@
 import { getCustomLabels, getObjFromSubscription } from "../../components/stringConversion";
 
-describe('', () => {
+describe('stringConversion', () => {
 
-    it("wrapper", () => {
+    it("should return value from subscription businessRequirements by key", () => {
         const subscription = {
             businessRequirements: [
                 {
@@ -20,7 +20,7 @@ describe('', () => {
         expect(result).toBe(expectedValue);
     });
 
-    it("wrapper", () => {
+    it("should return custom label for clarity id", () => {
         const item = 'clarity id';
         const expectedLabel = 'Clarity ID';
         const response = getCustomLabels(item);
