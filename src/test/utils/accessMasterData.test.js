@@ -33,4 +33,29 @@ describe("isAcessMasterDataDisabled", () => {
   it("should return true when entitlementType is not set", () => {
     expect(isAcessMasterDataDisabled()).toBe(true);
   });
+
+  it("should return false for case variations of dataset delegate", () => {
+    localStorage.setItem("entitlementType", "DATASET DELEGATE");
+    expect(isAcessMasterDataDisabled()).toBe(false);
+  });
+
+  it("should return false for case variations of read only", () => {
+    localStorage.setItem("entitlementType", "READ ONLY");
+    expect(isAcessMasterDataDisabled()).toBe(false);
+  });
+
+  it("should return false for case variations of dataset owner", () => {
+    localStorage.setItem("entitlementType", "DATASET OWNER");
+    expect(isAcessMasterDataDisabled()).toBe(false);
+  });
+
+  it("should return true for IAM Admin", () => {
+    localStorage.setItem("entitlementType", "IAM Admin");
+    expect(isAcessMasterDataDisabled()).toBe(true);
+  });
+
+  it("should return true for empty string entitlementType", () => {
+    localStorage.setItem("entitlementType", "");
+    expect(isAcessMasterDataDisabled()).toBe(true);
+  });
 });

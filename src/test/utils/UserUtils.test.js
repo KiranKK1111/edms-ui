@@ -16,6 +16,11 @@ describe("getHardCodedRole", () => {
     expect(getHardCodedRole("1117602")).toBe(ROLE_ADMIN);
     expect(getHardCodedRole("1588229")).toBe(ROLE_ADMIN);
     expect(getHardCodedRole("1264899")).toBe(ROLE_ADMIN);
+    expect(getHardCodedRole("1325208")).toBe(ROLE_ADMIN);
+    expect(getHardCodedRole("1278228")).toBe(ROLE_ADMIN);
+    expect(getHardCodedRole("1629035")).toBe(ROLE_ADMIN);
+    expect(getHardCodedRole("1558113")).toBe(ROLE_ADMIN);
+    expect(getHardCodedRole("1628553")).toBe(ROLE_ADMIN);
   });
 
   it("should return null for unknown PSIDs", () => {
@@ -26,6 +31,19 @@ describe("getHardCodedRole", () => {
   it("should handle numeric PSID input by converting to string", () => {
     expect(getHardCodedRole(1293220)).toBe(ROLE_OWNER);
     expect(getHardCodedRole(1380562)).toBe(ROLE_CONSUMER);
+    expect(getHardCodedRole(1117602)).toBe(ROLE_ADMIN);
+  });
+
+  it("should return null for empty string", () => {
+    expect(getHardCodedRole("")).toBeNull();
+  });
+
+  it("should return null for undefined", () => {
+    expect(getHardCodedRole(undefined)).toBeNull();
+  });
+
+  it("should return null for null", () => {
+    expect(getHardCodedRole(null)).toBeNull();
   });
 });
 
@@ -66,5 +84,20 @@ describe("createNewUserProfile", () => {
     const profile = createNewUserProfile("123", "Admin");
     expect(profile.lastLogin).toBeTruthy();
     expect(profile.firstLogin).toBeTruthy();
+  });
+
+  it("should create profile with Consumer role", () => {
+    const profile = createNewUserProfile("1380562", "Consumer");
+    expect(profile.psId).toBe("1380562");
+    expect(profile.entitlementType).toBe("Consumer");
+    expect(profile.newSubscriptions).toBe("Y");
+    expect(profile.systemMessages).toBe("Y");
+  });
+
+  it("should have lastLogin and firstLogin as valid date strings", () => {
+    const profile = createNewUserProfile("123", "Owner");
+    // Verify they are parseable date strings
+    expect(new Date(profile.lastLogin).toString()).not.toBe("Invalid Date");
+    expect(new Date(profile.firstLogin).toString()).not.toBe("Invalid Date");
   });
 });

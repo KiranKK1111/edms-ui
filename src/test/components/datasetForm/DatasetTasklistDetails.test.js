@@ -1,7 +1,7 @@
 import { configure, shallow } from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
-import { Button, PageHeader, Row } from "antd";
-import FeedDetails from "../../../components/datafeed/FeedDetails";
+import { Button, PageHeader, Col } from "antd";
+import DatasetTasklistDetails from "../../../components/datasetForm/DatasetTasklistDetails";
 import { RequestModal } from "../../../components/myTasks";
 import Breadcrumb from "../../../components/breadcrumb/Breadcrumb";
 
@@ -22,17 +22,13 @@ jest.mock("react-redux", () => ({
 const mockHistoryPush = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useParams: () => ({ id: "F1" }),
+  useParams: () => ({ id: "DS1" }),
   useHistory: () => ({ push: mockHistoryPush }),
 }));
 
-jest.mock("../../../store/services/DatafeedService", () => ({
-  getDataFeedById: jest.fn(),
-}));
-
-jest.mock("../../../store/actions/datafeedAction", () => ({
-  startGetDatafeeds: jest.fn(() => "startGetDatafeeds"),
-  getDatafeedDetailsByCrId: jest.fn((x) => "getDatafeedDetailsByCrId_" + x),
+jest.mock("../../../store/actions/DatasetPageActions", () => ({
+  startGetDatasets: jest.fn(() => "startGetDatasets"),
+  gerDatasetByCrId: jest.fn((x) => "gerDatasetByCrId_" + x),
 }));
 
 jest.mock("../../../store/actions/MyTasksActions", () => ({
@@ -47,20 +43,17 @@ jest.mock("../../../utils/accessMyTask", () => {
 const { updateTaskAction } = require("../../../store/actions/MyTasksActions");
 const isAcessDisabled = require("../../../utils/accessMyTask");
 
-const feedRecord = {
-  feedId: "F1",
-  documentationLink: "https://test.com",
-  feedDescription: "Test feed description",
-  feedStatus: "Active",
-  personalData: "No",
-  dataConfidentiality: "Low",
-  longName: "Test Feed Long",
-  shortName: "TF",
+const datasetRecord = {
+  datasetId: "DS1",
+  longName: "Dataset One",
+  shortName: "DS1Short",
+  datasetStatus: "Active",
+  datasetDescription: "A dataset",
 };
 
 mockState = {
-  datafeedInfo: {
-    datafeedsData: [feedRecord],
+  dataset: {
+    datasetsInfo: [datasetRecord],
   },
 };
 
@@ -71,15 +64,15 @@ const baseMockProps = {
         taskListId: "T1",
         taskListObjectAction: "Create",
         taskListTaskStatus: "Pending",
-        taskListObject: "Datafeed",
         taskListCreatedBy: "other_user",
+        taskListObject: "Dataset",
       },
     },
   },
   history: { push: jest.fn() },
 };
 
-describe("FeedDetails", () => {
+describe("DatasetTasklistDetails", () => {
   let wrapper;
 
   beforeEach(() => {
@@ -92,7 +85,7 @@ describe("FeedDetails", () => {
     localStorage.setItem("psid", "current_user");
     localStorage.setItem("entitlementType", "Admin");
     baseMockProps.history.push.mockClear();
-    wrapper = shallow(<FeedDetails {...baseMockProps} />);
+    wrapper = shallow(<DatasetTasklistDetails {...baseMockProps} />);
   });
 
   it("should render without crashing", () => {
@@ -112,21 +105,39 @@ describe("FeedDetails", () => {
     expect(wrapper.find(PageHeader).length).toBe(1);
   });
 
-  it("should render General Details heading", () => {
-    expect(wrapper.find("h3").text()).toContain("General Details");
+  it("should render dataset details heading", () => {
+    expect(wrapper.find("h3").text()).toContain("Dataset details");
   });
 
   it("should render breadcrumb area", () => {
     expect(wrapper.find(".breadcrumb-area").length).toBe(1);
   });
 
-  it("should render data rows", () => {
-    expect(wrapper.find(Row).length).toBeGreaterThanOrEqual(1);
+  // ---- Buttons not disabled for Pending ----
+  it("should not disable buttons when taskListTaskStatus is Pending", () => {
+    const buttons = wrapper.find(".btn-parent").find(Button);
+    expect(buttons.at(0).prop("disabled")).toBe(false);
+    expect(buttons.at(1).prop("disabled")).toBe(false);
+  });
+
+  // ---- isBtnDisplay when isAcessDisabled is true ----
+  it("should disable buttons when isAcessDisabled returns true", () => {
+    isAcessDisabled.mockReturnValue(true);
+    const w = shallow(<DatasetTasklistDetails {...baseMockProps} />);
+    expect(w.find(".btn-parent").find(Button).at(0).prop("disabled")).toBe(true);
+  });
+
+  // ---- isBtnDisplay when createdBy === psid ----
+  it("should disable buttons when taskListCreatedBy equals psid", () => {
+    localStorage.setItem("psid", "other_user");
+    const w = shallow(<DatasetTasklistDetails {...baseMockProps} />);
+    expect(w.find(".btn-parent").find(Button).at(0).prop("disabled")).toBe(true);
   });
 
   // ---- Renders with Create action ----
   it("should render with Create action props", () => {
-    expect(wrapper.exists()).toBe(true);
+    const w = shallow(<DatasetTasklistDetails {...baseMockProps} />);
+    expect(w.exists()).toBe(true);
   });
 
   // ---- Renders with Update action ----
@@ -142,7 +153,7 @@ describe("FeedDetails", () => {
         },
       },
     };
-    const w = shallow(<FeedDetails {...updateProps} />);
+    const w = shallow(<DatasetTasklistDetails {...updateProps} />);
     expect(w.exists()).toBe(true);
   });
 
@@ -159,59 +170,48 @@ describe("FeedDetails", () => {
         },
       },
     };
-    const w = shallow(<FeedDetails {...deactivateProps} />);
+    const w = shallow(<DatasetTasklistDetails {...deactivateProps} />);
     expect(w.exists()).toBe(true);
   });
 
-  // ---- feedInfo / breadcrumb (useEffect doesn't fire in shallow) ----
-  it("should show dash in breadcrumb when feedInfo is empty (useEffect not fired)", () => {
+  // ---- Breadcrumb shows dash when no data (useEffect doesn't fire in shallow) ----
+  it("should show dash in breadcrumb when datasetObj is empty", () => {
     const bc = wrapper.find(Breadcrumb);
+    // useEffect doesn't fire in shallow rendering, so datasetObj stays []
     expect(bc.prop("breadcrumb")[1].name).toBe("-");
   });
 
-  // ---- Empty/null datafeedsData ----
-  it("should handle empty datafeedsData", () => {
+  // ---- Empty datasetsInfo ----
+  it("should handle empty datasetsInfo", () => {
     const savedState = { ...mockState };
-    mockState = { datafeedInfo: { datafeedsData: [] } };
-    const w = shallow(<FeedDetails {...baseMockProps} />);
+    mockState = { dataset: { datasetsInfo: [] } };
+    const w = shallow(<DatasetTasklistDetails {...baseMockProps} />);
     expect(w.exists()).toBe(true);
     mockState = savedState;
   });
 
-  it("should handle null datafeedsData", () => {
-    const savedState = { ...mockState };
-    mockState = { datafeedInfo: { datafeedsData: null } };
-    const w = shallow(<FeedDetails {...baseMockProps} />);
+  // ---- Non-Create renders correctly ----
+  it("should render correctly for non-Create action", () => {
+    const updateProps = {
+      ...baseMockProps,
+      location: {
+        state: {
+          myTaskData: {
+            ...baseMockProps.location.state.myTaskData,
+            taskListObjectAction: "Update",
+          },
+        },
+      },
+    };
+    const w = shallow(<DatasetTasklistDetails {...updateProps} />);
     expect(w.exists()).toBe(true);
-    mockState = savedState;
-  });
-
-  // ---- Buttons not disabled for Pending ----
-  it("should not disable buttons when taskListTaskStatus is Pending", () => {
-    const buttons = wrapper.find(".btn-parent").find(Button);
-    expect(buttons.at(0).prop("disabled")).toBe(false);
-    expect(buttons.at(1).prop("disabled")).toBe(false);
-  });
-
-  // ---- isBtnDisplay when isAcessDisabled is true ----
-  it("should disable buttons when isAcessDisabled returns true", () => {
-    isAcessDisabled.mockReturnValue(true);
-    const w = shallow(<FeedDetails {...baseMockProps} />);
-    expect(w.find(".btn-parent").find(Button).at(0).prop("disabled")).toBe(true);
-  });
-
-  // ---- isBtnDisplay when createdBy === psid ----
-  it("should disable buttons when taskListCreatedBy equals psid", () => {
-    localStorage.setItem("psid", "other_user");
-    const w = shallow(<FeedDetails {...baseMockProps} />);
-    expect(w.find(".btn-parent").find(Button).at(0).prop("disabled")).toBe(true);
   });
 
   // ---- showApproveModal ----
-  it("should have onClick on Approve button", () => {
-    const btn = wrapper.find(".btn-parent").find(Button).at(1);
-    expect(typeof btn.prop("onClick")).toBe("function");
-    btn.prop("onClick")();
+  it("should open approve modal when Approve button clicked", () => {
+    wrapper.find(".btn-parent").find(Button).at(1).prop("onClick")();
+    wrapper.update();
+    expect(wrapper.find(RequestModal).at(0).prop("isModalVisible")).toBe(true);
   });
 
   // ---- handleApprove ----
@@ -239,26 +239,34 @@ describe("FeedDetails", () => {
   });
 
   // ---- handleApproveCancel ----
-  it("should have handleCancel on approve modal", () => {
-    expect(typeof wrapper.find(RequestModal).at(0).prop("handleCancel")).toBe("function");
+  it("should handle approve cancel and close modal", () => {
+    wrapper.find(".btn-parent").find(Button).at(1).prop("onClick")();
+    wrapper.update();
+    expect(wrapper.find(RequestModal).at(0).prop("isModalVisible")).toBe(true);
     wrapper.find(RequestModal).at(0).prop("handleCancel")();
+    wrapper.update();
+    expect(wrapper.find(RequestModal).at(0).prop("isModalVisible")).toBe(false);
   });
 
   // ---- showRejectModal ----
-  it("should have onClick on Reject button", () => {
-    const btn = wrapper.find(".btn-parent").find(Button).at(0);
-    expect(typeof btn.prop("onClick")).toBe("function");
-    btn.prop("onClick")();
+  it("should open reject modal when Reject button clicked", () => {
+    wrapper.find(".btn-parent").find(Button).at(0).prop("onClick")();
+    wrapper.update();
+    expect(wrapper.find(RequestModal).at(1).prop("isModalVisible")).toBe(true);
   });
 
   // ---- handleRejectCancel ----
-  it("should have handleCancel on reject modal", () => {
-    expect(typeof wrapper.find(RequestModal).at(1).prop("handleCancel")).toBe("function");
+  it("should handle reject cancel and close modal", () => {
+    wrapper.find(".btn-parent").find(Button).at(0).prop("onClick")();
+    wrapper.update();
+    expect(wrapper.find(RequestModal).at(1).prop("isModalVisible")).toBe(true);
     wrapper.find(RequestModal).at(1).prop("handleCancel")();
+    wrapper.update();
+    expect(wrapper.find(RequestModal).at(1).prop("isModalVisible")).toBe(false);
   });
 
   // ---- Reject modal structure ----
-  it("should have handleOk on reject modal", () => {
+  it("should have handleOk prop on reject modal", () => {
     expect(typeof wrapper.find(RequestModal).at(1).prop("handleOk")).toBe("function");
   });
 
@@ -291,18 +299,18 @@ describe("FeedDetails", () => {
     expect(baseMockProps.history.push).toHaveBeenCalledWith("/myTasks");
   });
 
-  // ---- Breadcrumb first item ----
+  // ---- Breadcrumb with correct data ----
   it("should pass correct breadcrumb first item", () => {
     const bc = wrapper.find(Breadcrumb);
     expect(bc.prop("breadcrumb")[0]).toEqual({ name: "My Tasks", url: "/myTasks" });
   });
 
-  // ---- Review submit section ----
+  // ---- Review submit section rendered ----
   it("should render review-submit section", () => {
     expect(wrapper.find(".review-submit").length).toBe(1);
   });
 
-  // ---- form-layout ----
+  // ---- form-layout rendered ----
   it("should render form-layout content-wrapper", () => {
     expect(wrapper.find(".form-layout").length).toBe(1);
   });

@@ -37,4 +37,31 @@ describe("getUniqueFileName", () => {
     const result = getUniqueFileName(fileObj);
     expect(result).toContain("my file (1).pdf");
   });
+
+  it("should return timestamp with .pdf when fileObj.name is empty string", () => {
+    const fileObj = { name: "" };
+    const result = getUniqueFileName(fileObj);
+    expect(result).toMatch(/^\d+\.pdf$/);
+  });
+
+  it("should return timestamp with .pdf when fileObj is false", () => {
+    const result = getUniqueFileName(false);
+    expect(result).toMatch(/^\d+\.pdf$/);
+  });
+
+  it("should return timestamp with .pdf when fileObj is 0", () => {
+    const result = getUniqueFileName(0);
+    expect(result).toMatch(/^\d+\.pdf$/);
+  });
+
+  it("should include correct timestamp components", () => {
+    const before = new Date();
+    const fileObj = { name: "test.txt" };
+    const result = getUniqueFileName(fileObj);
+    const after = new Date();
+    // Verify the result starts with digits and ends with the filename
+    expect(result).toMatch(/^\d+-test\.txt$/);
+    // Verify year is present
+    expect(result).toContain(String(before.getFullYear()));
+  });
 });

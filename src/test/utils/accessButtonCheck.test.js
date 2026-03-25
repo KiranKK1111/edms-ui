@@ -71,4 +71,50 @@ describe("isButtonObject", () => {
     const result = isButtonObject("catalogue", "overview");
     expect(result).toBe(false);
   });
+
+  it("should skip items with missing category field", () => {
+    const matrix = [
+      { objectName: "Main Page", permission: "R" },
+      { category: "Catalogue", objectName: "Main Page", permission: "R" },
+    ];
+    localStorage.setItem("objectMatrix", JSON.stringify(matrix));
+    const result = isButtonObject("Catalogue", "Main Page");
+    expect(result).toBe(false);
+  });
+
+  it("should skip items with missing objectName field", () => {
+    const matrix = [
+      { category: "Catalogue", permission: "RW" },
+    ];
+    localStorage.setItem("objectMatrix", JSON.stringify(matrix));
+    const result = isButtonObject("Catalogue", "Main Page");
+    expect(result).toBe(true);
+  });
+
+  it("should return true for Main Page with unknown permission", () => {
+    const matrix = [
+      { category: "Catalogue", objectName: "Main Page", permission: "X" },
+    ];
+    localStorage.setItem("objectMatrix", JSON.stringify(matrix));
+    const result = isButtonObject("Catalogue", "Main Page");
+    expect(result).toBe(true);
+  });
+
+  it("should return true for non-Main Page with unknown permission", () => {
+    const matrix = [
+      { category: "Catalogue", objectName: "Overview", permission: "X" },
+    ];
+    localStorage.setItem("objectMatrix", JSON.stringify(matrix));
+    const result = isButtonObject("Catalogue", "Overview");
+    expect(result).toBe(true);
+  });
+
+  it("should use includes for category matching (partial match)", () => {
+    const matrix = [
+      { category: "Catalogue Management", objectName: "Overview", permission: "RW" },
+    ];
+    localStorage.setItem("objectMatrix", JSON.stringify(matrix));
+    const result = isButtonObject("Catalogue", "Overview");
+    expect(result).toBe(false);
+  });
 });

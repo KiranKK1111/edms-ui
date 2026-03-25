@@ -132,4 +132,17 @@ describe("Login Page", () => {
     const wrapped = shallow(<Login />);
     expect(wrapped.find(".env-left-logo").length).toBe(1);
   });
+
+  it("should call window.location.assign with Entra URL when Continue to Catalogue button is clicked", () => {
+    const wrapped = shallow(<Login />);
+    const btn = wrapped.find("#btn-forgeRock");
+    btn.simulate("click");
+    expect(window.location.assign).toHaveBeenCalledTimes(1);
+    const assignedUrl = window.location.assign.mock.calls[0][0];
+    expect(assignedUrl).toContain("/authorize?client_id=");
+    expect(assignedUrl).toContain("response_type=code");
+    expect(assignedUrl).toContain("redirect_uri=https://localhost:3000");
+    expect(assignedUrl).toContain("response_mode=query");
+    expect(assignedUrl).toContain("scope=openid+profile+offline_access");
+  });
 });
