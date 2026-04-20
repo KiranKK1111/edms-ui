@@ -10,36 +10,20 @@ import {
 } from "antd";
 import { UserOutlined, HomeOutlined } from "@ant-design/icons";
 
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import moment from "moment";
 
 import Headers from "../header/Header";
 import "./UserProfile.css";
-import { startLoadUserProfile } from "../../store/actions/UserProfileAction";
 
 const { Header, Sider, Content } = Layout;
 
 const UserProfile = (props) => {
   const psid = localStorage.getItem("psid");
-  let lastLoginFormatted;
-
-  useEffect(() => {
-    const getData = async () => {
-      const response = await props.dispatch(startLoadUserProfile(psid));
-      return response;
-    };
-    const resp = getData();
-  }, [props.dispatch]);
-
-  if (props.userProfile) {
-    lastLoginFormatted = moment(props.userProfile.lastLogin).format(
-      "Do MMM, YYYY [at] h:mm a"
-    );
-  } else {
-    lastLoginFormatted = moment().format("Do MMM, YYYY [at] h:mm a");
-  }
+  const lastLoginFormatted = moment(
+    props.userProfile ? props.userProfile.lastLogin : undefined
+  ).format("Do MMM, YYYY [at] h:mm a");
 
   const handleEntitlementChange = () => {
     Modal.info({

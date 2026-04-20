@@ -48,11 +48,11 @@ const Login = (props) => {
   };
 
   const redirectToEntraLoginScreen = () => {
-    let url = window.location.host;
-    window.location.assign(
-      `${ENTRA_URL}/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=https://${url}&response_mode=query&scope=openid+profile+offline_access&sso_nonce=AwABEgEAAAADAOz_BQD0_85qFlR47QFPg77hd0J0P545DJiVNfBTxx5LN0IegzlnzxhcPKodamMqYJmHhfiYdDUXiuD4p_-E1Cbn_vrwnm0gAA&client-request-id=e650f9b4-d135-41df-9423-9d96770fb5ad&mscrid=e650f9b4-d135-41df-9423-9d96770fb5ad`
-    );
-    // userLogin(); //this is only meant for local changes and it should not be committed.
+    // let url = window.location.host;
+    // window.location.assign(
+    //   `${ENTRA_URL}/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=https://${url}&response_mode=query&scope=openid+profile+offline_access&sso_nonce=AwABEgEAAAADAOz_BQD0_85qFlR47QFPg77hd0J0P545DJiVNfBTxx5LN0IegzlnzxhcPKodamMqYJmHhfiYdDUXiuD4p_-E1Cbn_vrwnm0gAA&client-request-id=e650f9b4-d135-41df-9423-9d96770fb5ad&mscrid=e650f9b4-d135-41df-9423-9d96770fb5ad`
+    // );
+    userLogin(); //this is only meant for local changes and it should not be committed.
   };
 
   function findParam(url, param) {

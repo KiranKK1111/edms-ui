@@ -22,6 +22,7 @@ import {
   SUBSCRIPTION_MAIN_PAGE,
 } from "../../utils/Constants";
 import getPermissionObject from "../../utils/accessObject";
+import TextIcon from "../../images/EDP_logo_whiteText.svg";
 import { ENTRA_URL } from "../../urlMappings";
 
 const { Header } = Layout;
@@ -58,11 +59,12 @@ function Headers() {
   const loggedInTitle = localStorage.getItem("entitlementType");
 
   const redirectToEntraLogoutScreen = () => {
-    const url = window.location.host;
-    const logoutUrl = `${ENTRA_URL}/logout?post_logout_redirect_uri=https://${url}/&client_id=1aabad22-8830-401f-9480-42967d62ca9b`;
+    // const url = window.location.host;
+    // const logoutUrl = `${ENTRA_URL}/logout?post_logout_redirect_uri=https://${url}/&client_id=1aabad22-8830-401f-9480-42967d62ca9b`;
   
     deleteAllCookiesAndSiteData();
-    window.location.assign(logoutUrl);
+    // window.location.assign(logoutUrl);
+    window.location.assign("/");
   };
 
   const guestRole = localStorage.getItem("guestRole");
@@ -179,7 +181,7 @@ function Headers() {
     <Layout>
       <Header className="Main-header">
         <div className="logo" id="corp-logo">
-          <img src="/images/EDP_logo_whiteText.svg" alt="logo" />
+          <img src={TextIcon} alt="logo" />
         </div>
         <Menu className="header-bar" theme="dark" mode="horizontal" style={{ display: "block" }}>
           <Menu.Item key="1">

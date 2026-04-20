@@ -231,10 +231,9 @@ export const getConfigById = (id) => {
           lastUpdatedBy: data["lastUpdatedBy"],
           lastUpdatedOn: data["lastUpdatedOn"],
           splittingRequirement:
-            data["schemaId"] != "" && data["schemaId"] != "string"
-              ? data["schemaId"]
-                ? "Yes"
-                : "No"
+            data["splittingCanonicalClass"] != null &&
+            data["splittingCanonicalClass"] !== ""
+              ? "Yes"
               : "No",
           routeType: data["routeTypeCanonicalClass"],
           configurationStatus:
