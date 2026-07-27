@@ -506,7 +506,13 @@ const DataSetData = (props) => {
               key: "edit",
               icon: <EditIcon fontSize="small" />,
               label: "Edit",
-              to: `/masterData/${datasetShortName}/dataset`,
+              // Must carry the same router state as the dataset-name link —
+              // without it the form opens in create mode and the Review step
+              // crashes reading location.state.
+              to: {
+                pathname: `/masterData/${datasetShortName}/dataset`,
+                state: { isUpdate: true, licence: record },
+              },
               onClick: () => dispatch(datasetInfo(record)),
             },
             {

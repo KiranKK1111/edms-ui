@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { Box, Grid } from "@mui/material";
 import { FieldLabel, FormField } from "../../design-system";
 import { vendorContacts } from "../../store/actions/contractAction";
-import { bindData } from "./bindData";
 import "./VendorContacts.css";
 
 const VendorContacts = (props) => {
@@ -35,12 +34,18 @@ const VendorContacts = (props) => {
     formApi.setFieldsValue({
       billingModel: "Shared cost",
     });
-    bindData(
-      reduxData.vendorContacts.length
-        ? reduxData.vendorContacts
-        : reduxData.selectedContract,
-      formApi
-    );
+    // Bind ONLY this step's fields — binding the whole record would leak every
+    // agreement column into getValues() and hence into the Review screen.
+    const src = reduxData.vendorContacts.length
+      ? reduxData.vendorContacts
+      : reduxData.selectedContract;
+    if (src && src.length && src[0]) {
+      const d = src[0];
+      formApi.setFieldsValue({
+        agreementLimitations: d.agreementLimitations || "",
+        ...(d.billingModel ? { billingModel: d.billingModel } : {}),
+      });
+    }
   }, [reduxData.vendorContacts, reduxData.selectedContract, formApi]);
 
   const onFinish = (values) => {
@@ -57,6 +62,14 @@ const VendorContacts = (props) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.formData]);
+
+  // Let the controller persist the current (unvalidated) input when Previous
+  // is clicked, so nothing typed since the last Next is lost.
+  useEffect(() => {
+    if (!props.registerDraftSaver) return;
+    props.registerDraftSaver(() => dispatch(vendorContacts([getValues()])));
+    return () => props.registerDraftSaver(null);
+  });
 
   return (
     <Box component="form" noValidate>

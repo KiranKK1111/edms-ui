@@ -49,12 +49,18 @@ const DatafeedDetails = (props) => {
 
   // Bind existing data in edit / navigate-back scenarios, otherwise seed the
   // status field with "Pending" (mirrors the original antd form behaviour).
+  // The parent dataset's short name only exists in router state (no datafeed
+  // record carries a dataSetName key), so read it from there.
+  const datasetShortName =
+    (location.state && location.state.dataset && location.state.dataset.shortName) ||
+    "";
+
   useEffect(() => {
     if (data && Object.keys(data).length > 1) {
       reset({
         datafeedId: data.feedId || "",
         status: data.feedStatus || "",
-        dataSetName: data.dataSetName || "",
+        dataSetName: data.dataSetName || datasetShortName,
         dataConfidentiality: data.dataConfidentiality || "",
         longName: data.longName || "",
         personalDataType: data.personalData || "",
@@ -63,6 +69,7 @@ const DatafeedDetails = (props) => {
       });
     } else {
       setValue("status", "Pending");
+      if (datasetShortName) setValue("dataSetName", datasetShortName);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
@@ -73,7 +80,16 @@ const DatafeedDetails = (props) => {
     if (props.formData) {
       trigger().then((ok) => {
         if (ok && !nameFound && !longNameFound) {
-          dispatch(formDataFn(getValues()));
+          // Carry over the DB-record fields that have no form input — they
+          // must survive the wizard or an update silently wipes them.
+          const carry = {
+            documentationLink: data && data.documentationLink,
+            dataFeedConfiguration: data && data.dataFeedConfiguration,
+            createdBy: data && data.createdBy,
+            created: data && data.created,
+            datasetId: data && data.datasetId,
+          };
+          dispatch(formDataFn({ ...carry, ...getValues() }));
           props.next(true);
         }
       });
@@ -86,7 +102,11 @@ const DatafeedDetails = (props) => {
     let inputValue = e.target.value;
     inputValue = inputValue.trim();
     if (datafeedsInfo && datafeedsInfo.length) {
-      const datasetID = location.state.dataset.datasetId;
+      const datasetID =
+        (location.state && location.state.dataset
+          ? location.state.dataset.datasetId
+          : data && data.datasetId) || null;
+      if (!datasetID) return false;
       const filterFeeds = datafeedsInfo.filter(
         (v) => v.datasetId === datasetID
       );

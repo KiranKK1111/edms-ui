@@ -299,7 +299,13 @@ const VendorData = (props) => {
               label: "Edit",
               ...(canEdit
                 ? {
-                    to: `/masterData/${liscShort}/modifylicense`,
+                    // Must carry the record in router state exactly like the
+                    // licence-name link — the edit screen prefills from
+                    // location.state.record and has no fetch-by-id fallback.
+                    to: {
+                      pathname: `/masterData/${liscShort}/modifylicense`,
+                      state: { vendorId: vendorID, record },
+                    },
                     onClick: () =>
                       localStorage.setItem("agRecord", JSON.stringify(row)),
                   }

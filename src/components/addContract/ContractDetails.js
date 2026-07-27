@@ -42,6 +42,7 @@ const ContractDetails = (props) => {
   const [optionSelected, setOptionSelected] = useState(false);
   const [noExpiry, setNoExpiry] = useState(false);
   const [nameValidation, setNameValidation] = useState(false);
+  const [boundFromStore, setBoundFromStore] = useState(false);
 
   const {
     control,
@@ -75,8 +76,13 @@ const ContractDetails = (props) => {
       ? [...new Set(info.list.map((v) => v.shortName))]
       : [];
 
-  // Bind existing data in edit / navigate-back scenarios.
+  // Bind existing data in edit / navigate-back scenarios. The selected record
+  // is dispatched by the PARENT controller's effect, which runs after this
+  // component's mount effect — so this must re-run when the record lands in
+  // the store (a mount-only effect would leave the edit form blank). `bound`
+  // guards against clobbering user edits once a bind has happened.
   useEffect(() => {
+    if (boundFromStore) return;
     setValue("status", "Pending");
 
     let selectedData = [];
@@ -127,9 +133,10 @@ const ContractDetails = (props) => {
         setOptionSelected(true);
       }
       if (!d.expirationDate) setNoExpiry(true);
+      setBoundFromStore(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reduxData.selectedContract, reduxData.contractDetails]);
 
   // Auto-compose the agreement name and run the duplicate check whenever the
   // contributing fields change. Name = <entity>_<signedOn DDMMYYYY>_<refText>.

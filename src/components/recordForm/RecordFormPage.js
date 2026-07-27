@@ -64,6 +64,14 @@ const RecordFormPage = (props) => {
   const savedRef = useRef(null);
   const responseHandledRef = useRef(false);
 
+  // The mounted step may register a synchronous draft saver so Previous can
+  // persist typed-but-unvalidated input before the step unmounts. Steps
+  // without editable forms (review screens) simply never register.
+  const draftSaverRef = useRef(null);
+  const registerDraftSaver = useCallback((fn) => {
+    draftSaverRef.current = fn;
+  }, []);
+
   // ---- delegated-driver state (body reports a full view-model + actions) ----
   const [delegatedVm, setDelegatedVm] = useState({
     steps: [],
@@ -187,7 +195,9 @@ const RecordFormPage = (props) => {
   useEffect(() => {
     if (driver === "form" && hasId && record && !bound) {
       const formValues = descriptor.toForm(record);
-      reset(formValues);
+      // keepDirtyValues: the fields are interactive while the record request
+      // is in flight — anything already typed must not be overwritten.
+      reset(formValues, { keepDirtyValues: true });
       if (descriptor.syncToStore) descriptor.syncToStore(formValues, dispatch);
       if (descriptor.statusField) {
         setStatusPending(
@@ -257,7 +267,21 @@ const RecordFormPage = (props) => {
     }
   }, []);
 
-  const prev = useCallback(() => setCurrent((c) => Math.max(0, c - 1)), []);
+  const prev = useCallback(() => {
+    // Persist the leaving step's draft so nothing typed since the last Next is
+    // lost: the form driver holds values in the parent form (just refresh the
+    // store mirror for the review screen); self/component steps registered a
+    // synchronous draft saver.
+    if (driver === "form") {
+      if (descriptor && descriptor.syncToStore) {
+        descriptor.syncToStore(getValues(), dispatch);
+      }
+    } else if (draftSaverRef.current) {
+      draftSaverRef.current();
+    }
+    setCurrent((c) => Math.max(0, c - 1));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [driver, descriptor, getValues, dispatch]);
 
   const handleSubmit = useCallback(async () => {
     setIsSubmitted(true);
@@ -513,6 +537,7 @@ const RecordFormPage = (props) => {
           current={current}
           formData={formData}
           next={stepNext}
+          registerDraftSaver={registerDraftSaver}
           onStepsReady={handleStepsReady}
           isFormValid={setBodyValidStable}
           savedData={captureSaved}
@@ -585,7 +610,9 @@ const RecordFormPage = (props) => {
     ? steps[current].getProps(api)
     : {};
   const driverStepProps =
-    driver === "self" ? { formData, next: stepNext } : {};
+    driver === "self"
+      ? { formData, next: stepNext, registerDraftSaver }
+      : {};
   const stepProps = { ...driverStepProps, ...descriptorStepProps };
 
   return (

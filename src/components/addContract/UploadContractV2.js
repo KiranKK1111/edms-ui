@@ -45,8 +45,17 @@ const UploadContract = (props) => {
     [setValue, getValues, reset]
   );
 
+  // The upload slice is a single object { urlToAgreement, fileName } — the
+  // uploaded file's name must survive Next/Previous round trips alongside the
+  // URL field (an array-of-File shape here used to be overwritten on Next).
+  // The legacy array-of-file shape is still read for backward compatibility.
+  const uploadedFileName =
+    (Array.isArray(reduxData.upload)
+      ? reduxData.upload[0] && reduxData.upload[0].name
+      : reduxData.upload && reduxData.upload.fileName) || "";
+
   const onFinish = (values) => {
-    dispatch(upload(values));
+    dispatch(upload({ ...values, fileName: uploadedFileName }));
     props.next(true);
   };
 
@@ -60,9 +69,10 @@ const UploadContract = (props) => {
     ];
   }
 
-  const data = Object.keys(reduxData.upload).length
-    ? [reduxData.upload]
-    : selectedData;
+  const data =
+    !Array.isArray(reduxData.upload) && Object.keys(reduxData.upload).length
+      ? [reduxData.upload]
+      : selectedData;
 
   useEffect(() => {
     bindData(data, formApi);
@@ -79,8 +89,18 @@ const UploadContract = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
 
+  // Let the controller persist the current (unvalidated) input when Previous
+  // is clicked, so the URL and the uploaded file's name are not lost.
+  useEffect(() => {
+    if (!props.registerDraftSaver) return;
+    props.registerDraftSaver(() =>
+      dispatch(upload({ ...getValues(), fileName: uploadedFileName }))
+    );
+    return () => props.registerDraftSaver(null);
+  });
+
   const deleteHandler = async () => {
-    const fileName = reduxData.upload[0].name;
+    const fileName = uploadedFileName;
     let raw = JSON.stringify({ fileName: `${fileName}` });
     const res = await fetch(
       `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/delete`,
@@ -95,7 +115,7 @@ const UploadContract = (props) => {
     );
     if (res.status === 200) {
       message.success("File deleted successfully");
-      dispatch(upload([]));
+      dispatch(upload({ urlToAgreement: getValues("urlToAgreement") }));
     } else {
       message.error("Error while deleting");
     }
@@ -128,16 +148,20 @@ const UploadContract = (props) => {
       }
     );
     if (response.status === 200) {
-      file.url = `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/download/${file.name}`;
-      dispatch(upload([file]));
+      dispatch(
+        upload({
+          urlToAgreement: getValues("urlToAgreement"),
+          fileName: file.name,
+        })
+      );
     }
     e.target.value = "";
   };
 
-  const hasFile = reduxData.upload && reduxData.upload.length;
-  const uploadedName = hasFile ? reduxData.upload[0].name : "";
+  const hasFile = !!uploadedFileName;
+  const uploadedName = uploadedFileName;
   const uploadedUrl = hasFile
-    ? `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/download/${reduxData.upload[0].name}`
+    ? `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/download/${uploadedFileName}`
     : "";
 
   const prefixSelector = (

@@ -101,7 +101,6 @@ export const RESOURCES = {
       entityStatus: r.entityStatus || "Pending",
       website: r.website || "",
       entityDescription: r.entityDescription || "",
-      existingVendorWithScb: "yes",
     }),
     syncToStore: (values, dispatch) => dispatch(saveLocalData(values)),
     statusField: "entityStatus",

@@ -25,6 +25,13 @@ const ReviewSubmit = () => {
     if (data && !storeData) {
       const psid = localStorage.getItem("psid");
       const entitlementType = localStorage.getItem("entitlementType");
+      // Router state is absent on hard refresh / deep link — treat as update
+      // when the bound record carries a datasetId, and never throw.
+      const routeState = location.state || {};
+      const isUpdate =
+        routeState.isUpdate !== undefined
+          ? routeState.isUpdate
+          : !!data["datasetId"];
       let finalValues = {
         datasetDescription: data["description"],
         datasetId: data["datasetId"],
@@ -32,14 +39,15 @@ const ReviewSubmit = () => {
         longName: data["longName"],
         shortName: data["shortName"],
         roleName: data["roleName"],
-        isUpdate: location.state.isUpdate,
+        isUpdate,
       };
-      if (location.state.isUpdate === false) {
+      if (isUpdate === false) {
         finalValues["createdBy"] = psid;
         finalValues["roleName"] = entitlementType;
         finalValues["datasetUpdateFlag"] = "N";
-        finalValues["entityId"] = location.state.eid;
-        finalValues["licenseId"] = location.state.licence.licenseId;
+        finalValues["entityId"] = routeState.eid;
+        finalValues["licenseId"] =
+          routeState.licence && routeState.licence.licenseId;
       } else {
         finalValues["datasetUpdateFlag"] = "N";
         finalValues["lastUpdatedBy"] = psid;

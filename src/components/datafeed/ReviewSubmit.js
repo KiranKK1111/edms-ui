@@ -40,10 +40,22 @@ const ReviewSubmit = (props) => {
     if (data && !storeData) {
       const psid = localStorage.getItem("psid");
       const entitlementType = localStorage.getItem("entitlementType");
+      // Router state is absent on hard refresh / deep link — fall back to the
+      // record in the store and never throw.
+      const routeState = location.state || {};
+      const isUpdate =
+        routeState.isUpdate !== undefined
+          ? routeState.isUpdate
+          : !!data["datafeedId"];
       let finalValues = {
         dataConfidentiality: data["dataConfidentiality"],
-        datasetId: location.state.dataset.datasetId,
-        documentationLink: data["url"],
+        datasetId:
+          (routeState.dataset && routeState.dataset.datasetId) ||
+          data["datasetId"],
+        // documentationLink has no form input — round-trip the stored value
+        // so an update does not silently wipe it (data["url"] never existed).
+        documentationLink: data["documentationLink"],
+        dataFeedConfiguration: data["dataFeedConfiguration"],
         feedDescription: data["description"],
         feedId: data["datafeedId"],
         feedStatus: data["status"],
@@ -51,9 +63,9 @@ const ReviewSubmit = (props) => {
         personalData: data["personalDataType"],
         shortName: data["shortName"],
         roleName: data["entitlementType"],
-        isUpdate: location.state.isUpdate,
+        isUpdate,
       };
-      if (location.state.isUpdate === false) {
+      if (isUpdate === false) {
         finalValues["createdBy"] = psid;
         finalValues["roleName"] = entitlementType;
         finalValues["feedUpdateFlag"] = "N";

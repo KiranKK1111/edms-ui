@@ -59,20 +59,24 @@ function LicenseLimitations(props) {
   );
 
   useEffect(() => {
-    const selectedData =
-      reduxData.support && reduxData.support.length
-        ? reduxData.support
-        : reduxData1.selectedLicense;
-
-    if (typeof selectedData === "object" && Object.keys(selectedData).length) {
-      bindData(selectedData, form);
-    } else if (location.state && location.state.record) {
-      let data = [
-        {
-          licenceLimitations: location.state.record.licenseLimitations,
-        },
-      ];
-      bindData(data, form);
+    // Wizard draft (saved on Next/Previous) wins over the DB record.
+    if (reduxData.support && reduxData.support.length) {
+      bindData(reduxData.support, form);
+      return;
+    }
+    // DB record: note the key is licenSe... while the form field is
+    // licenCe... — map it explicitly (binding the raw record leaves the
+    // field empty).
+    const selected = reduxData1.selectedLicense;
+    const record =
+      (Array.isArray(selected) && selected.length && selected[0]) ||
+      (location.state && location.state.record) ||
+      null;
+    if (record) {
+      form.setFieldsValue({
+        licenceLimitations:
+          record.licenceLimitations ?? record.licenseLimitations ?? "",
+      });
     } else {
       bindData([], form);
     }
@@ -93,6 +97,18 @@ function LicenseLimitations(props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
+
+  // Let the controller persist the current (unvalidated) input when Previous
+  // is clicked, so text typed since the last Next is not lost.
+  useEffect(() => {
+    if (!props.registerDraftSaver) return;
+    props.registerDraftSaver(() =>
+      dispatch(
+        support([{ licenceLimitations: getValues("licenceLimitations") }])
+      )
+    );
+    return () => props.registerDraftSaver(null);
+  });
 
   const limitationsLength = (watch("licenceLimitations") || "").length;
 

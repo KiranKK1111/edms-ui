@@ -14,7 +14,9 @@ const DatasetDetails = (props) => {
   const dispatch = useDispatch();
   const location = useLocation();
   const data = useSelector((state) => state.dataset.formData);
-  const datasetsInfo = useSelector((state) => state.dataset.datasetInfo);
+  // NB: the reducer key is datasetsInfo (plural) — reading state.dataset
+  // .datasetInfo made the duplicate-name check permanently inert.
+  const datasetsInfo = useSelector((state) => state.dataset.datasetsInfo);
 
   const { control, setValue, getValues, reset, trigger, setError, clearErrors } =
     useForm({
@@ -81,7 +83,11 @@ const DatasetDetails = (props) => {
     let inputValue = e.target.value;
     inputValue = inputValue.trim();
     if (datasetsInfo && datasetsInfo.length) {
-      const licenseID = location.state.licence.licenseId;
+      const licenseID =
+        (location.state && location.state.licence
+          ? location.state.licence.licenseId
+          : data && data.licenseId) || null;
+      if (!licenseID) return false;
       const filterFeeds = datasetsInfo.filter((v) => v.licenseId === licenseID);
       let sName =
         data && Object.keys(data).length && data.datasetId
@@ -104,7 +110,11 @@ const DatasetDetails = (props) => {
     inputValue = inputValue.trim();
 
     if (datasetsInfo && datasetsInfo.length) {
-      const licenseID = location.state.licence.licenseId;
+      const licenseID =
+        (location.state && location.state.licence
+          ? location.state.licence.licenseId
+          : data && data.licenseId) || null;
+      if (!licenseID) return false;
       const filterFeeds = datasetsInfo.filter((v) => v.licenseId === licenseID);
       let lName =
         data && Object.keys(data).length && data.datasetId

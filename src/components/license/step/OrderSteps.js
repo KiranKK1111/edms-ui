@@ -58,6 +58,7 @@ const OrderStep = (props) => {
   const info = useSelector((state) => state.contract);
   const licenseinfo = useSelector((state) => state.license);
   const [isLicenseLoaded, setIsLicenseLoaded] = useState(false);
+  const didInitRef = React.useRef(false);
   const [isSelectedLicenseUpdated, setIsSelectedLicenseUpdated] =
     useState(false);
   const [isLicenseNameChanged, setIsLicenseNameChanged] = useState(false);
@@ -226,13 +227,19 @@ const OrderStep = (props) => {
 
   useEffect(() => {
     if (!isLicenseLoaded) {
-      dispatch(startGetContracts());
-      dispatch(startGetLicenses());
-      dispatch({ type: "LICENSE_DETAILS", payload: [] });
-      dispatch({ type: "USAGE", payload: [] });
-      dispatch({ type: "DATASET", payload: [] });
-      dispatch({ type: "SUPPORT", payload: [] });
-      dispatch({ type: "UPLOAD", payload: [] });
+      // Fetch + wizard-slice reset must run exactly ONCE (on mount). Re-running
+      // it on every licenseList identity change used to wipe the saved step
+      // data mid-wizard — and loop forever when the contracts call was empty.
+      if (!didInitRef.current) {
+        didInitRef.current = true;
+        dispatch(startGetContracts());
+        dispatch(startGetLicenses());
+        dispatch({ type: "LICENSE_DETAILS", payload: [] });
+        dispatch({ type: "USAGE", payload: [] });
+        dispatch({ type: "DATASET", payload: [] });
+        dispatch({ type: "SUPPORT", payload: [] });
+        dispatch({ type: "UPLOAD", payload: [] });
+      }
       if (info && info.data && info.data[0]) {
         const list = info.data[0].filter((contract) => {
           return contract && contract.agreementStatus && contract.agreementStatus.toLowerCase() === "active";
@@ -257,7 +264,9 @@ const OrderStep = (props) => {
       (!isSelectedLicenseUpdated && !licenseinfo.selectedLicense)
     ) {
       selectedLicenseItem = licenseinfo.licenseList[0].filter((item) => {
-        return item.licenseId === params.id;
+        // The route carries the licence SHORT NAME (see VendorData
+        // checkUrlSlash), not the id — match both so the fallback works.
+        return item.licenseId === params.id || item.licenseShortName === params.id;
       });
       dispatch(setSelectedLicense(selectedLicenseItem));
       if (selectedLicenseItem[0] && selectedLicenseItem[0].technicalDocument) {
@@ -278,7 +287,8 @@ const OrderStep = (props) => {
         setIsSelectedLicenseUpdated(true);
       }
     }
-  }, [dispatch, setSelectedLicense, licenseinfo.licenseList]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, setSelectedLicense, licenseinfo.licenseList, info.data]);
 
   const steps = [
     {
@@ -313,7 +323,13 @@ const OrderStep = (props) => {
     },
     {
       title: "Licence Limitations",
-      content: <LicenseLimitations next={next} formData={formData} />,
+      content: (
+        <LicenseLimitations
+          next={next}
+          formData={formData}
+          registerDraftSaver={props.registerDraftSaver}
+        />
+      ),
     },
     {
       title: "Review & Submit",

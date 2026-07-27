@@ -25,9 +25,14 @@ function ReviewSubmit(props) {
       ? reduxData.licenseDetailsRequirements[0]
       : {};
 
-  const expirationDate = dayjs(
-    new Date(reduxData.licenseDetailsRequirements[0].expirationDate)
-  ).format("YYYY-MM-DD[T]HH:mm:ss");
+  const rawExpirationDate =
+    reduxData.licenseDetailsRequirements &&
+    reduxData.licenseDetailsRequirements.length
+      ? reduxData.licenseDetailsRequirements[0].expirationDate
+      : null;
+  const expirationDate = rawExpirationDate
+    ? dayjs(new Date(rawExpirationDate)).format("YYYY-MM-DD[T]HH:mm:ss")
+    : "";
   const { licenceLimitations } =
     reduxData.support && reduxData.support.length ? reduxData.support[0] : {};
 
