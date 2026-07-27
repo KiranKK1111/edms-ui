@@ -10,13 +10,17 @@ jest.mock("react-redux", () => ({
   connect: () => (Component) => Component,
 }));
 
+let mockLocation = {
+  state: {
+    dataset: { datasetId: "DS001", shortName: "MyDataset" },
+    isUpdate: false,
+  },
+};
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useParams: () => ({ id: "123" }),
   useHistory: () => ({ push: jest.fn() }),
-  useLocation: () => ({
-    state: { dataset: { datasetId: "DS001" }, isUpdate: false },
-  }),
+  useLocation: () => mockLocation,
 }));
 
 const setupSelector = (formData = {}, datafeedsData = []) => {
@@ -73,5 +77,83 @@ describe("DatafeedDetails", () => {
     });
     const { container } = render(<DatafeedDetails />);
     expect(container.querySelector("#main")).toBeInTheDocument();
+  });
+
+  it("should prefill Dataset Short Name from the router state in create mode", () => {
+    render(<DatafeedDetails />);
+    expect(screen.getByDisplayValue("MyDataset")).toBeInTheDocument();
+  });
+
+  it("should prefill Dataset Short Name from the router state in edit mode", () => {
+    setupSelector({
+      feedId: "DF001",
+      feedStatus: "Active",
+      longName: "Test Feed",
+      shortName: "TF",
+      dataConfidentiality: "Internal",
+      personalData: "Non-personal data",
+      feedDescription: "A test feed",
+    });
+    render(<DatafeedDetails />);
+    expect(screen.getByDisplayValue("MyDataset")).toBeInTheDocument();
+  });
+
+  it("should flag a duplicate short name under the same dataset on blur", async () => {
+    const { fireEvent } = require("@testing-library/react");
+    setupSelector(
+      {
+        feedId: "DF001",
+        feedStatus: "Active",
+        longName: "Test Feed",
+        shortName: "TF",
+        dataConfidentiality: "Internal",
+        personalData: "Non-personal data",
+        feedDescription: "A test feed",
+      },
+      [{ datasetId: "DS001", shortName: "Dup", longName: "DupLong" }]
+    );
+    render(<DatafeedDetails />);
+    const input = await screen.findByDisplayValue("TF");
+    fireEvent.change(input, { target: { value: "Dup" } });
+    fireEvent.blur(input);
+    expect(
+      await screen.findByText(
+        "Data Feed short name already exists under this DataSet"
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("should carry non-form DB fields through when Next persists the step", async () => {
+    const { act } = require("@testing-library/react");
+    setupSelector({
+      feedId: "DF001",
+      feedStatus: "Active",
+      longName: "Test Feed",
+      shortName: "TF",
+      dataConfidentiality: "Internal",
+      personalData: "Non-personal data",
+      feedDescription: "A test feed",
+      documentationLink: "http://example.com/doc",
+      dataFeedConfiguration: "CFG1",
+      datasetId: "DS001",
+      createdBy: "111",
+    });
+    const next = jest.fn();
+    const { rerender } = render(<DatafeedDetails next={next} formData={false} />);
+    mockDispatch.mockClear();
+    await act(async () => {
+      rerender(<DatafeedDetails next={next} formData={true} />);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(mockDispatch).toHaveBeenCalled();
+    const dispatched = mockDispatch.mock.calls[0][0];
+    expect(dispatched.payload).toEqual(
+      expect.objectContaining({
+        documentationLink: "http://example.com/doc",
+        dataFeedConfiguration: "CFG1",
+        datasetId: "DS001",
+      })
+    );
   });
 });

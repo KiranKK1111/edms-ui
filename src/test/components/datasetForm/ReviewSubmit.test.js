@@ -11,12 +11,13 @@ jest.mock("react-redux", () => ({
   connect: () => (Component) => Component,
 }));
 
+let mockLocation = {
+  pathname: "/another-route",
+  state: { isUpdate: true, eid: "E1", licence: { licenseId: "L1" } },
+};
 jest.mock("react-router-dom", () => ({
   __esModule: true,
-  useLocation: () => ({
-    pathname: "/another-route",
-    state: { isUpdate: true, eid: "E1", licence: { licenseId: "L1" } },
-  }),
+  useLocation: () => mockLocation,
   useParams: () => ({ vendorId: "123", id: "" }),
   useHistory: () => ({ push: jest.fn() }),
 }));
@@ -65,5 +66,37 @@ describe("ReviewSubmit", () => {
     expect(screen.getByText("Long")).toBeInTheDocument();
     expect(screen.getByText("Short")).toBeInTheDocument();
     expect(screen.getByText("DS1")).toBeInTheDocument();
+  });
+
+  it("should not crash without router state and infer update from the record", () => {
+    const { datasetInfo } = require("../../../store/actions/datasetFormActions");
+    mockLocation = { pathname: "/another-route", state: null };
+    datasetInfo.mockClear();
+    expect(() => renderReview()).not.toThrow();
+    // datasetId present on the record → treated as an update
+    expect(datasetInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ isUpdate: true })
+    );
+    mockLocation = {
+      pathname: "/another-route",
+      state: { isUpdate: true, eid: "E1", licence: { licenseId: "L1" } },
+    };
+  });
+
+  it("should build the create payload from router state when isUpdate is false", () => {
+    const { datasetInfo } = require("../../../store/actions/datasetFormActions");
+    mockLocation = {
+      pathname: "/another-route",
+      state: { isUpdate: false, eid: "E9", licence: { licenseId: "L9" } },
+    };
+    datasetInfo.mockClear();
+    renderReview();
+    expect(datasetInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ isUpdate: false, entityId: "E9", licenseId: "L9" })
+    );
+    mockLocation = {
+      pathname: "/another-route",
+      state: { isUpdate: true, eid: "E1", licence: { licenseId: "L1" } },
+    };
   });
 });

@@ -10,10 +10,11 @@ jest.mock("react-redux", () => ({
   useDispatch: () => mockDispatch,
 }));
 
+let mockLocation = {
+  state: { dataset: { datasetId: "DS001" }, isUpdate: false },
+};
 jest.mock("react-router-dom", () => ({
-  useLocation: () => ({
-    state: { dataset: { datasetId: "DS001" }, isUpdate: false },
-  }),
+  useLocation: () => mockLocation,
 }));
 
 const setupSelector = (formData = {}) => {
@@ -69,5 +70,39 @@ describe("ReviewSubmit (Datafeed)", () => {
   it("should dispatch formDataFn on mount", () => {
     render(<ReviewSubmit />);
     expect(mockDispatch).toHaveBeenCalled();
+  });
+
+  it("should round-trip documentationLink into the submit payload", () => {
+    setupSelector({
+      ...fullFormData,
+      datafeedId: "DF001",
+      documentationLink: "http://example.com/doc",
+      dataFeedConfiguration: "CFG1",
+    });
+    render(<ReviewSubmit />);
+    const dispatched = mockDispatch.mock.calls[0][0];
+    expect(dispatched.payload).toEqual(
+      expect.objectContaining({
+        documentationLink: "http://example.com/doc",
+        dataFeedConfiguration: "CFG1",
+      })
+    );
+  });
+
+  it("should not crash without router state and infer update from the record", () => {
+    mockLocation = { state: null };
+    setupSelector({
+      ...fullFormData,
+      datafeedId: "DF001",
+      datasetId: "DS777",
+    });
+    expect(() => render(<ReviewSubmit />)).not.toThrow();
+    const dispatched = mockDispatch.mock.calls[0][0];
+    expect(dispatched.payload).toEqual(
+      expect.objectContaining({ isUpdate: true, datasetId: "DS777" })
+    );
+    mockLocation = {
+      state: { dataset: { datasetId: "DS001" }, isUpdate: false },
+    };
   });
 });

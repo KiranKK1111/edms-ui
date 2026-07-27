@@ -10,12 +10,6 @@ export const ROLE_ADMIN = "Admin";
 export const ROLE_CONSUMER = "Consumer";
 export const ROLE_OWNER = "Owner";
 
-export const GRANT_TYPE = "grant_type";
-export const PASSWORD_KEY = "password";
-export const PASSWORD_TEXT = "password";
-export const USERNAME_KEY = "username";
-export const OVERRIDE_SESSION = "overRideSession";
-
 export const LOCAL_STORAGE_ACCESS_TOKEN = "access_token";
 export const LOCAL_STORAGE_REFRESH_TOKEN = "refresh_token";
 export const LOCAL_STORAGE_TOKEN_REFRESHED = "token_refreshed";
@@ -37,8 +31,11 @@ export const ADMIN_ROLES = [
   "1628553",
 ];
 
-export const REACT_CLIENT = "react-client";
-export const CLIENT_SECRET = "client-secret";
+// Basic-auth credentials for the login endpoint. Sourced from the environment
+// (see .env, which is untracked) so no credential literal lives in the repo
+// and trips secret scanning.
+export const REACT_CLIENT = process.env.REACT_APP_CLIENT_ID || "";
+export const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET || "";
 
 // ACCESS PAGE or BUTTON DISABLED
 export const MAIN_PAGE = "Main Page";

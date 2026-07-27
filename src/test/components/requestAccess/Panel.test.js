@@ -51,6 +51,17 @@ jest.mock("../../../store/services/ContractService", () => ({
   auditlogSubscriptionLevel: jest.fn(),
 }));
 
+jest.mock("../../../design-system/toast", () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    warning: jest.fn(),
+    info: jest.fn(),
+  },
+}));
+
+const { toast: mockToast } = require("../../../design-system/toast");
+
 const baseMockState = () => ({
   dataset: {
     subscriptionInfo: { status: "pending" },
@@ -152,5 +163,116 @@ describe("Panel", () => {
     render(<Panel {...baseMockProps} />);
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(baseMockProps.history.push).toHaveBeenCalledWith("/catalog");
+  });
+
+  it("should toast success and redirect with the new subscription after submit", async () => {
+    render(<Panel {...baseMockProps} />);
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    await waitFor(() =>
+      expect(mockToast.success).toHaveBeenCalledWith(
+        "SUB1 submitted successfully."
+      )
+    );
+    await waitFor(
+      () =>
+        expect(baseMockProps.history.push).toHaveBeenCalledWith({
+          pathname: "/catalog/details",
+          state: {
+            data: {
+              dataFeedLongName: "Test Feed Long Name",
+              dataFamilyId: "DF1",
+              subscription: {
+                subscriptionStatus: "Pending",
+                subscriptionId: "SUB1",
+              },
+            },
+            activeTab: 1,
+          },
+        }),
+      { timeout: 2000 }
+    );
+  });
+
+  it("should toast the generic update message when no subscription is returned", async () => {
+    mockDispatch.mockReturnValue(Promise.resolve({ data: {}, status: 200 }));
+    render(<Panel {...baseMockProps} />);
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    await waitFor(() =>
+      expect(mockToast.success).toHaveBeenCalledWith("Updated successfully.")
+    );
+    // redirect without a subscription payload keeps the original catalogue data
+    await waitFor(
+      () =>
+        expect(baseMockProps.history.push).toHaveBeenCalledWith({
+          pathname: "/catalog/details",
+          state: {
+            data: {
+              dataFeedLongName: "Test Feed Long Name",
+              dataFamilyId: "DF1",
+            },
+            activeTab: 1,
+          },
+        }),
+      { timeout: 2000 }
+    );
+  });
+
+  it("should toast an error when the submit response contains a message", async () => {
+    mockDispatch.mockReturnValue(
+      Promise.resolve({ message: "Save failed" })
+    );
+    render(<Panel {...baseMockProps} />);
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    await waitFor(() =>
+      expect(mockToast.error).toHaveBeenCalledWith("Save failed")
+    );
+    expect(mockToast.success).not.toHaveBeenCalled();
+  });
+
+  it("should toast an error when approveReject rejects", async () => {
+    mockState = baseMockState();
+    mockState.requestAccess.saveFinalData = { subscriptionId: "EXISTING_SUB" };
+    mockDispatch.mockReturnValue(
+      Promise.reject({ message: "Approve failed" })
+    );
+    render(<Panel {...baseMockProps} />);
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    await waitFor(() =>
+      expect(mockToast.error).toHaveBeenCalledWith("Approve failed")
+    );
+  });
+
+  it("should warn to fill the form when allowSubmit is not set", async () => {
+    render(<Panel {...baseMockProps} allowSubmit={undefined} />);
+    const submit = screen.getByRole("button", { name: "Submit" });
+    expect(submit).not.toBeDisabled();
+    fireEvent.click(submit);
+    await waitFor(() =>
+      expect(mockToast.warning).toHaveBeenCalledWith("Please fill the form!")
+    );
+    expect(mockSendData).not.toHaveBeenCalled();
+    expect(mockApproveReject).not.toHaveBeenCalled();
+  });
+
+  it("should navigate back to the catalog from the page header", () => {
+    render(<Panel {...baseMockProps} />);
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(baseMockProps.history.push).toHaveBeenCalledWith("/catalog");
+  });
+
+  it("should render a dash when the data feed long name is missing", () => {
+    // memo()d component — a fresh render with different location data
+    const spy = jest.requireMock("react-router-dom");
+    const original = spy.useLocation;
+    spy.useLocation = () => ({
+      pathname: "/another-route",
+      search: "",
+      hash: "",
+      state: { data: { dataFamilyId: "DF1" } },
+      key: "abc123",
+    });
+    render(<Panel {...baseMockProps} />);
+    expect(screen.getByText("-")).toBeInTheDocument();
+    spy.useLocation = original;
   });
 });

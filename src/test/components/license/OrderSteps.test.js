@@ -1,7 +1,11 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 import { AppProviders } from "../../../design-system";
 import OrderSteps from "../../../components/license/step/OrderSteps";
+import {
+  setSelectedLicense,
+} from "../../../store/actions/licenseAction";
+import { upload } from "../../../store/actions/licensedataAction";
 
 let mockState = {};
 const mockDispatch = jest.fn();
@@ -17,10 +21,16 @@ jest.mock("react-router-dom", () => ({
   useHistory: () => ({ push: jest.fn() }),
 }));
 
-// Step content children are exercised by their own suites.
-jest.mock("../../../components/license/licenseDetails/LicenseDetails", () => () => (
-  <div data-testid="license-details-step" />
-));
+// Step content children are exercised by their own suites. The LicenseDetails
+// mock captures the props it receives so the handler callbacks can be driven.
+const mockDetailsProps = {};
+jest.mock(
+  "../../../components/license/licenseDetails/LicenseDetails",
+  () => (props) => {
+    Object.assign(mockDetailsProps, props);
+    return <div data-testid="license-details-step" />;
+  }
+);
 jest.mock("../../../components/license/licenseLimitations/LicenseLimitations", () => () => (
   <div data-testid="license-limitations-step" />
 ));
@@ -71,6 +81,7 @@ const renderSteps = (props = {}) =>
 describe("OrderSteps (controlled body)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.keys(mockDetailsProps).forEach((k) => delete mockDetailsProps[k]);
     mockParams = { id: "123" };
     mockState = { license, contract, licenseReq };
   });
@@ -123,9 +134,171 @@ describe("OrderSteps (controlled body)", () => {
     expect(defaultProps.savedData).toHaveBeenCalled();
   });
 
-  it("should render with a contractId in params", () => {
+  it("reports isFormValid=false on the first step and true on the review step", () => {
+    renderSteps({ current: 0 });
+    expect(defaultProps.isFormValid).toHaveBeenCalledWith(false);
+    jest.clearAllMocks();
+    renderSteps({ current: 2 });
+    expect(defaultProps.isFormValid).toHaveBeenCalledWith(true);
+  });
+
+  it("marks the snapshot as an update when the route carries a licence id", () => {
+    renderSteps();
+    expect(defaultProps.savedData).toHaveBeenCalledWith(
+      expect.objectContaining({ isUpdated: true }),
+      true
+    );
+  });
+
+  it("marks the snapshot as a create when there is no licence id in the route", () => {
+    mockParams = {};
+    renderSteps();
+    expect(defaultProps.savedData).toHaveBeenCalledWith(
+      expect.objectContaining({ isUpdated: false }),
+      true
+    );
+  });
+
+  it("should render with a contractId in params and clear the selected licence", () => {
     mockParams = { contractId: "C001" };
     const { container } = renderSteps();
     expect(container.querySelector("#main")).toBeInTheDocument();
+    expect(setSelectedLicense).toHaveBeenCalledWith([]);
+  });
+
+  it("falls back to matching the licence by short name and splits its technical documents", () => {
+    mockState = {
+      license: {
+        licenseList: [
+          [
+            {
+              licenseId: "L-999",
+              licenseShortName: "123",
+              licenseName: "Lic1",
+              technicalDocument: "doc1.pdf,doc2.pdf",
+            },
+          ],
+        ],
+        selectedLicense: [],
+      },
+      contract,
+      licenseReq,
+    };
+    renderSteps();
+    expect(setSelectedLicense).toHaveBeenCalledWith([
+      expect.objectContaining({ licenseShortName: "123" }),
+    ]);
+    expect(upload).toHaveBeenCalledWith([
+      { name: "doc1.pdf" },
+      { name: "doc2.pdf" },
+    ]);
+    // the matched licence is merged into the wizard state snapshot
+    expect(defaultProps.savedData).toHaveBeenCalledWith(
+      expect.objectContaining({ licenseName: "Lic1" }),
+      true
+    );
+  });
+
+  it("matches the licence by id and resets uploads when it has no technical document", () => {
+    mockState = {
+      license: {
+        licenseList: [[{ licenseId: "123", licenseName: "Lic2" }]],
+        selectedLicense: [],
+      },
+      contract,
+      licenseReq,
+    };
+    renderSteps();
+    expect(upload).toHaveBeenCalledWith([]);
+    expect(defaultProps.savedData).toHaveBeenCalledWith(
+      expect.objectContaining({ licenseName: "Lic2" }),
+      true
+    );
+  });
+
+  it("opens the audit log dialog when modalStatus is true and closes it via OK", async () => {
+    renderSteps({ modalStatus: true });
+    expect(screen.getByText("Audit Log")).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "OK" }));
+    });
+    await waitFor(() =>
+      expect(screen.queryByText("Audit Log")).not.toBeInTheDocument()
+    );
+  });
+
+  it("closes the audit log dialog via the backdrop escape key", async () => {
+    renderSteps({ modalStatus: true });
+    const dialog = screen.getByRole("dialog");
+    await act(async () => {
+      fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+    });
+    await waitFor(() =>
+      expect(screen.queryByText("Audit Log")).not.toBeInTheDocument()
+    );
+  });
+
+  it("updates state and flags the name change via handleChange", async () => {
+    renderSteps();
+    await act(async () => {
+      mockDetailsProps.handleChange({
+        target: { name: "licenseName", value: "My Licence" },
+      });
+    });
+    expect(mockDetailsProps.licenseName).toBe("My Licence");
+    expect(mockDetailsProps.isLicenseNameChanged).toBe(true);
+    expect(defaultProps.savedData).toHaveBeenCalledWith(
+      expect.objectContaining({ licenseName: "My Licence" }),
+      true
+    );
+  });
+
+  it("updates other fields via handleChange without flagging the name change", async () => {
+    renderSteps();
+    await act(async () => {
+      mockDetailsProps.handleChange({
+        target: { name: "productDescription", value: "Some product" },
+      });
+    });
+    expect(mockDetailsProps.productDescription).toBe("Some product");
+    expect(mockDetailsProps.isLicenseNameChanged).toBe(false);
+  });
+
+  it("sets the contract owner via handledropChange", async () => {
+    renderSteps();
+    await act(async () => {
+      mockDetailsProps.handledropChange("Jane Owner");
+    });
+    expect(mockDetailsProps.contractOwner).toBe("Jane Owner");
+  });
+
+  it("resolves contract id and status via handleContractChange", async () => {
+    renderSteps();
+    await act(async () => {
+      mockDetailsProps.handleContractChange("TestContract");
+    });
+    expect(mockDetailsProps.contractId).toBe("C001");
+    expect(mockDetailsProps.contractName).toBe("TestContract");
+    expect(mockDetailsProps.licenseStatus).toBe("Active");
+  });
+
+  it("updates licence type, cost, data coverage and status via their handlers", async () => {
+    renderSteps();
+    await act(async () => {
+      mockDetailsProps.handleLicenseType("Enterprise");
+    });
+    expect(mockDetailsProps.licenseType).toBe("Enterprise");
+    await act(async () => {
+      mockDetailsProps.handleLicenseCost(5000);
+    });
+    expect(mockDetailsProps.licenseCost).toBe(5000);
+    await act(async () => {
+      mockDetailsProps.handleDataCoverage("Global equities");
+    });
+    expect(mockDetailsProps.dataCoverage).toBe("Global equities");
+    await act(async () => {
+      mockDetailsProps.handleStatusChange("Approved");
+    });
+    expect(mockDetailsProps.licenseStatus).toBe("Approved");
   });
 });

@@ -93,6 +93,14 @@ jest.mock(
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [props.formData]);
+      // Mirror the real step's Previous contract: when prevData flips true the
+      // step persists its draft and calls back previous(true, draft).
+      React.useEffect(() => {
+        if (props.prevData) {
+          props.previous(true, { sourceProtocol: "HTTPS" });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [props.prevData]);
       return React.createElement("div", { "data-testid": "api-config" });
     };
   }
@@ -270,6 +278,34 @@ describe("ConfigurationSteps (delegated body)", () => {
       await Promise.resolve();
     });
     expect(lastVm.current).toBe(1);
+  });
+
+  it("controller Previous from the API step saves the draft then returns to General", async () => {
+    renderBody();
+    // Get to the API step first (General -> HTTPS -> API).
+    await act(async () => {
+      lastActions.next();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(lastVm.current).toBe(1);
+    // Previous: the controller asks the API step to persist its draft; the
+    // step calls back previous(true, draft) and navigation completes.
+    await act(async () => {
+      lastActions.previous();
+      await Promise.resolve();
+    });
+    expect(lastVm.current).toBe(0);
+    expect(screen.getByTestId("general-config")).toBeInTheDocument();
+  });
+
+  it("controller Previous from Review (no form) navigates directly", async () => {
+    renderBody();
+    // current stays 0 here; previous at step 0 must be a no-op (stays at 0).
+    await act(async () => {
+      lastActions.previous();
+    });
+    expect(lastVm.current).toBe(0);
   });
 
   it("cancel action dispatches clearConfigData and navigates to masterData", async () => {

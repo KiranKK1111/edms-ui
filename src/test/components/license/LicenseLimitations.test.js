@@ -53,4 +53,48 @@ describe("LicenseLimitations", () => {
     const { container } = renderLimitations();
     expect(container.querySelector("textarea")).toBeInTheDocument();
   });
+
+  it("should map the DB licenseLimitations key onto the licenceLimitations field", () => {
+    mockState = {
+      license: {
+        selectedLicense: [{ licenseLimitations: "Internal use only" }],
+      },
+      licenseReq: { support: [] },
+    };
+    renderLimitations();
+    expect(screen.getByDisplayValue("Internal use only")).toBeInTheDocument();
+  });
+
+  it("should prefer the saved wizard draft over the DB record", () => {
+    mockState = {
+      license: {
+        selectedLicense: [{ licenseLimitations: "From DB" }],
+      },
+      licenseReq: { support: [{ licenceLimitations: "Typed draft" }] },
+    };
+    renderLimitations();
+    expect(screen.getByDisplayValue("Typed draft")).toBeInTheDocument();
+  });
+
+  it("should register a draft saver that persists limitations for Previous", () => {
+    const { support } = require("../../../store/actions/licensedataAction");
+    const registerDraftSaver = jest.fn();
+    render(
+      <AppProviders>
+        <LicenseLimitations
+          next={jest.fn()}
+          registerDraftSaver={registerDraftSaver}
+        />
+      </AppProviders>
+    );
+    expect(registerDraftSaver).toHaveBeenCalledWith(expect.any(Function));
+    mockDispatch.mockClear();
+    support.mockClear();
+    const saver = registerDraftSaver.mock.calls[0][0];
+    saver();
+    expect(mockDispatch).toHaveBeenCalled();
+    expect(support).toHaveBeenCalledWith([
+      expect.objectContaining({ licenceLimitations: expect.anything() }),
+    ]);
+  });
 });

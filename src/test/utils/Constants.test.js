@@ -7,11 +7,6 @@ import {
   ROLE_ADMIN,
   ROLE_CONSUMER,
   ROLE_OWNER,
-  GRANT_TYPE,
-  PASSWORD_KEY,
-  PASSWORD_TEXT,
-  USERNAME_KEY,
-  OVERRIDE_SESSION,
   LOCAL_STORAGE_ACCESS_TOKEN,
   LOCAL_STORAGE_REFRESH_TOKEN,
   LOCAL_STORAGE_TOKEN_REFRESHED,
@@ -84,14 +79,6 @@ describe("Constants", () => {
     expect(ROLE_OWNER).toBe("Owner");
   });
 
-  it("should export auth-related constants", () => {
-    expect(GRANT_TYPE).toBe("grant_type");
-    expect(PASSWORD_KEY).toBe("password");
-    expect(PASSWORD_TEXT).toBe("password");
-    expect(USERNAME_KEY).toBe("username");
-    expect(OVERRIDE_SESSION).toBe("overRideSession");
-  });
-
   it("should export local storage key constants", () => {
     expect(LOCAL_STORAGE_ACCESS_TOKEN).toBe("access_token");
     expect(LOCAL_STORAGE_REFRESH_TOKEN).toBe("refresh_token");
@@ -119,9 +106,12 @@ describe("Constants", () => {
     ]);
   });
 
-  it("should export client constants", () => {
-    expect(REACT_CLIENT).toBe("react-client");
-    expect(CLIENT_SECRET).toBe("client-secret");
+  it("should export client constants sourced from the environment", () => {
+    // The values live in .env (untracked) so no credential literal is
+    // committed; assert the wiring, never the secret itself.
+    expect(REACT_CLIENT).toBe(process.env.REACT_APP_CLIENT_ID || "");
+    expect(CLIENT_SECRET).toBe(process.env.REACT_APP_CLIENT_SECRET || "");
+    expect(typeof CLIENT_SECRET).toBe("string");
   });
 
   it("should export page constants", () => {

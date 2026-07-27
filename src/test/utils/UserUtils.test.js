@@ -53,18 +53,18 @@ describe("setLocalStorage", () => {
   });
 
   it("should set all local storage items", () => {
-    setLocalStorage("token123", "refresh456", true, "1293220");
-    expect(localStorage.getItem("access_token")).toBe("token123");
-    expect(localStorage.getItem("refresh_token")).toBe("refresh456");
+    setLocalStorage("fake-value-a", "fake-refresh-a", true, "1293220");
+    expect(localStorage.getItem("access_token")).toBe("fake-value-a");
+    expect(localStorage.getItem("refresh_token")).toBe("fake-refresh-a");
     expect(localStorage.getItem("token_refreshed")).toBe("true");
     expect(localStorage.getItem("psid")).toBe("1293220");
   });
 
   it("should overwrite existing local storage items", () => {
     setLocalStorage("token1", "refresh1", false, "111");
-    setLocalStorage("token2", "refresh2", true, "222");
-    expect(localStorage.getItem("access_token")).toBe("token2");
-    expect(localStorage.getItem("refresh_token")).toBe("refresh2");
+    setLocalStorage("fake-value-b", "fake-refresh-b", true, "222");
+    expect(localStorage.getItem("access_token")).toBe("fake-value-b");
+    expect(localStorage.getItem("refresh_token")).toBe("fake-refresh-b");
     expect(localStorage.getItem("psid")).toBe("222");
   });
 });

@@ -135,8 +135,6 @@
       "store",
       "i18n.js",
       "serviceWorker.js",
-      ".page.js",
-      ".Page.js",
       ".sagas.js",
       ".saga.js",
       ".reducer.js",
