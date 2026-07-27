@@ -1,42 +1,55 @@
-import * as redux from "react-redux";
-import { configure, shallow, sleep, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-
-import { Breadcrumb } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { AppProviders } from "../../../design-system";
 import ReviewSubmit from "../../../components/license/reviewSubmit/ReviewSubmit";
 
-configure({ adapter: new Adapter() });
-
 jest.spyOn(console, "warn").mockImplementation(() => {});
+
+let mockState = {};
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
+  useSelector: (cb) => cb(mockState),
   useDispatch: () => mockDispatch,
 }));
+
 jest.mock("react-router-dom", () => ({
   __esModule: true,
-  useLocation: jest.fn().mockReturnValue({
-    pathname: "/another-route",
-    search: "",
-    hash: "",
-    state: null,
-    key: "5nvxpbdafa",
-  }),
+  useLocation: () => ({ pathname: "/another-route", state: null }),
 }));
 
-const licenseReq = {
-  licenseDetailsRequirements: [{ expirationDate: "" }],
-  support: [{}],
-};
-const state = { licenseReq };
+const buildState = () => ({
+  licenseReq: {
+    licenseDetailsRequirements: [{ expirationDate: "" }],
+    support: [{}],
+  },
+});
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
+const renderReview = () =>
+  render(
+    <AppProviders>
+      <ReviewSubmit stepsdata={{ licenseName: "" }} />
+    </AppProviders>
+  );
 
-const wrapper = shallow(<ReviewSubmit stepsdata={{ licenseName: "" }} />);
+describe("ReviewSubmit (license)", () => {
+  beforeEach(() => {
+    mockState = buildState();
+  });
 
-it("wrapper", () => {
-  const element = wrapper.find("#main");
-  expect(element.length).toBe(1);
+  it("should render the main container", () => {
+    const { container } = renderReview();
+    expect(container.querySelector("#main")).toBeInTheDocument();
+  });
+
+  it("should render the Licence Details section", () => {
+    renderReview();
+    expect(screen.getByText("Licence Details")).toBeInTheDocument();
+  });
+
+  it("should render the Licence Limitations section", () => {
+    renderReview();
+    expect(
+      screen.getAllByText("Licence Limitations").length
+    ).toBeGreaterThanOrEqual(1);
+  });
 });

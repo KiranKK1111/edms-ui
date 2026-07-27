@@ -1,42 +1,40 @@
-import * as redux from "react-redux";
-import { configure, shallow, sleep, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter, Route } from "react-router-dom";
 
 import ViewDatafeed from "../../pages/datafeed/ViewDatafeed";
 
-configure({ adapter: new Adapter() });
+// ViewDatafeed is now a thin wrapper that delegates to the generic
+// RecordFormPage controller in read-only ("view") mode.
+jest.mock("../../components/recordForm/RecordFormPage", () => (props) => (
+  <div
+    data-testid="mock-record-form-page"
+    data-resource={props.resource}
+    data-mode={props.mode}
+  />
+));
 
-jest.spyOn(console, "error").mockImplementation(() => {});
-const mockDispatch = jest.fn();
-jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
-  useDispatch: () => mockDispatch,
-  connect: () => (Component) => Component,
-}));
-jest.mock("react-router-dom", () => ({
-  useParams: jest.fn().mockReturnValue({ id: "123" }),
-  useHistory: jest.fn(),
-  __esModule: true,
-  useLocation: jest.fn().mockReturnValue({
-    pathname: "/another-route",
-    search: "",
-    hash: "",
-    state: { datafeedRecord: {}, dataset: { shortName: "" } },
-    key: "5nvxpbdafa",
-  }),
-}));
-const datafeedInfo = {
-  formData: { feedId: "" },
-};
-const state = { datafeedInfo };
+const renderPage = () =>
+  render(
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: "/masterData/DS1/viewDatafeed",
+          state: { datafeedRecord: {}, dataset: { shortName: "DS1" } },
+        },
+      ]}
+    >
+      <Route path="*">
+        <ViewDatafeed />
+      </Route>
+    </MemoryRouter>
+  );
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
-
-const wrapper = shallow(<ViewDatafeed />);
-
-it("wrapper", () => {
-  const element = wrapper.find("#main");
-  expect(element.length).toBe(1);
+describe("ViewDatafeed page wrapper", () => {
+  it("renders RecordFormPage for the datafeed resource in view mode", () => {
+    renderPage();
+    const el = screen.getByTestId("mock-record-form-page");
+    expect(el).toHaveAttribute("data-resource", "datafeed");
+    expect(el).toHaveAttribute("data-mode", "view");
+  });
 });

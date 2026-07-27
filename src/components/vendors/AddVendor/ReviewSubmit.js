@@ -1,28 +1,35 @@
-import { useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Row, Col, Divider, Button, PageHeader } from "antd";
+import { Box, Grid, Typography } from "@mui/material";
 import { normalText } from "../../stringConversion";
 
 const ReviewSubmit = () => {
   const data = useSelector((state) => state.vendor);
 
-  let keys = Object.keys(data.data);
-  keys.push(keys.splice(keys.indexOf("entityDescription"), 1)[0]);
+  const keys = Object.keys(data.data || {});
+  const idx = keys.indexOf("entityDescription");
+  if (idx >= 0) keys.push(keys.splice(idx, 1)[0]);
 
   return (
-    <div id="main">
-      <Row gutter={[2, 8]}>
+    <Box id="main">
+      <Grid container spacing={2}>
         {keys.map((item, i) => (
-          <Col span={item === "entityDescription" ? 16 : 8} key={i}>
-            <span className="label-review">
+          <Grid
+            size={{
+              xs: 12,
+              sm: item === "entityDescription" ? 12 : 6,
+              md: item === "entityDescription" ? 12 : 4,
+            }}
+            key={i}
+          >
+            <Typography component="span" className="label-review">
               {normalText(item)
                 .replace("Entity Description", "Description")
                 .replace("Entity Status", "Status")}{" "}
               :
-            </span>
+            </Typography>{" "}
             {data.data[item] ? (
               item === "website" ? (
-                <a href={`https://${data.data[item]}`} target="_blank">
+                <a href={`https://${data.data[item]}`} target="_blank" rel="noreferrer">
                   {data.data[item]}
                 </a>
               ) : (
@@ -31,10 +38,10 @@ const ReviewSubmit = () => {
             ) : (
               "-"
             )}
-          </Col>
+          </Grid>
         ))}
-      </Row>
-    </div>
+      </Grid>
+    </Box>
   );
 };
 

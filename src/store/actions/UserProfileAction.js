@@ -1,5 +1,5 @@
 import axios from "axios";
-import moment from "moment";
+import dayjs from "dayjs";
 import { API_BASE_ENDPOINT } from "../../utils/Config";
 import { API_BASE_URL_FOR_ENTITLEMENT } from "../../urlMappings";
 
@@ -29,7 +29,7 @@ export const UpdateUserProfile = (userData) => {
     psId: userData.psId,
     entitlementType: userData.entitlementType,
     
-    lastLogin: moment().format(),
+    lastLogin: dayjs().format(),
     firstLogin: userData.firstLogin,
     newSubscriptions: userData.newSubscriptions,
     systemMessages: userData.systemMessages,

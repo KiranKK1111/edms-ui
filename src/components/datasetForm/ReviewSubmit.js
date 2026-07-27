@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Row, Col, Descriptions } from "antd";
+import { Grid } from "@mui/material";
 import { normalText } from "../stringConversion";
 import { datasetInfo } from "../../store/actions/datasetFormActions";
 
@@ -55,30 +55,19 @@ const ReviewSubmit = () => {
   return (
     <div className="review-submit">
       <h3>Dataset Details</h3>
-      <Row gutter={[2, 4]}>
+      <Grid container spacing={1}>
         {keys &&
           keys.map((item, i) => (
-            <Col span={item !== "description" ? 8 : 16} key={i}>
-              <Descriptions
-                title=""
-                layout="horizontal"
-                column={1}
-                size="middle"
-                style={{ marginLeft: "1rem", marginTop: "0.5rem" }}
-              >
-                <Descriptions.Item
-                  label={normalText(item).replace("Id", "ID")}
-                  labelStyle={{
-                    fontFamily: "inherit",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {newData[item]}
-                </Descriptions.Item>
-              </Descriptions>
-            </Col>
+            <Grid size={item !== "description" ? 4 : 8} key={i}>
+              <div style={{ marginLeft: "1rem", marginTop: "0.5rem" }}>
+                <span style={{ fontFamily: "inherit", fontWeight: "bold" }}>
+                  {normalText(item).replace("Id", "ID")}:{" "}
+                </span>
+                {newData[item]}
+              </div>
+            </Grid>
           ))}
-      </Row>
+      </Grid>
     </div>
   );
 };

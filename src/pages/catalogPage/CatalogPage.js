@@ -1,35 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  Box,
   Button,
-  Col,
-  Divider,
-  Modal,
-  Badge,
-  Form,
-  Input,
-  Layout,
-  Menu,
-  Radio,
-  Row,
-  Select,
-  Space,
-  Spin,
-  List,
   Card,
-  message,
-} from "antd";
-
-import { FilterOutlined, ExclamationOutlined } from "@ant-design/icons";
-
-import Headers from "../../pages/header/Header";
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Drawer,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Pagination,
+  Select,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import {
+  Close as CloseIcon,
+  FilterList as FilterIcon,
+  Search as SearchIcon,
+} from "@mui/icons-material";
 
 import "../../common.css";
 import "./CatalogPage.css";
 
 import Catalog from "../../components/catalog/Catalog";
+import { EmptyState, PageHero, useSnackbar } from "../../design-system";
+import { getPageConfig } from "../../config/pageConfig";
 import { newCataloguePageData } from "../../store/actions/CatalogPageActions";
-//import { userDetailsLogin } from "../../store/actions/loginActions";
+import { selectCatalogueState } from "../../store/selectors";
 
 import { startGetVendors } from "../../store/actions/VendorActions";
 import isButtonObject from "../../utils/accessButtonCheck";
@@ -38,46 +46,38 @@ import {
   CATELOG_MANAGEMENT_FILTER_BTN,
   SUBSCRIBER,
 } from "../../utils/Constants";
-import moment from "moment";
 import { checkForString } from "../../utils/warningUtils";
 
-const { Option } = Select;
+const initialFilters = {
+  datafeeds: "",
+  datasource: "",
+  datafeedStatus: "",
+};
 
-const CatalogPage = (props) => {
-  const [searchWord, setSearchWord] = useState();
+const CatalogPage = () => {
+  const [searchWord, setSearchWord] = useState("");
   const [catalogueNewList, setCatalogueNewList] = useState({
     loading: false,
     catalogueList: [],
   });
 
-  const [form] = Form.useForm();
-
-  let [filterShown, setFilterShown] = useState(false);
-  const dispatch = useDispatch();
-  const [sortLabel, setSortLabel] = useState("Sort By");
+  const [filterValues, setFilterValues] = useState(initialFilters);
+  const [filterShown, setFilterShown] = useState(false);
   const [datasourceList, setDatasourceList] = useState([]);
   const [feedStatus, setFeedStatus] = useState([]);
-  const onClick = ({ key }) => {
-    setSortLabel(key);
-    form.setFieldsValue({
-      countryName: undefined,
-      licenseType: undefined,
-      vendorName: undefined,
-    });
-  };
-  const SORT_MENU = (
-    <Menu onClick={onClick}>
-      <Menu.Item key="All">All</Menu.Item>
-      <Menu.Item key="Subscribed">Subscribed</Menu.Item>
-      <Menu.Item key="Unsubscribed">Unsubscribed</Menu.Item>
-    </Menu>
-  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
 
-  const getEntityData = async () => {
-    const resp = await dispatch(startGetVendors(true));
-  };
+  const dispatch = useDispatch();
+  const snackbar = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  // Load data by passing the Data Family ID.
+  const getEntityData = useCallback(async () => {
+    await dispatch(startGetVendors(true));
+  }, [dispatch]);
+
   useEffect(() => {
     dispatch(newCataloguePageData());
     const loggedUser = localStorage.getItem("entitlementType");
@@ -91,266 +91,332 @@ const CatalogPage = (props) => {
     ) {
       getEntityData();
     }
-    const domain = /:\/\/([^\/]+)/.exec(window.location.href)[1];
-    const chkStage = domain.includes("stage");
-    // if (chkStage) userDetailsLogin();
-  }, [dispatch]);
+  }, [dispatch, getEntityData]);
 
-  let catalogueList = useSelector((state) => state.catalogueList) || [];
+  const catalogueList = useSelector(selectCatalogueState) || {};
   useEffect(() => {
     setCatalogueNewList(catalogueList);
   }, [catalogueList]);
 
-  /**
-   * Event Handlers
-   */
-  const onFilterButtonClick = (e) => {
-    setFilterShown(!filterShown);
-    e.preventDefault();
-  };
-  const getFilterList = (obj) => {
-    const advancedFilter =
-      catalogueList &&
-      catalogueList.catalogueList &&
-      catalogueList.catalogueList.filter((v) => {
-        let filterResponse = true;
-        if (filterResponse && obj.datasource) {
-          filterResponse = obj.datasource === v.entityShortName;
-        }
-        if (
-          filterResponse &&
-          obj &&
-          obj.datafeedStatus &&
-          v &&
-          v.dataFeedStatus
-        ) {
-          filterResponse =
-            obj.datafeedStatus.toLowerCase() === v.dataFeedStatus.toLowerCase();
-        }
-        if (filterResponse && !obj.datafeeds) {
+  const onFilterButtonClick = useCallback(() => {
+    setFilterShown((prev) => !prev);
+  }, []);
+
+  const applyFilters = useCallback(
+    (obj) => {
+      const advancedFilter =
+        catalogueList &&
+        catalogueList.catalogueList &&
+        catalogueList.catalogueList.filter((v) => {
+          let filterResponse = true;
+          if (filterResponse && obj.datasource) {
+            filterResponse = obj.datasource === v.entityShortName;
+          }
+          if (
+            filterResponse &&
+            obj &&
+            obj.datafeedStatus &&
+            v &&
+            v.dataFeedStatus
+          ) {
+            filterResponse =
+              obj.datafeedStatus.toLowerCase() ===
+              v.dataFeedStatus.toLowerCase();
+          }
+          if (filterResponse && !obj.datafeeds) {
+            return filterResponse;
+          }
+          if (filterResponse && obj.datafeeds === "subscribed") {
+            return (filterResponse = v.subscription);
+          }
+          if (filterResponse && obj.datafeeds !== "subscribed") {
+            return (filterResponse = !v.subscription);
+          }
           return filterResponse;
-        }
-        if (filterResponse && obj.datafeeds === "subscribed") {
-          return (filterResponse = v.subscription);
-        }
-        if (filterResponse && obj.datafeeds !== "subscribed") {
-          return (filterResponse = !v.subscription);
-        }
-        return filterResponse;
-      });
+        });
 
-    const advancedFilterList = {
-      ...catalogueNewList,
-      catalogueList: advancedFilter,
-    };
-    setCatalogueNewList(advancedFilterList);
+      setCatalogueNewList((prev) => ({
+        ...prev,
+        catalogueList: advancedFilter,
+      }));
+    },
+    [catalogueList]
+  );
+
+  const filter = useCallback(() => {
+    applyFilters(filterValues);
+    if (isMobile) setFilterShown(false);
+  }, [applyFilters, filterValues, isMobile]);
+
+  const onReset = useCallback(() => {
+    setFilterValues(initialFilters);
+    applyFilters(initialFilters);
+  }, [applyFilters]);
+
+  const setFilterField = (field) => (event) => {
+    const value = event && event.target ? event.target.value : event;
+    setFilterValues((prev) => ({ ...prev, [field]: value ?? "" }));
   };
 
-  // Filter the data present in the table.
-  const filter = () => {
-    setSortLabel("Sort By");
-    const filterObject = form.getFieldsValue();
-    getFilterList(filterObject);
+  const setDatafeedsToggle = (_, value) => {
+    setFilterValues((prev) => ({ ...prev, datafeeds: value || "" }));
   };
 
-  // Resetting Form Fields.
-  const onReset = () => {
-    form.resetFields();
-    filter();
-  };
+  const guestRole = localStorage.getItem("guestRole");
 
-  const lablelFn = (lable) => {
-    return <div className="label-bold">{lable}</div>;
-  };
+  const getList = useCallback(
+    (value) => {
+      const list = (catalogueList.catalogueList || []).map((item) => item[value]);
+      return [...new Set(list)];
+    },
+    [catalogueList.catalogueList]
+  );
 
-  // Decide if the filter panel be shown.
-  let filterDisplay = null;
-  let guestRole = localStorage.getItem("guestRole");
+  const getListStatus = useCallback(
+    (value) => {
+      const list = (catalogueList.catalogueList || []).map(
+        (item) =>
+          item[value] &&
+          item[value].replace(/(^\w{1})|(\s{1}\w{1})/g, (m) => m.toUpperCase())
+      );
+      const out = [];
+      list &&
+        list.forEach((item = "inactive") => {
+          if (item.toLowerCase() === "inactive") out.push("Inactive");
+          else out.push(item);
+        });
+      return [...new Set(out)];
+    },
+    [catalogueList.catalogueList]
+  );
 
-  // Data for the Select -> Options dropdown.
-  const getList = (value) => {
-    let list = catalogueList.catalogueList.map((item) => item[value]);
-    list = [...new Set(list)];
-    return list;
-  };
-  const getListStatus = (value) => {
-    let list = catalogueList.catalogueList.map(
-      (item) =>
-        item[value] &&
-        item[value].replace(/(^\w{1})|(\s{1}\w{1})/g, (match) =>
-          match.toUpperCase()
-        )
-    );
-    const listModified = [];
-    list &&
-      list.length > 0 &&
-      list.forEach((item = "inactive") => {
-        return item.toLowerCase() === "inactive"
-          ? listModified.push("Inactive")
-          : listModified.push(item);
-      });
-
-    list = [...new Set(listModified)];
-    return list;
-  };
   useEffect(() => {
     if (catalogueList && catalogueList.catalogueList) {
       setDatasourceList(getList("entityShortName"));
       setFeedStatus(getListStatus("dataFeedStatus"));
     }
-  }, [catalogueList.catalogueList]);
+  }, [catalogueList.catalogueList, getList, getListStatus]);
 
-  if (filterShown) {
-    filterDisplay = (
-      <Form form={form} labelCol={{ span: 24 }}>
-        <Row className="bg-white pr-24 pl-24 pb-8">
-          <Col flex="380px" className="pr-24">
-            <Form.Item
-              label={lablelFn("Data Feeds")}
-              name="datafeeds"
-              initialValue={undefined}
-            >
-              <Radio.Group disabled={guestRole ? true : false}>
-                <Radio.Button value={undefined}>All</Radio.Button>
-                <Radio.Button value="subscribed">Subscribed</Radio.Button>
-                <Radio.Button value="unsubscribed">Unsubscribed</Radio.Button>
-              </Radio.Group>
-            </Form.Item>
-          </Col>
+  const filterMenuProps = {
+    anchorOrigin: { vertical: "bottom", horizontal: "left" },
+    transformOrigin: { vertical: "top", horizontal: "left" },
+    slotProps: {
+      paper: {
+        sx: {
+          mt: 0.5,
+          minHeight: 120,
+          maxHeight: 280,
+          overflowY: "auto",
+        },
+      },
+    },
+  };
 
-          <Col flex="auto" className="pr-24">
-            <Form.Item label={lablelFn("Data Source")} name="datasource">
-              <Select placeholder="Select">
-                {datasourceList.length > 0 &&
-                  datasourceList.map((v) => (
-                    <Option key={v} value={v}>
-                      {v}
-                    </Option>
-                  ))}
-              </Select>
-            </Form.Item>
-          </Col>
+  const filterForm = (
+    <Box className="catalog-filters-drawer" sx={{ p: 2 }}>
+      <Box className="catalog-filters-row">
+        <Box className="catalog-filter-field catalog-filter-segmented">
+          <Typography component="div" sx={{ fontWeight: 600, fontSize: 13, mb: 0.5 }}>
+            Data Feeds
+          </Typography>
+          <ToggleButtonGroup
+            size="small"
+            color="primary"
+            exclusive
+            value={filterValues.datafeeds}
+            onChange={setDatafeedsToggle}
+            disabled={!!guestRole}
+          >
+            <ToggleButton value="">All</ToggleButton>
+            <ToggleButton value="subscribed">Subscribed</ToggleButton>
+            <ToggleButton value="unsubscribed">Unsubscribed</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
 
-          <Col flex="auto" className="pr-24">
-            <Form.Item
-              label={lablelFn("Data Feed Status")}
-              name="datafeedStatus"
-            >
-              <Select placeholder="Select">
-                {feedStatus.length > 0 &&
-                  feedStatus.map((c) => (
-                    <Option key={c} value={c}>
-                      {c}
-                    </Option>
-                  ))}
-              </Select>
-            </Form.Item>
-          </Col>
+        <FormControl className="catalog-filter-field" size="small" fullWidth>
+          <InputLabel id="ds-filter-datasource-label">Data Source</InputLabel>
+          <Select
+            labelId="ds-filter-datasource-label"
+            label="Data Source"
+            value={filterValues.datasource}
+            onChange={setFilterField("datasource")}
+            MenuProps={filterMenuProps}
+          >
+            <MenuItem value=""><em>All</em></MenuItem>
+            {datasourceList.map((v) => (
+              <MenuItem key={v} value={v}>
+                {v}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-          <Col flex="none">
-            <Space style={{ paddingTop: "40px" }}>
-              <Button onClick={onReset}>Reset</Button>
-              <Button type="primary" onClick={filter}>
-                Apply
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-      </Form>
-    );
-  }
-  let catalogListDisplay = "Loading...";
-  let catalogueCount = 0;
-  if (catalogueNewList.loading) {
-    catalogListDisplay = (
-      <Col span={24} style={{ textAlign: "center" }} className="mt-24">
-        <Spin tip="Loading..." />
-      </Col>
-    );
-  }
+        <FormControl className="catalog-filter-field" size="small" fullWidth>
+          <InputLabel id="ds-filter-status-label">Data Feed Status</InputLabel>
+          <Select
+            labelId="ds-filter-status-label"
+            label="Data Feed Status"
+            value={filterValues.datafeedStatus}
+            onChange={setFilterField("datafeedStatus")}
+            MenuProps={filterMenuProps}
+          >
+            <MenuItem value=""><em>All</em></MenuItem>
+            {feedStatus.map((c) => (
+              <MenuItem key={c} value={c}>
+                {c}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-  if (
-    catalogueNewList &&
-    catalogueNewList.catalogueList &&
-    catalogueNewList.catalogueList.length > 0
-  ) {
-    const revisedCatalogueList = catalogueNewList.catalogueList.filter(
+        <Box className="catalog-filter-actions" sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+          <Button onClick={onReset} variant="outlined" size="small">
+            Reset
+          </Button>
+          <Button onClick={filter} variant="contained" size="small">
+            Apply
+          </Button>
+        </Box>
+      </Box>
+    </Box>
+  );
+
+  const revisedCatalogueList = useMemo(() => {
+    if (
+      !catalogueNewList ||
+      !catalogueNewList.catalogueList ||
+      catalogueNewList.catalogueList.length === 0
+    ) {
+      return [];
+    }
+    return catalogueNewList.catalogueList.filter(
       (catalogue) =>
         catalogue.dataFeedStatus &&
         catalogue.dataFeedStatus.toLowerCase() !== "deleted"
     );
-    catalogueCount = revisedCatalogueList.length;
+  }, [catalogueNewList]);
+
+  const catalogueCount = revisedCatalogueList.length;
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(catalogueCount / pageSize));
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [catalogueCount, pageSize, currentPage]);
+
+  let catalogListDisplay;
+  let catalogPagination = null;
+  if (catalogueNewList.loading) {
     catalogListDisplay = (
-      <div className="list-parent">
-        <List
-          grid={{ gutter: [24, 12], column: 4 }}
-          pagination={{
-            // onChange: (page) => { },
-            // pageSize: 16,
-            defaultPageSize: 12,
-            pageSizeOptions: ["12", "24", "48", "100"],
-            hideOnSinglePage: true,
-            defaultCurrent: 1,
-            size: "small",
-          }}
-          dataSource={revisedCatalogueList}
-          renderItem={(d) => (
-            <List.Item>
-              <Catalog catalogueInfo={d} />
-            </List.Item>
-          )}
-        />
+      <div className="catalog-state-center">
+        <CircularProgress size={40} />
       </div>
     );
+  } else if (revisedCatalogueList.length > 0) {
+    const startIdx = (currentPage - 1) * pageSize;
+    const pagedList = revisedCatalogueList.slice(startIdx, startIdx + pageSize);
+    catalogListDisplay = (
+      <div className="catalog-grid-wrap">
+        <div className="catalog-grid">
+          {pagedList.map((d) => (
+            <Catalog
+              key={d.dataFeedId || `${d.entityShortName}-${d.dataFeedShortName}`}
+              catalogueInfo={d}
+            />
+          ))}
+        </div>
+      </div>
+    );
+    if (revisedCatalogueList.length > pageSize) {
+      catalogPagination = (
+        <Box
+          className="catalog-pagination"
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel id="page-size-label">Page size</InputLabel>
+            <Select
+              labelId="page-size-label"
+              label="Page size"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              <MenuItem value={12}>12</MenuItem>
+              <MenuItem value={24}>24</MenuItem>
+              <MenuItem value={48}>48</MenuItem>
+            </Select>
+          </FormControl>
+          <Pagination
+            count={Math.ceil(revisedCatalogueList.length / pageSize)}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            size="small"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      );
+    }
   } else if (
     catalogueNewList.catalogueList &&
     catalogueNewList.catalogueList.length === 0
   ) {
     catalogListDisplay = (
-      <h3
-        style={{
-          margin: "auto",
-          fontSize: "16px",
-          color: "#212B36",
-          paddingTop: "20px",
-        }}
-      >
-        No Data Feeds Found
-      </h3>
+      <div className="catalog-state-center">
+        <EmptyState
+          title="No data feeds found"
+          description="Try adjusting your search or filters to find what you need."
+          variant="search"
+        />
+      </div>
+    );
+  } else {
+    catalogListDisplay = (
+      <div className="catalog-state-center">
+        <CircularProgress size={40} />
+      </div>
     );
   }
 
-  const searchByWordFn = (word) => {
-    const searchText = word.toLowerCase().trim();
-    const revisedList =
-      catalogueList &&
-      catalogueList.catalogueList &&
-      catalogueList.catalogueList.filter(
-        (u) =>
-          (u.entityShortName && u.entityShortName.toLowerCase().includes(searchText)) ||
-          (u.datasetShortName && u.datasetShortName.toLowerCase().includes(searchText)) ||
-          (u.dataFeedLongName && u.dataFeedLongName.toLowerCase().includes(searchText)) ||
-          (u.dataFeedDescription && u.dataFeedDescription.toLowerCase().includes(searchText)) ||
-          (u.dataFeedId && u.dataFeedId.toLowerCase().includes(searchText)) ||
-          (u.dataFeedShortName && u.dataFeedShortName.toLowerCase().includes(searchText))
-      );
-    const revisedNewList = {
-      ...catalogueNewList,
-      catalogueList: revisedList,
-    };
-    setCatalogueNewList(revisedNewList);
-  };
+  const searchByWordFn = useCallback(
+    (word) => {
+      const searchText = word.toLowerCase().trim();
+      const revisedList =
+        catalogueList &&
+        catalogueList.catalogueList &&
+        catalogueList.catalogueList.filter(
+          (u) =>
+            (u.entityShortName && u.entityShortName.toLowerCase().includes(searchText)) ||
+            (u.datasetShortName && u.datasetShortName.toLowerCase().includes(searchText)) ||
+            (u.dataFeedLongName && u.dataFeedLongName.toLowerCase().includes(searchText)) ||
+            (u.dataFeedDescription && u.dataFeedDescription.toLowerCase().includes(searchText)) ||
+            (u.dataFeedId && u.dataFeedId.toLowerCase().includes(searchText)) ||
+            (u.dataFeedShortName && u.dataFeedShortName.toLowerCase().includes(searchText))
+        );
+      setCatalogueNewList((prev) => ({
+        ...prev,
+        catalogueList: revisedList,
+      }));
+    },
+    [catalogueList]
+  );
 
   useEffect(() => {
     if (searchWord) {
-      const delayDebounceFn = setTimeout(async () => {
+      const t = setTimeout(() => {
         searchByWordFn(searchWord);
       }, 500);
-      return () => clearTimeout(delayDebounceFn);
-    } else {
-      setCatalogueNewList(catalogueList);
+      return () => clearTimeout(t);
     }
-  }, [searchWord]);
+    setCatalogueNewList(catalogueList);
+  }, [searchWord, catalogueList, searchByWordFn]);
 
   const wordSearchHandler = (e) => {
     setSearchWord(e.target.value);
@@ -361,116 +427,220 @@ const CatalogPage = (props) => {
     CATELOG_MANAGEMENT_FILTER_BTN
   );
 
-  const config = {
-    title: <div className="modal-head">Access Token</div>,
-    content: (
-      <>
-        <div>Below is the access token generated. Click Copy Token.</div>
-        <div className="para-break">
-          <Card className="noselect" style={{ width: 900 }}>
-            {localStorage.getItem("access_token")}
-          </Card>
-        </div>
-        {/* <div style={{ paddingTop: "20px" }}>
-          Please refer the{" "}
-          <a href={Document} target="_blank" download>
-            External Data Platform Access Guide
-          </a>{" "}
-          document for authorization.
-        </div> */}
-      </>
-    ),
-    width: 1000,
-    icon: <ExclamationOutlined style={{ color: "white" }} />,
-    style: { top: "35%" },
-    okText: "Copy Token",
+  const handleCopyToken = () => {
+    navigator.clipboard.writeText(localStorage.getItem("access_token") || "");
+    snackbar.success("Access Token Copied Successfully!");
+  };
 
-    onOk: () => {
-      navigator.clipboard.writeText(localStorage.getItem("access_token"));
-      message.success("Access Token Copied Successfully!");
-    },
-  };
-  const authTokenModal = () => {
-    let secondsToGo = 180;
-    const tokenModal = Modal.confirm(config);
-    const timer = setInterval(() => {
-      secondsToGo -= 1;
-    }, 1000);
-    setTimeout(() => {
-      clearInterval(timer);
-      tokenModal.destroy();
-    }, secondsToGo * 1000);
-  };
+  const cataloguePage = getPageConfig("catalogue");
 
   return (
     <div className="catalog-page" id="main">
-      <Headers />
-
-      <Layout>
-        <Row className="bg-white pr-24 pl-24">
-          <Col span={24} className="mt-24">
-            <span className="catalog-title">
-              Catalogue
-              <Badge
-                color="#52c41a"
-                style={{
-                  verticalAlign: "-webkit-baseline-middle",
-                  left: "0.15%",
-                }}
-              />
-            </span>
-          </Col>
-        </Row>
-        <Row className="bg-white pr-24 pl-24 pb-24">
-          <Col flex="auto" className="mt-24">
-            <Input
-              name="searchText"
-              onChange={(e) => wordSearchHandler(e)}
-              placeholder="Search Data Feed"
-              disabled={!guestRole && isFilterButton}
-            />
-          </Col>
-          <Col flex="none" className="mt-24">
-            <Button
-              icon={<FilterOutlined />}
-              onClick={onFilterButtonClick}
-              className="ml-24"
-              disabled={!guestRole && isFilterButton}
-              id="btn-filter"
-            >
-              Filters
-            </Button>
-          </Col>
-          <Col flex="none" className="mt-24">
-            <Button
-              onClick={authTokenModal}
-              className="ml-24 btn-token1"
-              type="primary"
-              disabled={
-                !checkForString("entitlementType", SUBSCRIBER)
+      <Box className="catalog-page-bg">
+        <div className="catalog-shell">
+          <div className="catalog-fixed">
+            <PageHero
+              breadcrumb={cataloguePage.breadcrumb}
+              title={cataloguePage.title}
+              subtitle={cataloguePage.subtitle}
+              badge={cataloguePage.badge}
+              actions={
+                <div className="catalog-hero-actions">
+                  <Button
+                    startIcon={<FilterIcon />}
+                    variant="outlined"
+                    onClick={onFilterButtonClick}
+                    disabled={!guestRole && isFilterButton}
+                    id="btn-filter"
+                  >
+                    Filters
+                  </Button>
+                  <Button
+                    onClick={() => setTokenDialogOpen(true)}
+                    className="btn-token1"
+                    variant="contained"
+                    disabled={!checkForString("entitlementType", SUBSCRIBER)}
+                  >
+                    Access Token
+                  </Button>
+                </div>
               }
             >
-              Generate Access Token
-            </Button>
-          </Col>
-        </Row>
-        {filterDisplay}
-        {/* Content for the page starts from here. */}
-        <Row className="mt-24 mr-24 ml-24">
-          <Col flex="auto">
-            <span className="content-title">
-              All Data Feeds ({catalogueCount})
-            </span>
-          </Col>
-        </Row>
-        <Row className="ml-24 mr-24">
-          <Col span={24}>
-            <Divider className="mt-8 mb-0" />
-          </Col>
-        </Row>
-        <Row className="mr-24 ml-24 mt-24 mb-24">{catalogListDisplay}</Row>
-      </Layout>
+              <div
+                className={
+                  !isMobile && filterShown
+                    ? "catalog-hero-search is-filtering"
+                    : "catalog-hero-search"
+                }
+              >
+                <TextField
+                  name="searchText"
+                  size="small"
+                  fullWidth
+                  value={searchWord || ""}
+                  onChange={wordSearchHandler}
+                  placeholder="Search data feeds, datasets, or data sources..."
+                  disabled={!guestRole && isFilterButton}
+                  className="catalog-hero-input"
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: searchWord ? (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            aria-label="Clear search"
+                            onClick={() => setSearchWord("")}
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </InputAdornment>
+                      ) : null,
+                    },
+                  }}
+                />
+
+                {!isMobile && filterShown && (
+                  <div className="catalog-inline-filters">
+                    <ToggleButtonGroup
+                      size="small"
+                      color="primary"
+                      exclusive
+                      value={filterValues.datafeeds}
+                      onChange={setDatafeedsToggle}
+                      disabled={!!guestRole}
+                      className="catalog-inline-toggle"
+                    >
+                      <ToggleButton value="">All</ToggleButton>
+                      <ToggleButton value="subscribed">Subscribed</ToggleButton>
+                      <ToggleButton value="unsubscribed">
+                        Unsubscribed
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+
+                    <FormControl size="small" className="catalog-inline-field">
+                      <InputLabel id="ds-filter-datasource-label">
+                        Data Source
+                      </InputLabel>
+                      <Select
+                        labelId="ds-filter-datasource-label"
+                        label="Data Source"
+                        value={filterValues.datasource}
+                        onChange={setFilterField("datasource")}
+                        MenuProps={filterMenuProps}
+                      >
+                        <MenuItem value="">
+                          <em>All</em>
+                        </MenuItem>
+                        {datasourceList.map((v) => (
+                          <MenuItem key={v} value={v}>
+                            {v}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl size="small" className="catalog-inline-field">
+                      <InputLabel id="ds-filter-status-label">
+                        Data Feed Status
+                      </InputLabel>
+                      <Select
+                        labelId="ds-filter-status-label"
+                        label="Data Feed Status"
+                        value={filterValues.datafeedStatus}
+                        onChange={setFilterField("datafeedStatus")}
+                        MenuProps={filterMenuProps}
+                      >
+                        <MenuItem value="">
+                          <em>All</em>
+                        </MenuItem>
+                        {feedStatus.map((c) => (
+                          <MenuItem key={c} value={c}>
+                            {c}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <Button onClick={onReset} variant="outlined" size="small">
+                      Reset
+                    </Button>
+                    <Button onClick={filter} variant="contained" size="small">
+                      Apply
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </PageHero>
+          </div>
+
+          <Drawer
+            anchor="right"
+            open={isMobile && filterShown}
+            onClose={() => setFilterShown(false)}
+            slotProps={{ paper: { sx: { width: "min(420px, 92vw)" } } }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 2, borderBottom: "1px solid var(--color-border-secondary)" }}>
+              <Typography component="h3" sx={{ fontSize: 16, fontWeight: 600, m: 0 }}>
+                Filters
+              </Typography>
+              <IconButton size="small" onClick={() => setFilterShown(false)} aria-label="Close">
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            {filterForm}
+          </Drawer>
+
+          <div className="catalog-card-shell">
+            <div className="catalog-section-title">
+              <span className="content-title">
+                All Data Feeds ({catalogueCount})
+              </span>
+            </div>
+            <div className="catalog-scroll">{catalogListDisplay}</div>
+            {catalogPagination}
+          </div>
+        </div>
+      </Box>
+
+      <Dialog
+        open={tokenDialogOpen}
+        onClose={() => setTokenDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Access Token</DialogTitle>
+        <DialogContent>
+          <Typography component="div" sx={{ mb: 2 }}>
+            Below is the access token generated. Click Copy Token.
+          </Typography>
+          <Card
+            className="noselect"
+            sx={{
+              p: 2,
+              maxWidth: 900,
+              wordBreak: "break-all",
+              fontFamily: "monospace",
+              fontSize: 12,
+              background: "var(--color-bg-subtle)",
+            }}
+          >
+            {localStorage.getItem("access_token")}
+          </Card>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTokenDialogOpen(false)}>Close</Button>
+          <Button variant="contained" onClick={handleCopyToken}>
+            Copy Token
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
+
 export default CatalogPage;

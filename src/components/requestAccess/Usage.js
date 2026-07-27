@@ -1,213 +1,222 @@
-import { createRef, useEffect, memo } from "react";
+import { useEffect, memo } from "react";
 import { useLocation } from "react-router-dom";
-import { Row, Col, Form, Input, Select, Button, DatePicker } from "antd";
+import { useForm } from "react-hook-form";
+import {
+  Box,
+  Grid,
+  InputAdornment,
+  MenuItem,
+  Select,
+} from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
+import { FormField } from "../../design-system";
 import { usage, updateUsage } from "../../store/actions/requestAccessActions";
 import { bindData } from "./bindData";
-import moment from "moment";
+import dayjs from "dayjs";
+import "../../design-system/dayjs";
 
-const { Option } = Select;
-const layout = {
-    labelCol: {
-        span: 6,
-    },
-    wrapperCol: {
-        span: 18,
-    },
-};
 const dateFormat = "DD-MM-YYYY";
 
+const SUBSCRIPTION_CYCLE_OPTIONS = ["Weekly", "Monthly", "Annually"];
+const ALERTS_OPTIONS = ["Yes", "No"];
+const SUBSCRIPTION_STATUS_OPTIONS = [
+  "Active",
+  "Pending",
+  "Expired",
+  "Suspended",
+];
+
 const Usage = (props) => {
-    const dispatch = useDispatch();
-    const reduxData = useSelector((state) => state.requestAccess);
-    const location = useLocation();
-    const formRef = createRef();
-    const button = createRef();
+  const dispatch = useDispatch();
+  const reduxData = useSelector((state) => state.requestAccess);
+  const location = useLocation();
 
-    useEffect(() => {
-        if (props.formData) {
-            button.current.click();
-            props.next(false);
+  const { control, setValue, getValues, trigger } = useForm({
+    defaultValues: {
+      subscriptionCycle: "Weekly",
+      billingModel: "Shared cost",
+      estRechargeCostPerAnnum: "",
+      alertsAndNotifications: "Yes",
+      expirationDate: null,
+      subscriptionStatus: "",
+    },
+    mode: "onChange",
+  });
+
+  // Adapter so the shared bindData() (built for antd's setFieldsValue) can keep
+  // populating fields without modification.
+  const formAdapter = {
+    setFieldsValue: (obj) =>
+      Object.keys(obj).forEach((key) => setValue(key, obj[key])),
+    getFieldValue: (name) => getValues(name),
+    getFieldsValue: () => getValues(),
+  };
+
+  const { contractExpDate, licenseStatus } = reduxData.tableInfo;
+  const defaultDate = dayjs(contractExpDate).format("DD-MM-YYYY");
+
+  useEffect(() => {
+    if (props.formData) {
+      trigger().then((ok) => {
+        if (ok) {
+          dispatch(usage(getValues()));
+          props.next(true);
         }
+      });
+      props.next(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.formData]);
 
-    }, [props.formData]);
-    const { contractExpDate, licenseStatus } = reduxData.tableInfo;
-
-    const defaultDate = moment(contractExpDate).format("DD-MM-YYYY");
-    useEffect(() => {
-        const locationObj = location.state.data;
-        let cost = 0;
-        if (locationObj && locationObj.license && locationObj.license.licenseCost) {
-            cost = locationObj.license.licenseCost / locationObj.totalSubscribers + 1;
-        } else {
-            cost = cost + 1;
-        }
-
-        cost = Math.ceil(cost);
-        formRef.current.setFieldsValue({
-            billingModel: "Shared cost",
-            expirationDate: moment(contractExpDate),
-            subscriptionStatus: licenseStatus,
-            alertsAndNotifications: "Yes",
-            subscriptionCycle: "Weekly",
-            estRechargeCostPerAnnum: cost,
-
-        });
-        bindData(reduxData.usage, formRef.current);
-
-    }, []);
-
-    function disabledDate(current) {
-
-        return (
-            current > moment(defaultDate, dateFormat) ||
-            current.valueOf() < Date.now()
-        );
+  useEffect(() => {
+    const locationObj = location.state.data;
+    let cost = 0;
+    if (locationObj && locationObj.license && locationObj.license.licenseCost) {
+      cost = locationObj.license.licenseCost / locationObj.totalSubscribers + 1;
+    } else {
+      cost = cost + 1;
     }
 
-    function onChange(date, dateString) {
-        dispatch(
-            updateUsage({
-                expirationDate: date,
-            })
-        );
-    }
+    cost = Math.ceil(cost);
+    setValue("billingModel", "Shared cost");
+    setValue("expirationDate", dayjs(contractExpDate));
+    setValue("subscriptionStatus", licenseStatus);
+    setValue("alertsAndNotifications", "Yes");
+    setValue("subscriptionCycle", "Weekly");
+    setValue("estRechargeCostPerAnnum", cost);
 
-    const selectBefore = (
-        <Select defaultValue="USD" className="select-before">
-            <Option value="USD">USD</Option>
-            <Option value="EUR">EUR</Option>
-            <Option value="GBP">GBP</Option>
-        </Select>
-    );
+    bindData(reduxData.usage, formAdapter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const onFinish = (values) => {
-
-        dispatch(usage(values));
-        props.next(true);
-    };
-
-    const onBlurHandler = (e) => {
-        let data = {};
-        const { name, value } = e.target;
-        data[name] = value;
-        dispatch(updateUsage(data));
-    };
-
-    const onSelectChangeHandler = (name, value) => {
-        let data = {};
-        data[name] = value;
-        dispatch(updateUsage(data));
-    };
-
+  function disabledDate(current) {
     return (
-        <Form {...layout} name="usage-one" onFinish={onFinish} ref={formRef}>
-            <Row gutter={[78, 0]}>
-                <Col span={12}>
-                    <Form.Item
-                        name="subscriptionCycle"
-                        label="Subscription Cycle"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Subscription Cycle is mandatory.",
-                            },
-                        ]}
-                    >
-                        <Select
-                            placeholder="Weekly"
-                            allowClear
-                            name="subscriptionCycle"
-                            onChange={(value) =>
-                                onSelectChangeHandler("subscriptionCycle", value)
-                            }
-                        >
-                            <Option value="Weekly">Weekly</Option>
-                            <Option value="Monthly">Monthly</Option>
-                            <Option value="Annually">Annually</Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="billingModel" label="Billing Model">
-                        <Input disabled placeholder="Billing Model" />
-                    </Form.Item>
-                    <Form.Item
-                        name="estRechargeCostPerAnnum"
-                        label="Est.Cost Per Annum"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Est. cost per annum cycle is mandatory.",
-                            },
-                            {
-                                pattern: new RegExp(/^[0-9]*$/i),
-                                message: "Please enter a valid Est. cost per annum",
-                            },
-                        ]}
-                    >
-                        <Input
-                            addonBefore={selectBefore}
-                            placeholder="Est.Cost Per Annum"
-                            name="estRechargeCostPerAnnum"
-                            onBlur={(e) => onBlurHandler(e)}
-                        />
-                    </Form.Item>
-                </Col>
-                <Col span={12}>
-                    <Form.Item
-                        name="alertsAndNotifications"
-                        label="Alerts & Notifications"
-                    >
-                        <Select
-                            placeholder="Yes"
-                            allowClear
-                            onChange={(value) =>
-                                onSelectChangeHandler("alertsAndNotifications", value)
-                            }
-                        >
-                            <Option value="Yes">Yes</Option>
-                            <Option value="No">No</Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item
-                        name="expirationDate"
-                        label="Expiration Date"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Expiration date is mandatory.",
-                            },
-                        ]}
-                    >
-                        <DatePicker
-                            style={{ width: "100%" }}
-                            format={dateFormat}
-                            disabledDate={(e) => disabledDate(e)}
-                            onChange={onChange}
-                        />
-                    </Form.Item>
-                    <Form.Item name="subscriptionStatus" label="Subscription Status">
-                        <Select
-                            placeholder="Licence"
-                            disabled={reduxData.businessRequirements[0].subscriptionId === ""}
-                            onChange={(value) =>
-                                onSelectChangeHandler("subscriptionStatus", value)
-                            }
-                        >
-                            <Option value="Active">Active</Option>
-                            <Option value="Pending">Pending</Option>
-                            <Option value="Expired">Expired</Option>
-                            <Option value="Suspended">Suspended</Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item style={{ display: "none" }}>
-                        <Button htmlType="submit" ref={button}>
-                            Click
-                        </Button>
-                    </Form.Item>
-                </Col>
-            </Row>
-        </Form>
+      current > dayjs(defaultDate, dateFormat) ||
+      current.valueOf() < Date.now()
     );
+  }
+
+  function onChange(date) {
+    dispatch(
+      updateUsage({
+        expirationDate: date,
+      })
+    );
+  }
+
+  const selectBefore = (
+    <Select
+      defaultValue="USD"
+      size="small"
+      variant="standard"
+      disableUnderline
+      className="select-before"
+      sx={{ mr: 1 }}
+    >
+      <MenuItem value="USD">USD</MenuItem>
+      <MenuItem value="EUR">EUR</MenuItem>
+      <MenuItem value="GBP">GBP</MenuItem>
+    </Select>
+  );
+
+  const onBlurHandler = (e) => {
+    let data = {};
+    const { name, value } = e.target;
+    data[name] = value;
+    dispatch(updateUsage(data));
+  };
+
+  const onSelectChangeHandler = (name, value) => {
+    let data = {};
+    data[name] = value;
+    dispatch(updateUsage(data));
+  };
+
+  return (
+    <Box component="form" name="usage-one">
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <FormField
+              name="subscriptionCycle"
+              label="Subscription Cycle"
+              type="select"
+              control={control}
+              required="Subscription Cycle is mandatory."
+              placeholder="Weekly"
+              options={SUBSCRIPTION_CYCLE_OPTIONS}
+              onChange={(e) =>
+                onSelectChangeHandler("subscriptionCycle", e.target.value)
+              }
+            />
+            <FormField
+              name="billingModel"
+              label="Billing Model"
+              control={control}
+              placeholder="Billing Model"
+              disabled
+            />
+            <FormField
+              name="estRechargeCostPerAnnum"
+              label="Est.Cost Per Annum"
+              control={control}
+              placeholder="Est.Cost Per Annum"
+              required="Est. cost per annum cycle is mandatory."
+              rules={{
+                pattern: {
+                  value: /^[0-9]*$/i,
+                  message: "Please enter a valid Est. cost per annum",
+                },
+              }}
+              startAdornment={
+                <InputAdornment position="start">{selectBefore}</InputAdornment>
+              }
+              onBlur={(e) => onBlurHandler(e)}
+            />
+          </Box>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <FormField
+              name="alertsAndNotifications"
+              label="Alerts & Notifications"
+              type="select"
+              control={control}
+              placeholder="Yes"
+              options={ALERTS_OPTIONS}
+              onChange={(e) =>
+                onSelectChangeHandler("alertsAndNotifications", e.target.value)
+              }
+            />
+            <FormField
+              name="expirationDate"
+              label="Expiration Date"
+              type="date"
+              control={control}
+              required="Expiration date is mandatory."
+              format={dateFormat}
+              shouldDisableDate={(e) => disabledDate(e)}
+              onChange={onChange}
+            />
+            <FormField
+              name="subscriptionStatus"
+              label="Subscription Status"
+              type="select"
+              control={control}
+              placeholder="Licence"
+              disabled={
+                reduxData.businessRequirements[0].subscriptionId === ""
+              }
+              options={SUBSCRIPTION_STATUS_OPTIONS}
+              onChange={(e) =>
+                onSelectChangeHandler("subscriptionStatus", e.target.value)
+              }
+            />
+          </Box>
+        </Grid>
+      </Grid>
+    </Box>
+  );
 };
 
 export default memo(Usage);

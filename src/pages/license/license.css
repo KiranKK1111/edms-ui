@@ -1,31 +1,43 @@
-.rectangleone{
-    box-sizing: border-box;
-    height: 129px; 
-    
-    border: 1px solid #DFE3E9;
-    border-radius: 4px;
-    background-color: #FFFFFF;
-    box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
-    padding:0 24px;
+.rectangleone {
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  padding: 0 24px;
+}
+
+.license-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.license-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .reactangletwo {
   box-sizing: border-box;
   padding-left: 24px;
   margin-left: -24px;
-  border-radius: 4px;
-  background-color: #ffffff;
-  box-shadow: 0 1px 4px 0 rgba(223, 227, 233, 0.5);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-sm);
   padding: 35px;
   margin: 24px;
-  
 }
 
 .add-new-license-headers {
   height: 28px;
   width: 119px;
-  color: #0f1217;
-  font-family: Inter;
+  color: var(--color-text);
   font-size: 20px;
   font-weight: 500;
   letter-spacing: 0;
@@ -34,25 +46,44 @@
 .arrow-left {
   height: 16px;
   width: 16px;
-  color: #000000;
+  color: var(--color-text);
   margin-right: 7px;
 }
 
 .alert-header {
   margin: 24px;
   box-sizing: border-box;
-  height: 38px;
-
-  border: 1px solid #ffeebb;
-  border-radius: 4px;
-  background-color: #fff9e7;
-  box-shadow: 0 1px 4px 0 rgba(223, 227, 233, 0.5);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-warning-bg);
+  box-shadow: var(--shadow-sm);
 }
 .button-right {
- 
   padding-right: 24px;
 }
 .home-page {
   margin-left: -25px;
   margin-top: -13px;
+}
+
+@media (max-width: 768px) {
+  .rectangleone {
+    padding: 0 12px;
+  }
+  .license-header-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .license-header-actions {
+    justify-content: flex-end;
+  }
+  .home-page {
+    margin-left: 0;
+    margin-top: 0;
+  }
+  .reactangletwo {
+    padding: 16px;
+    margin: 12px;
+    margin-left: 12px;
+  }
 }

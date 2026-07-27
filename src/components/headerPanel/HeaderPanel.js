@@ -1,11 +1,25 @@
-import { useDispatch, useSelector } from "react-redux";
-import { Descriptions, PageHeader, Spin, Tag, Badge } from "antd";
-import { withRouter, useLocation, useHistory } from "react-router-dom";
-import moment from "moment";
+import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
+import { Chip } from "@mui/material";
+import dayjs from "../../design-system/dayjs";
+
+const StatusChip = ({ status, text }) => {
+  if (!status) return <span>NA</span>;
+  const color =
+    status === "success" ? "success" : status === "warning" ? "warning" : "error";
+  return <Chip size="small" color={color} variant="outlined" label={text} />;
+};
+
+const HeaderField = ({ label, children }) => (
+  <div className="page-form-meta-item">
+    <span className="page-form-meta-label">{label}</span>
+    <span className="page-form-meta-value">{children}</span>
+  </div>
+);
 
 const HeaderPanel = () => {
   const location = useLocation();
-  let catalogueObj =
+  const catalogueObj =
     location.state && location.state.data ? location.state.data : {};
   const { dataFeedStatus: datafeedStatus, entityShortName } = catalogueObj;
   const { licenseById: licenseInfo } = useSelector((state) => state.license);
@@ -23,8 +37,8 @@ const HeaderPanel = () => {
     ? agreementInfo
     : {};
 
-  let licensedPurchaised = /^\d+$/.test(licenseNumberOfLicensesPurchaised);
-  let licenseLicensesUsed = /^\d+$/.test(
+  const licensedPurchaised = /^\d+$/.test(licenseNumberOfLicensesPurchaised);
+  const licenseLicensesUsed = /^\d+$/.test(
     licenseNumberOfLicensesUsed !== null ? licenseNumberOfLicensesUsed : 0
   );
   let availableLicenses =
@@ -37,59 +51,42 @@ const HeaderPanel = () => {
     licensedPurchaised &&
     licenseLicensesUsed
   ) {
-    let licenseNoOfLicUsed =
+    const licenseNoOfLicUsed =
       licenseNumberOfLicensesUsed !== null ? licenseNumberOfLicensesUsed : 0;
     availableLicenses =
-      parseInt(licenseNumberOfLicensesPurchaised) -
-      parseInt(licenseNoOfLicUsed);
+      parseInt(licenseNumberOfLicensesPurchaised, 10) -
+      parseInt(licenseNoOfLicUsed, 10);
   }
 
   let licenseExpiryDateDisplay = "-";
-  let str = /^\s*(true|1|on)\s*$/i.test(licenseNoInheritanceFlag);
-  if (str) {
-    licenseExpiryDateDisplay = moment(licenseExpiryDate).format("DD MMM YYYY");
+  const isStr = /^\s*(true|1|on)\s*$/i.test(licenseNoInheritanceFlag);
+  if (isStr) {
+    licenseExpiryDateDisplay = dayjs(licenseExpiryDate).format("DD MMM YYYY");
   } else {
     licenseExpiryDateDisplay = agreementExpiryDate
-      ? moment(agreementExpiryDate).format("DD MMM YYYY")
+      ? dayjs(agreementExpiryDate).format("DD MMM YYYY")
       : "31 Dec 2099";
   }
 
-  const lablelFn = (lable) => {
-    return <div className="label-bold">{lable}</div>;
-  };
-
   let status;
-  if (datafeedStatus && datafeedStatus.toLowerCase() === "active") {
-    status = "success";
-  }
-  if (datafeedStatus && datafeedStatus.toLowerCase() === "pending") {
-    status = "warning";
-  }
-  if (datafeedStatus && datafeedStatus.toLowerCase() === "inactive") {
-    status = "error";
-  }
+  if (datafeedStatus && datafeedStatus.toLowerCase() === "active") status = "success";
+  if (datafeedStatus && datafeedStatus.toLowerCase() === "pending") status = "warning";
+  if (datafeedStatus && datafeedStatus.toLowerCase() === "inactive") status = "error";
+
   return (
-    <Descriptions
-      size="small"
-      column={{ lg: 3, md: 2, sm: 1, xs: 1 }}
-      bordered={false}
-    >
-      <Descriptions.Item label={lablelFn("Number of available Licences")}>
-        {availableLicenses}
-      </Descriptions.Item>
-      <Descriptions.Item label={lablelFn("Expiration date")}>
-        {licenseExpiryDateDisplay}
-      </Descriptions.Item>
-      <Descriptions.Item label={lablelFn("Data source")}>
-        {entityShortName ? entityShortName : "NA"}
-      </Descriptions.Item>
-      <Descriptions.Item label={lablelFn("Status")}>
-        {status ? <Badge status={status} text={datafeedStatus} /> : "NA"}
-      </Descriptions.Item>
-      <Descriptions.Item label={lablelFn("SCB Data Owner")}>
-        {agreementScbAgreementMgrBankId ? agreementScbAgreementMgrBankId : "NA"}
-      </Descriptions.Item>
-    </Descriptions>
+    <div className="page-form-meta">
+      <HeaderField label="Number of available Licences">
+        {availableLicenses || "NA"}
+      </HeaderField>
+      <HeaderField label="Expiration date">{licenseExpiryDateDisplay}</HeaderField>
+      <HeaderField label="Data source">{entityShortName || "NA"}</HeaderField>
+      <HeaderField label="Status">
+        {status ? <StatusChip status={status} text={datafeedStatus} /> : "NA"}
+      </HeaderField>
+      <HeaderField label="SCB Data Owner">
+        {agreementScbAgreementMgrBankId || "NA"}
+      </HeaderField>
+    </div>
   );
 };
 

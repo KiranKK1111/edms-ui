@@ -1,10 +1,7 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Form, Input } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
 import ApproveRejectModal from "../../components/Modals/ApproveRejectModal";
-import RequestModal from "../../components/myTasks/RequestModal";
-
-configure({ adapter: new Adapter() });
+import { AppProviders } from "../../design-system";
 
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
@@ -26,98 +23,60 @@ const defaultProps = {
   refreshPage: jest.fn(),
 };
 
+const renderModal = (props = {}) =>
+  render(
+    <AppProviders>
+      <ApproveRejectModal {...defaultProps} {...props} />
+    </AppProviders>
+  );
+
 describe("ApproveRejectModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("should render main container", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    expect(wrapper.find("#main").length).toBe(1);
+  it("should render without crashing", () => {
+    const { baseElement } = renderModal();
+    expect(baseElement).toBeInTheDocument();
   });
 
-  it("should render two RequestModal components", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    expect(wrapper.find(RequestModal).length).toBe(2);
+  it("should render the Approve Task modal content when approve modal is open", () => {
+    renderModal({ approveModal: true });
+    expect(screen.getByText("Approve Task")).toBeInTheDocument();
+    expect(
+      screen.getByText("Are you sure you want to proceed?")
+    ).toBeInTheDocument();
   });
 
-  it("should render Approve Task modal", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    const approveModal = wrapper
-      .find(RequestModal)
-      .filterWhere((m) => m.prop("title") === "Approve Task");
-    expect(approveModal.length).toBe(1);
+  it("should render an Approve action button when approve modal is open", () => {
+    renderModal({ approveModal: true });
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
   });
 
-  it("should render Reject Task modal", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    const rejectModal = wrapper
-      .find(RequestModal)
-      .filterWhere((m) => m.prop("title") === "Reject Task");
-    expect(rejectModal.length).toBe(1);
+  it("should render the Reject Task modal content when reject modal is open", () => {
+    renderModal({ rejectModal: true });
+    expect(screen.getByText("Reject Task")).toBeInTheDocument();
+    expect(
+      screen.getByText(/reason for rejecting/i)
+    ).toBeInTheDocument();
   });
 
-  it("should render Form inside reject modal", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    expect(wrapper.find(Form).length).toBe(1);
+  it("should render the reason textarea with a max length of 250", () => {
+    renderModal({ rejectModal: true });
+    const textarea = document.querySelector('textarea[maxlength="250"]');
+    expect(textarea).toBeInTheDocument();
   });
 
-  it("should render reason TextArea in reject form", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    const textarea = wrapper.find(Input.TextArea || "TextArea");
-    expect(textarea.length).toBe(1);
-  });
-
-  it("should render Form.Item for reason", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    const formItem = wrapper
-      .find(Form.Item)
-      .filterWhere((fi) => fi.prop("name") === "reason");
-    expect(formItem.length).toBe(1);
-  });
-
-  it("should show approve modal text", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    const approveModal = wrapper
-      .find(RequestModal)
-      .filterWhere((m) => m.prop("title") === "Approve Task");
-    expect(approveModal.children().text()).toContain(
-      "Are you sure you want to proceed?"
-    );
-  });
-
-  it("should show reject modal text", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    expect(wrapper.find("p").text()).toContain("reason for rejecting");
-  });
-
-  it("should pass approve modal visibility", () => {
-    const wrapper = shallow(
-      <ApproveRejectModal {...defaultProps} approveModal={true} />
-    );
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should pass reject modal visibility", () => {
-    const wrapper = shallow(
-      <ApproveRejectModal {...defaultProps} rejectModal={true} />
-    );
-    expect(wrapper.exists()).toBe(true);
+  it("should render a Reject action button when reject modal is open", () => {
+    renderModal({ rejectModal: true });
+    expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
   });
 
   it("should render with currentActionData", () => {
-    const wrapper = shallow(
-      <ApproveRejectModal
-        {...defaultProps}
-        currentActionData={{ taskId: "T001", taskListTaskStatus: "Pending" }}
-      />
-    );
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should have reason field with max 250 chars", () => {
-    const wrapper = shallow(<ApproveRejectModal {...defaultProps} />);
-    const textarea = wrapper.find(Input.TextArea || "TextArea");
-    expect(textarea.prop("maxLength")).toBe(250);
+    const { baseElement } = renderModal({
+      approveModal: true,
+      currentActionData: { taskId: "T001", taskListTaskStatus: "Pending" },
+    });
+    expect(baseElement).toBeInTheDocument();
   });
 });

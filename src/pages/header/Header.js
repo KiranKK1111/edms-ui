@@ -1,18 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { connect } from "react-redux";
-import { Dropdown, Layout, Menu, Avatar } from "antd";
 import {
-  BellFilled,
-  DownOutlined,
-  UserOutlined,
-  QuestionCircleFilled,
-  LogoutOutlined,
-  SettingFilled,
-  LoginOutlined,
-} from "@ant-design/icons";
-import { NavLink, Link } from "react-router-dom";
+  AppBar,
+  Avatar,
+  Box,
+  Drawer,
+  IconButton,
+  Toolbar,
+} from "@mui/material";
+import {
+  Notifications as NotificationsIcon,
+  KeyboardArrowDown as ArrowDownIcon,
+  Person as PersonIcon,
+  HelpOutlined as HelpIcon,
+  Logout as LogoutIcon,
+  Settings as SettingsIcon,
+  Login as LoginIcon,
+  Menu as MenuIcon,
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
+} from "@mui/icons-material";
+import { NavLink, Link, useHistory, useLocation } from "react-router-dom";
+
 import "./header.css";
-import "antd/dist/antd.css";
+import { useThemeMode, THEME_STORAGE_KEY } from "../../design-system";
+import BrandLogo from "./BrandLogo";
+import { getNavPages } from "../../config/pageConfig";
 import {
   MASTERDATA_MANAGEMENT_PAGE,
   MY_TASK_PAGE,
@@ -22,260 +35,355 @@ import {
   SUBSCRIPTION_MAIN_PAGE,
 } from "../../utils/Constants";
 import getPermissionObject from "../../utils/accessObject";
-import TextIcon from "../../images/EDP_logo_whiteText.svg";
 import { ENTRA_URL } from "../../urlMappings";
-
-const { Header } = Layout;
 
 export const deleteCookies = (cookie, hostname) => {
   cookie.replace(/(?<=^|;).+?(?=\=|;|$)/g, (name) =>
-      hostname
-          .split(".")
-          .reverse()
-          .reduce(
-              (domain) => {
-                  domain = domain.replace(/^\.?[^.]+/, "");
-                  document.cookie = `${name}=;max-age=0;path=/;domain=${domain}`;
-                  return domain;
-              },
-              hostname
-          )
+    hostname
+      .split(".")
+      .reverse()
+      .reduce((domain) => {
+        domain = domain.replace(/^\.?[^.]+/, "");
+        document.cookie = `${name}=;max-age=0;path=/;domain=${domain}`;
+        return domain;
+      }, hostname)
   );
 };
 
 export const deleteAllCookiesAndSiteData = () => {
   const cookies = document.cookie.split(";");
-  for (let cookie of cookies) {
+  for (const cookie of cookies) {
     const name = cookie.split("=")[0].trim();
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
   }
+  // Preserve the user's theme preference across logout so the landing page
+  // keeps the chosen light/dark mode after the storage is cleared.
+  const themePref = localStorage.getItem(THEME_STORAGE_KEY);
   localStorage.clear();
   sessionStorage.clear();
+  if (themePref) {
+    localStorage.setItem(THEME_STORAGE_KEY, themePref);
+  }
 };
 
 function Headers() {
   const [showItem, setShowItem] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+  const { isDark, toggleMode } = useThemeMode();
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 992 : false
+  );
   const loggedInUserId = localStorage.getItem("psid");
   const loggedInTitle = localStorage.getItem("entitlementType");
-
-  const redirectToEntraLogoutScreen = () => {
-    // const url = window.location.host;
-    // const logoutUrl = `${ENTRA_URL}/logout?post_logout_redirect_uri=https://${url}/&client_id=1aabad22-8830-401f-9480-42967d62ca9b`;
-  
-    deleteAllCookiesAndSiteData();
-    // window.location.assign(logoutUrl);
-    window.location.assign("/");
-  };
-
   const guestRole = localStorage.getItem("guestRole");
 
-  let USER_MENU;
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 992);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
-  if (guestRole) {
-    USER_MENU = (
-      <Menu className="header-notification-menu">
-        <Menu.Item key="1" className="header-menu-item-1">
-          <h4>
-            <b>Guest</b>
-          </h4>
-        </Menu.Item>
+  const history = useHistory();
+  const location = useLocation();
 
-        <Menu.Divider />
+  const redirectToEntraLogoutScreen = () => {
+    const url = window.location.host;
+    const logoutUrl = `${ENTRA_URL}/logout?post_logout_redirect_uri=https://${url}/&client_id=1aabad22-8830-401f-9480-42967d62ca9b`;
+  
+    deleteAllCookiesAndSiteData();
+    window.location.assign(logoutUrl);
+  };
 
-        <Menu.Item key="3" className="header-menu-item-2">
-          <QuestionCircleFilled
-            className="icon-style"
-            style={{ fontSize: "18px" }}
-          />{" "}
-          Help Center{" "}
-        </Menu.Item>
-        <Menu.Divider />
+  const closeUserMenu = () => setUserMenuOpen(false);
 
-        <Menu.Item key="4" className="header-menu-item-2">
-          <span role="button" style={{ cursor: "pointer" }} onClick={() => redirectToEntraLogoutScreen()}>
-            <LoginOutlined
-              className="icon-style"
-              style={{ fontSize: "18px" }}
-            />
-            Login
-          </span>
-        </Menu.Item>
-      </Menu>
-    );
-  } else {
-    USER_MENU = (
-      <Menu className="header-notification-menu">
-        <Menu.Item key="1" className="header-menu-item-1">
-          <Link to={`/userProfile/${loggedInUserId}`}>
-            PSID : {loggedInUserId}
-            <h4>
-              <b>{loggedInTitle}</b>
-            </h4>
-          </Link>
-        </Menu.Item>
+  // Close the user menu whenever the route changes — protects against the
+  // menu persisting after a navigation.
+  useEffect(() => {
+    setUserMenuOpen(false);
+  }, [location.pathname]);
 
-        <Menu.Divider />
+  // Close the dropdown when clicking outside of it.
+  useEffect(() => {
+    if (!userMenuOpen) return undefined;
+    const onDocClick = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [userMenuOpen]);
 
-        <Menu.Item key="2" className="header-menu-item-2">
-          <Link to={`/userProfile/${loggedInUserId}`}>
-            {" "}
-            <SettingFilled
-              className="icon-style"
-              style={{ fontSize: "18px" }}
-            />{" "}
-            Settings{" "}
-          </Link>{" "}
-        </Menu.Item>
+  const toggleUserMenu = () => setUserMenuOpen((prev) => !prev);
 
-        <Menu.Item key="3" className="header-menu-item-2">
-          <QuestionCircleFilled
-            className="icon-style"
-            style={{ fontSize: "18px" }}
-          />{" "}
-          Help Center{" "}
-        </Menu.Item>
-        <Menu.Divider />
+  const goTo = (path) => {
+    setUserMenuOpen(false);
+    history.push(path);
+  };
 
-        <Menu.Item key="4" className="header-menu-item-2">
-          <span role="button" style={{ cursor: "pointer" }} onClick={() => redirectToEntraLogoutScreen()}>
-            <LogoutOutlined
-              className="icon-style"
-              style={{ fontSize: "18px" }}
-            />{" "}
-            Log out{" "}
-          </span>
-        </Menu.Item>
-      </Menu>
-    );
-  }
-
-  let loginedRold = localStorage.getItem("entitlementType");
-  loginedRold = loginedRold ? loginedRold : localStorage.getItem("guestRole");
-  useState(() => {
+  const loginedRold =
+    localStorage.getItem("entitlementType") || localStorage.getItem("guestRole");
+  useEffect(() => {
     if (
-      (loginedRold &&
-        loginedRold.toString().toLocaleLowerCase() === "subscriber") ||
-      (loginedRold && loginedRold.toString().toLocaleLowerCase() === "guest")
+      loginedRold &&
+      (loginedRold.toLowerCase() === "subscriber" ||
+        loginedRold.toLowerCase() === "guest")
     ) {
       setShowItem(false);
     }
-  }, []);
+  }, [loginedRold]);
 
   const myTaskPages = getPermissionObject(MY_TASK_PAGE, MAIN_PAGE);
   const userManagementPages = getPermissionObject(
     USER_MANAGEMENT_PAGE,
     MAIN_PAGE
   );
-
   const masterDataPages = getPermissionObject(
     MASTERDATA_MANAGEMENT_PAGE,
     MAIN_PAGE
   );
-
   const subscriptionManagementPages = getPermissionObject(
     SUBSCRIPTION_PAGE,
     SUBSCRIPTION_MAIN_PAGE
   );
 
+  const navLinks = useMemo(() => {
+    const navPages = getNavPages();
+    const byKey = (key) => navPages.find((p) => p.key === key);
+
+    // Permission gate per nav key. Catalogue is always shown.
+    const isAllowed = (key) => {
+      if (key === "catalogue") return true;
+      if (!showItem) return false;
+      if (key === "masterData") {
+        return (
+          masterDataPages &&
+          (masterDataPages.permission === "RW" ||
+            masterDataPages.permission === "R")
+        );
+      }
+      if (key === "myTasks") {
+        return (
+          myTaskPages &&
+          (myTaskPages.permission === "RW" || myTaskPages.permission === "R")
+        );
+      }
+      if (key === "subscriptions") {
+        return (
+          subscriptionManagementPages &&
+          (subscriptionManagementPages.permission === "R" ||
+            subscriptionManagementPages.permission === "RW")
+        );
+      }
+      return false;
+    };
+
+    return navPages
+      .filter((page) => isAllowed(page.key))
+      .map((page) => ({
+        key: page.key,
+        to: page.path,
+        label: page.navLabel,
+      }));
+  }, [showItem, masterDataPages, myTaskPages, subscriptionManagementPages]);
+
+  const renderNavLink = (item, onClick) => (
+    <NavLink
+      key={item.key}
+      to={item.to}
+      activeClassName="page-selected"
+      className="app-nav-link"
+      onClick={onClick}
+    >
+      {item.label}
+    </NavLink>
+  );
+
   return (
-    <Layout>
-      <Header className="Main-header">
-        <div className="logo" id="corp-logo">
-          <img src={TextIcon} alt="logo" />
-        </div>
-        <Menu className="header-bar" theme="dark" mode="horizontal" style={{ display: "block" }}>
-          <Menu.Item key="1">
-            <NavLink to="/catalog" activeClassName="page-selected">
-              Catalogue
-            </NavLink>
-          </Menu.Item>
-
-          {showItem &&
-            masterDataPages &&
-            (masterDataPages.permission === "RW" ||
-              masterDataPages.permission === "R") ? (
-            <Menu.Item key="2">
-              <NavLink to="/masterData" activeClassName="page-selected">
-                Master Data
-              </NavLink>
-            </Menu.Item>
-          ) : (
-            <Menu.Item key="2"></Menu.Item>
-          )}
-
-          {showItem &&
-            myTaskPages &&
-            (myTaskPages.permission === "RW" ||
-              myTaskPages.permission === "R") ? (
-            <Menu.Item key="3">
-              <NavLink to="/myTasks" activeClassName="page-selected">
-                My Tasks
-              </NavLink>
-            </Menu.Item>
-          ) : null}
-          {/*showItem &&
-          userManagementPages &&
-          (userManagementPages.permission === "RW" ||
-            userManagementPages.permission === "R") ? (
-            <Menu.Item key="4">
-              <NavLink to="/userManagement" activeClassName="page-selected">
-                User Management
-              </NavLink>
-            </Menu.Item>
-            ) : null*/}
-
-          {showItem &&
-            subscriptionManagementPages &&
-            (subscriptionManagementPages.permission === "R" ||
-              subscriptionManagementPages.permission === "RW") ? (
-            <Menu.Item key="4">
-              <NavLink
-                to="/subscriptionManagement"
-                activeClassName="page-selected"
+    <>
+      <AppBar
+        position="static"
+        className="Main-header app-header"
+        elevation={0}
+      >
+        <Toolbar disableGutters sx={{ width: "100%", justifyContent: "space-between" }}>
+          <div className="app-header-left">
+            {isMobile && (
+              <IconButton
+                aria-label="Open navigation"
+                className="app-header-menu-btn"
+                onClick={() => setDrawerOpen(true)}
+                size="small"
+                sx={{ color: "inherit" }}
               >
-                Subscriptions
-              </NavLink>
-            </Menu.Item>
-          ) : null}
+                <MenuIcon />
+              </IconButton>
+            )}
+            <div className="logo" id="corp-logo">
+              <Link to="/catalog">
+                <BrandLogo className="app-logo-svg" />
+              </Link>
+            </div>
+            {!isMobile && (
+              <nav className="app-header-nav">
+                {navLinks.map((item) => renderNavLink(item))}
+              </nav>
+            )}
+          </div>
 
-          {/* Right side Menu Items */}
-
-          <Menu.Item
-            key="5"
-            className="right-item-1"
-            style={{ padding: "0 -1px" }}
-          >
-            <Avatar
-              style={{ backgroundColor: "#87d068", padding: "0px" }}
-              icon={<UserOutlined />}
-            />
-            <Dropdown overlay={USER_MENU}>
-              <a
-                href="/#"
-                className="ant-dropdown-link"
-                onClick={(e) => e.preventDefault()}
+          <div className="app-header-right">
+            {!guestRole && (
+              <button
+                type="button"
+                className="app-header-bell"
+                aria-label="Notifications"
               >
-                &nbsp; <DownOutlined />
-              </a>
-            </Dropdown>
-          </Menu.Item>
+                <NotificationsIcon fontSize="small" />
+              </button>
+            )}
+            <Box
+              ref={userMenuRef}
+              sx={{ position: "relative", display: "inline-flex" }}
+            >
+              <Box
+                role="button"
+                className="app-user-trigger"
+                onClick={toggleUserMenu}
+                aria-label="User menu"
+                aria-haspopup="true"
+                aria-expanded={userMenuOpen}
+                sx={{ display: "inline-flex", alignItems: "center", cursor: "pointer", gap: 0.5 }}
+              >
+                <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32 }}>
+                  <PersonIcon fontSize="small" />
+                </Avatar>
+                <ArrowDownIcon className="app-user-caret" fontSize="small" />
+              </Box>
 
-          {!guestRole ? (
-            <Menu.Item
-              key="6"
-              className="right-item-2"
-              style={{ padding: "0px" }}
-              icon={
-                <BellFilled
-                  className="notification-bell"
-                  style={{ fontSize: "21px", color: "#FFFFFF" }}
-                />
-              }
-            />
-          ) : null}
-        </Menu>
-      </Header>
-    </Layout>
+              {userMenuOpen && (
+                <div className="app-user-dropdown" role="menu">
+                  {guestRole ? (
+                    <div className="app-user-dropdown-item is-disabled">
+                      <span className="app-user-dropdown-label">
+                        <strong>Guest</strong>
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="app-user-dropdown-item"
+                      onClick={() => goTo(`/userProfile/${loggedInUserId}`)}
+                    >
+                      <span className="app-user-dropdown-label">
+                        <span className="header-user-psid">
+                          PSID : {loggedInUserId}
+                        </span>
+                        <strong>{loggedInTitle}</strong>
+                      </span>
+                    </button>
+                  )}
+
+                  <div className="app-user-dropdown-divider" />
+
+                  {!guestRole && (
+                    <button
+                      type="button"
+                      className="app-user-dropdown-item"
+                      onClick={() => goTo(`/userProfile/${loggedInUserId}`)}
+                    >
+                      <span className="app-user-dropdown-icon">
+                        <SettingsIcon fontSize="small" />
+                      </span>
+                      <span className="app-user-dropdown-label">Settings</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="app-user-dropdown-item"
+                    onClick={closeUserMenu}
+                  >
+                    <span className="app-user-dropdown-icon">
+                      <HelpIcon fontSize="small" />
+                    </span>
+                    <span className="app-user-dropdown-label">Help Center</span>
+                  </button>
+
+                  <div className="app-user-dropdown-divider" />
+
+                  <button
+                    type="button"
+                    className="app-user-dropdown-item"
+                    onClick={toggleMode}
+                    aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                  >
+                    <span className="app-user-dropdown-icon">
+                      {isDark ? (
+                        <LightModeIcon fontSize="small" />
+                      ) : (
+                        <DarkModeIcon fontSize="small" />
+                      )}
+                    </span>
+                    <span className="app-user-dropdown-label">
+                      {isDark ? "Light mode" : "Dark mode"}
+                    </span>
+                  </button>
+
+                  <div className="app-user-dropdown-divider" />
+
+                  <button
+                    type="button"
+                    className="app-user-dropdown-item"
+                    onClick={() => {
+                      closeUserMenu();
+                      redirectToEntraLogoutScreen();
+                    }}
+                  >
+                    <span className="app-user-dropdown-icon">
+                      {guestRole ? (
+                        <LoginIcon fontSize="small" />
+                      ) : (
+                        <LogoutIcon fontSize="small" />
+                      )}
+                    </span>
+                    <span className="app-user-dropdown-label">
+                      {guestRole ? "Login" : "Log out"}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </Box>
+          </div>
+        </Toolbar>
+
+        <Drawer
+          anchor="left"
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          slotProps={{
+            paper: {
+              sx: {
+                width: Math.min(
+                  280,
+                  (typeof window !== "undefined" ? window.innerWidth : 360) - 40
+                ),
+              },
+            },
+          }}
+        >
+          <Box sx={{ p: 2, fontWeight: 600, borderBottom: "1px solid var(--color-border-secondary)" }}>
+            Menu
+          </Box>
+          <Box className="app-drawer-nav">
+            {navLinks.map((item) =>
+              renderNavLink(item, () => setDrawerOpen(false))
+            )}
+          </Box>
+        </Drawer>
+      </AppBar>
+    </>
   );
 }
 

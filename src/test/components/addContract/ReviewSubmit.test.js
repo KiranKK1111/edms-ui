@@ -1,16 +1,24 @@
+import React from "react";
 import * as redux from "react-redux";
-import { configure, shallow, sleep, mount } from "enzyme";
-import { createMemoryHistory } from "history";
-import Adapter from "enzyme-adapter-react-16";
+import { render, screen } from "@testing-library/react";
 
 import ReviewSubmit from "../../../components/addContract/ReviewSubmit";
-
-configure({ adapter: new Adapter() });
 
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
   useSelector: jest.fn(),
   useDispatch: () => mockDispatch,
+}));
+
+jest.mock("react-router-dom", () => ({
+  __esModule: true,
+  useLocation: () => ({
+    pathname: "/another-route",
+    search: "",
+    hash: "",
+    state: null,
+    key: "5nvxpbdafa",
+  }),
 }));
 
 const contract = {
@@ -20,23 +28,22 @@ const contract = {
 };
 const state = { contract };
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
+describe("ReviewSubmit (Contract)", () => {
+  beforeEach(() => {
+    jest
+      .spyOn(redux, "useSelector")
+      .mockImplementation((callback) => callback(state));
+  });
 
-jest.mock("react-router-dom", () => ({
-  __esModule: true,
-  useLocation: jest.fn().mockReturnValue({
-    pathname: "/another-route",
-    search: "",
-    hash: "",
-    state: null,
-    key: "5nvxpbdafa",
-  }),
-}));
-const wrapper = shallow(<ReviewSubmit />);
+  it("should render the main container", () => {
+    const { container } = render(<ReviewSubmit />);
+    expect(container.querySelector("#main")).toBeInTheDocument();
+  });
 
-it("wrapper", () => {
-  const element = wrapper.find("#main");
-  expect(element.length).toBe(1);
+  it("should render the review section headers", () => {
+    render(<ReviewSubmit />);
+    expect(screen.getByText("Agreement Details")).toBeInTheDocument();
+    expect(screen.getByText("Agreement Limitations")).toBeInTheDocument();
+    expect(screen.getByText("Agreement Document")).toBeInTheDocument();
+  });
 });

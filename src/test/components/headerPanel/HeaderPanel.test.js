@@ -1,119 +1,85 @@
-import * as redux from "react-redux";
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Descriptions, Badge } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { AppProviders } from "../../../design-system";
 import HeaderPanel from "../../../components/headerPanel/HeaderPanel";
 
-configure({ adapter: new Adapter() });
-
+let mockState = {};
 jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
+  useSelector: (cb) => cb(mockState),
   useDispatch: () => jest.fn(),
 }));
 
+let mockLocation = {};
 jest.mock("react-router-dom", () => ({
-  __esModule: true,
-  useLocation: jest.fn().mockReturnValue({
-    pathname: "/catalog/details",
-    search: "",
-    hash: "",
-    state: {
-      data: {
-        dataFeedStatus: "Active",
-        entityShortName: "TestEntity",
-      },
-    },
-    key: "test",
-  }),
+  ...jest.requireActual("react-router-dom"),
+  useLocation: () => mockLocation,
   withRouter: (component) => component,
-  useHistory: jest.fn(),
+  useHistory: () => ({ push: jest.fn() }),
 }));
 
 const setupSelector = (licenseInfo = {}, agreementInfo = {}) => {
-  const state = {
+  mockState = {
     license: { licenseById: licenseInfo },
     contract: { agreementById: agreementInfo },
   };
-  redux.useSelector.mockImplementation((cb) => cb(state));
 };
+
+const setupLocation = (data = { dataFeedStatus: "Active", entityShortName: "TestEntity" }) => {
+  mockLocation = { pathname: "/catalog/details", state: { data } };
+};
+
+const renderPanel = () =>
+  render(
+    <AppProviders>
+      <HeaderPanel />
+    </AppProviders>
+  );
 
 describe("HeaderPanel", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    const { useLocation } = require("react-router-dom");
-    useLocation.mockReturnValue({
-      pathname: "/catalog/details",
-      search: "",
-      hash: "",
-      state: {
-        data: {
-          dataFeedStatus: "Active",
-          entityShortName: "TestEntity",
-        },
-      },
-      key: "test",
-    });
+    setupLocation();
     setupSelector();
   });
 
-  it("should render Descriptions component", () => {
-    const wrapper = shallow(<HeaderPanel />);
-    expect(wrapper.find(Descriptions).length).toBe(1);
+  it("should render all five header fields", () => {
+    renderPanel();
+    expect(screen.getByText("Number of available Licences")).toBeInTheDocument();
+    expect(screen.getByText("Expiration date")).toBeInTheDocument();
+    expect(screen.getByText("Data source")).toBeInTheDocument();
+    expect(screen.getByText("Status")).toBeInTheDocument();
+    expect(screen.getByText("SCB Data Owner")).toBeInTheDocument();
   });
 
-  it("should render 5 Description.Items", () => {
-    const wrapper = shallow(<HeaderPanel />);
-    expect(wrapper.find(Descriptions.Item).length).toBe(5);
-  });
-
-  it("should display entity short name as data source", () => {
-    const wrapper = shallow(<HeaderPanel />);
-    const dataSourceItem = wrapper.find(Descriptions.Item).at(2);
-    expect(dataSourceItem.children().text()).toBe("TestEntity");
+  it("should display the entity short name as data source", () => {
+    renderPanel();
+    expect(screen.getByText("TestEntity")).toBeInTheDocument();
   });
 
   it("should display NA when entityShortName is empty", () => {
-    const { useLocation } = require("react-router-dom");
-    useLocation.mockReturnValue({
-      pathname: "/catalog/details",
-      state: { data: { dataFeedStatus: "Active", entityShortName: "" } },
-    });
-    const wrapper = shallow(<HeaderPanel />);
-    const dataSourceItem = wrapper.find(Descriptions.Item).at(2);
-    expect(dataSourceItem.children().text()).toBe("NA");
+    setupLocation({ dataFeedStatus: "Active", entityShortName: "" });
+    renderPanel();
+    // Data source NA + SCB Data Owner NA
+    expect(screen.getAllByText("NA").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should display success badge for active status", () => {
-    const wrapper = shallow(<HeaderPanel />);
-    const statusItem = wrapper.find(Descriptions.Item).at(3);
-    expect(statusItem.find(Badge).prop("status")).toBe("success");
+  it("should render a success status chip for active status", () => {
+    const { container } = renderPanel();
+    expect(container.querySelector(".MuiChip-colorSuccess")).toBeInTheDocument();
   });
 
-  it("should display warning badge for pending status", () => {
-    const { useLocation } = require("react-router-dom");
-    useLocation.mockReturnValue({
-      pathname: "/catalog/details",
-      state: { data: { dataFeedStatus: "Pending", entityShortName: "Test" } },
-    });
-    const wrapper = shallow(<HeaderPanel />);
-    const statusItem = wrapper.find(Descriptions.Item).at(3);
-    expect(statusItem.find(Badge).prop("status")).toBe("warning");
+  it("should render a warning status chip for pending status", () => {
+    setupLocation({ dataFeedStatus: "Pending", entityShortName: "Test" });
+    const { container } = renderPanel();
+    expect(container.querySelector(".MuiChip-colorWarning")).toBeInTheDocument();
   });
 
-  it("should display error badge for inactive status", () => {
-    const { useLocation } = require("react-router-dom");
-    useLocation.mockReturnValue({
-      pathname: "/catalog/details",
-      state: {
-        data: { dataFeedStatus: "Inactive", entityShortName: "Test" },
-      },
-    });
-    const wrapper = shallow(<HeaderPanel />);
-    const statusItem = wrapper.find(Descriptions.Item).at(3);
-    expect(statusItem.find(Badge).prop("status")).toBe("error");
+  it("should render an error status chip for inactive status", () => {
+    setupLocation({ dataFeedStatus: "Inactive", entityShortName: "Test" });
+    const { container } = renderPanel();
+    expect(container.querySelector(".MuiChip-colorError")).toBeInTheDocument();
   });
 
-  it("should display Unlimited licenses for enterprise license type", () => {
+  it("should display Unlimited licenses for an enterprise license type", () => {
     setupSelector(
       {
         licenseType: "Enterprise License",
@@ -123,12 +89,11 @@ describe("HeaderPanel", () => {
       },
       {}
     );
-    const wrapper = shallow(<HeaderPanel />);
-    const licensesItem = wrapper.find(Descriptions.Item).at(0);
-    expect(licensesItem.children().text()).toBe("Unlimited");
+    renderPanel();
+    expect(screen.getByText("Unlimited")).toBeInTheDocument();
   });
 
-  it("should calculate available licenses for non-enterprise type", () => {
+  it("should calculate available licenses for a non-enterprise type", () => {
     setupSelector(
       {
         licenseType: "Named User",
@@ -138,12 +103,11 @@ describe("HeaderPanel", () => {
       },
       {}
     );
-    const wrapper = shallow(<HeaderPanel />);
-    const licensesItem = wrapper.find(Descriptions.Item).at(0);
-    expect(licensesItem.children().text()).toBe("70");
+    renderPanel();
+    expect(screen.getByText("70")).toBeInTheDocument();
   });
 
-  it("should display license expiry date when inheritance flag is true", () => {
+  it("should display license expiry date when the inheritance flag is true", () => {
     setupSelector(
       {
         licenseType: "Named User",
@@ -152,56 +116,41 @@ describe("HeaderPanel", () => {
       },
       {}
     );
-    const wrapper = shallow(<HeaderPanel />);
-    const expiryItem = wrapper.find(Descriptions.Item).at(1);
-    expect(expiryItem.children().text()).toBe("31 Dec 2025");
+    renderPanel();
+    expect(screen.getByText("31 Dec 2025")).toBeInTheDocument();
   });
 
-  it("should display agreement expiry date when inheritance flag is false", () => {
+  it("should display agreement expiry date when the inheritance flag is false", () => {
     setupSelector(
-      {
-        licenseType: "Named User",
-        licenseNoInheritanceFlag: "false",
-      },
+      { licenseType: "Named User", licenseNoInheritanceFlag: "false" },
       { agreementExpiryDate: "2026-06-30" }
     );
-    const wrapper = shallow(<HeaderPanel />);
-    const expiryItem = wrapper.find(Descriptions.Item).at(1);
-    expect(expiryItem.children().text()).toBe("30 Jun 2026");
+    renderPanel();
+    expect(screen.getByText("30 Jun 2026")).toBeInTheDocument();
   });
 
-  it("should display default date 31 Dec 2099 when no agreement expiry", () => {
+  it("should display the default date when there is no agreement expiry", () => {
     setupSelector(
       { licenseNoInheritanceFlag: "false" },
       { agreementExpiryDate: null }
     );
-    const wrapper = shallow(<HeaderPanel />);
-    const expiryItem = wrapper.find(Descriptions.Item).at(1);
-    expect(expiryItem.children().text()).toBe("31 Dec 2099");
+    renderPanel();
+    expect(screen.getByText("31 Dec 2099")).toBeInTheDocument();
   });
 
-  it("should display NA for SCB Data Owner when not set", () => {
-    setupSelector({}, {});
-    const wrapper = shallow(<HeaderPanel />);
-    const ownerItem = wrapper.find(Descriptions.Item).at(4);
-    expect(ownerItem.children().text()).toBe("NA");
-  });
-
-  it("should display SCB Data Owner when set", () => {
+  it("should display the SCB Data Owner when set", () => {
     setupSelector({}, { agreementScbAgreementMgrBankId: "1234567" });
-    const wrapper = shallow(<HeaderPanel />);
-    const ownerItem = wrapper.find(Descriptions.Item).at(4);
-    expect(ownerItem.children().text()).toBe("1234567");
+    renderPanel();
+    expect(screen.getByText("1234567")).toBeInTheDocument();
   });
 
   it("should handle null licenseInfo gracefully", () => {
-    const state = {
+    mockState = {
       license: { licenseById: null },
       contract: { agreementById: null },
     };
-    redux.useSelector.mockImplementation((cb) => cb(state));
-    const wrapper = shallow(<HeaderPanel />);
-    expect(wrapper.exists()).toBe(true);
+    const { container } = renderPanel();
+    expect(container.querySelector(".page-form-meta")).toBeInTheDocument();
   });
 
   it("should handle null used licenses", () => {
@@ -214,8 +163,7 @@ describe("HeaderPanel", () => {
       },
       {}
     );
-    const wrapper = shallow(<HeaderPanel />);
-    const licensesItem = wrapper.find(Descriptions.Item).at(0);
-    expect(licensesItem.children().text()).toBe("50");
+    renderPanel();
+    expect(screen.getByText("50")).toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 import axios from "axios";
-import moment from "moment";
-import * as jwt from "jsonwebtoken";
+import dayjs from "dayjs";
+import { jwtDecode } from "jwt-decode";
 
 import {
   METHOD_POST,
@@ -62,12 +62,12 @@ export const mockUserLogin = async () => {
 };
 
 export const getExpiration = (token) => {
-  const decodedToken = jwt.decode(token);
-  return moment.unix(decodedToken.exp);
+  const decodedToken = jwtDecode(token);
+  return dayjs.unix(decodedToken.exp);
 };
 
 export const isValid = (token) => {
-  const ActiveToken = moment().isBefore(getExpiration(token));
+  const ActiveToken = dayjs().isBefore(getExpiration(token));
   return ActiveToken;
 };
 

@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "dayjs";
 
 import {
   OWNER_ROLES,
@@ -59,8 +59,8 @@ export const createNewUserProfile = (psid, userRole) => {
   return {
     psId: psid,
     entitlementType: userRole,
-    lastLogin: moment().format(),
-    firstLogin: moment().format(),
+    lastLogin: dayjs().format(),
+    firstLogin: dayjs().format(),
     newSubscriptions: "Y",
     systemMessages: "Y",
   };

@@ -1,0 +1,71 @@
+/*
+  AppLayout — persistent application shell.
+  Header mounts once and stays fixed; <main> is the only scroller, so the
+  scrollbar always begins below the header and content fits exactly inside
+  the viewport without a body-level scrollbar.
+*/
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  min-height: 0;
+  background: var(--color-bg-layout);
+  overflow: hidden;
+}
+
+.app-shell-header {
+  flex: 0 0 auto;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-shell-header .app-header,
+.app-shell-header .MuiAppBar-root {
+  position: static;
+}
+
+.app-shell-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--color-bg-layout);
+  scroll-behavior: smooth;
+}
+
+.app-shell-main:focus {
+  outline: none;
+}
+
+/* Scrollbar — match the design system without affecting the rest of the app */
+.app-shell-main::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.app-shell-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-shell-main::-webkit-scrollbar-thumb {
+  background: var(--color-border, rgba(15, 18, 23, 0.16));
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.app-shell-main::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary, rgba(15, 18, 23, 0.36));
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/*
+  Pages used to size themselves to 100vh and include their own scroll regions.
+  Now that <main> is bounded and is the scroller, pages should fill 100% of
+  <main>'s height instead. This is a non-breaking floor — pages can still
+  declare their own height behaviour explicitly.
+*/
+.app-shell-main > * {
+  min-height: 100%;
+}

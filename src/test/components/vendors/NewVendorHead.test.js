@@ -1,139 +1,96 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Breadcrumb, Button, PageHeader, Modal, Table } from "antd";
-import { Link } from "react-router-dom";
+import React from "react";
+import { screen, fireEvent } from "@testing-library/react";
+
+import { renderWithProviders } from "../../utils/renderWithProviders";
 import NewVendorHead from "../../../components/vendors/AddVendor/NewVendorHead";
 
-configure({ adapter: new Adapter() });
-
-jest.spyOn(console, "error").mockImplementation(() => {});
-
 const mockPush = jest.fn();
-jest.mock("react-router-dom", () => ({
-  useParams: jest.fn().mockReturnValue({}),
-  useHistory: () => ({ push: mockPush }),
-  Link: ({ children, to }) => <a href={to}>{children}</a>,
-}));
+// `mockUseParams` is a stable reference; its return value is set in beforeEach
+// (resetMocks would otherwise wipe an implementation declared at creation time).
+const mockUseParams = jest.fn();
+
+jest.mock("react-router-dom", () => {
+  const actual = jest.requireActual("react-router-dom");
+  return {
+    ...actual,
+    useParams: () => mockUseParams(),
+    useHistory: () => ({ push: mockPush }),
+  };
+});
 
 describe("NewVendorHead", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    const { useParams } = require("react-router-dom");
-    useParams.mockReturnValue({});
+    mockPush.mockReset();
+    mockUseParams.mockReturnValue({});
   });
 
-  it("should render header-one container", () => {
-    const wrapper = shallow(<NewVendorHead />);
-    expect(wrapper.find(".header-one").length).toBe(1);
+  it("should render the header-one container", () => {
+    const { container } = renderWithProviders(<NewVendorHead />);
+    expect(container.querySelector(".header-one")).toBeInTheDocument();
   });
 
-  it("should render Breadcrumb component", () => {
-    const wrapper = shallow(<NewVendorHead />);
-    expect(wrapper.find(Breadcrumb).length).toBe(1);
+  it("should render the breadcrumb links", () => {
+    renderWithProviders(<NewVendorHead />);
+    expect(screen.getByText("Entities")).toBeInTheDocument();
   });
 
-  it("should render Breadcrumb.Items", () => {
-    const wrapper = shallow(<NewVendorHead />);
-    expect(wrapper.find(Breadcrumb.Item).length).toBe(3);
+  it("should show 'Add entity' breadcrumb when no id param", () => {
+    renderWithProviders(<NewVendorHead />);
+    expect(screen.getByText("Add entity")).toBeInTheDocument();
   });
 
-  it("should show Add entity when no id param", () => {
-    const wrapper = shallow(<NewVendorHead />);
-    const itemChildren = wrapper.find(Breadcrumb.Item).at(2).prop("children");
-    const text = []
-      .concat(itemChildren)
-      .filter((c) => typeof c === "string")
-      .join("");
-    expect(text).toContain("Add entity");
+  it("should show 'Edit entity' breadcrumb when id param exists", () => {
+    mockUseParams.mockReturnValue({ id: "123" });
+    renderWithProviders(<NewVendorHead />);
+    expect(screen.getByText("Edit entity")).toBeInTheDocument();
   });
 
-  it("should show Edit entity when id param exists", () => {
-    const { useParams } = require("react-router-dom");
-    useParams.mockReturnValue({ id: "123" });
-    const wrapper = shallow(<NewVendorHead />);
-    const itemChildren = wrapper.find(Breadcrumb.Item).at(2).prop("children");
-    const text = []
-      .concat(itemChildren)
-      .filter((c) => typeof c === "string")
-      .join("");
-    expect(text).toContain("Edit entity");
+  it("should render the Cancel button", () => {
+    renderWithProviders(<NewVendorHead />);
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 
-  it("should render Cancel button", () => {
-    const wrapper = shallow(<NewVendorHead />);
-    const buttons = wrapper.find(Button);
-    const cancelBtn = buttons.filterWhere(
-      (b) => b.prop("type") === "default"
-    );
-    expect(cancelBtn.length).toBe(1);
-    expect(cancelBtn.children().text()).toBe("Cancel");
-  });
-
-  it("should render Submit button", () => {
-    const wrapper = shallow(<NewVendorHead />);
-    const buttons = wrapper.find(Button);
-    const submitBtn = buttons.filterWhere(
-      (b) => b.prop("type") === "primary"
-    );
-    expect(submitBtn.length).toBe(1);
-    expect(submitBtn.children().text()).toBe("Submit");
+  it("should render the Submit button", () => {
+    renderWithProviders(<NewVendorHead />);
+    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
   });
 
   it("should disable Submit when activeSubmit is true", () => {
-    const wrapper = shallow(<NewVendorHead activeSubmit={true} />);
-    const submitBtn = wrapper
-      .find(Button)
-      .filterWhere((b) => b.prop("type") === "primary");
-    expect(submitBtn.prop("disabled")).toBe(true);
+    renderWithProviders(<NewVendorHead activeSubmit={true} />);
+    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
   });
 
   it("should disable Submit when isSubmitted is true", () => {
-    const wrapper = shallow(<NewVendorHead isSubmitted={true} />);
-    const submitBtn = wrapper
-      .find(Button)
-      .filterWhere((b) => b.prop("type") === "primary");
-    expect(submitBtn.prop("disabled")).toBe(true);
+    renderWithProviders(<NewVendorHead isSubmitted={true} />);
+    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
   });
 
-  it("should render PageHeader", () => {
-    const wrapper = shallow(<NewVendorHead />);
-    expect(wrapper.find(PageHeader).length).toBe(1);
+  it("should show 'Add Entity' page title when no id", () => {
+    renderWithProviders(<NewVendorHead />);
+    expect(screen.getByText("Add Entity")).toBeInTheDocument();
   });
 
-  it("should show Add Entity title when no id", () => {
-    const { useParams } = require("react-router-dom");
-    useParams.mockReturnValue({});
-    const wrapper = shallow(<NewVendorHead />);
-    expect(wrapper.find(PageHeader).prop("title")).toBe("Add Entity");
-  });
-
-  it("should show Edit Entity title when id exists", () => {
-    const { useParams } = require("react-router-dom");
-    useParams.mockReturnValue({ id: "456" });
-    const wrapper = shallow(<NewVendorHead />);
-    expect(wrapper.find(PageHeader).prop("title")).toBe("Edit Entity");
-  });
-
-  it("should render Audit Log Modal", () => {
-    const wrapper = shallow(<NewVendorHead />);
-    expect(wrapper.find(Modal).length).toBe(1);
-    expect(wrapper.find(Modal).prop("title")).toBe("Audit Log");
-  });
-
-  it("should render Table inside Modal", () => {
-    const wrapper = shallow(<NewVendorHead />);
-    expect(wrapper.find(Table).length).toBe(1);
+  it("should show 'Edit Entity' page title when id exists", () => {
+    mockUseParams.mockReturnValue({ id: "456" });
+    renderWithProviders(<NewVendorHead />);
+    expect(screen.getByText("Edit Entity")).toBeInTheDocument();
   });
 
   it("should call handleSubmitSuccess on Submit click", () => {
     const mockSubmit = jest.fn();
-    const wrapper = shallow(
-      <NewVendorHead handleSubmitSuccess={mockSubmit} />
-    );
-    const submitBtn = wrapper
-      .find(Button)
-      .filterWhere((b) => b.prop("type") === "primary");
-    submitBtn.simulate("click");
+    renderWithProviders(<NewVendorHead handleSubmitSuccess={mockSubmit} />);
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
     expect(mockSubmit).toHaveBeenCalled();
+  });
+
+  it("should navigate to /masterData on Cancel click", () => {
+    renderWithProviders(<NewVendorHead />);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(mockPush).toHaveBeenCalledWith("/masterData");
+  });
+
+  it("should not show the Audit Log dialog initially", () => {
+    renderWithProviders(<NewVendorHead />);
+    expect(screen.queryByText("Audit Log")).not.toBeInTheDocument();
   });
 });

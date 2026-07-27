@@ -1,83 +1,65 @@
-/*Lib imports begin*/
-import { useState, useEffect } from "react";
-import { HomeOutlined } from "@ant-design/icons";
-import { Breadcrumb, Button, PageHeader, Modal, Table } from "antd";
+import React, { useState } from "react";
+import { Link, useHistory, useParams } from "react-router-dom";
+import {
+  Box,
+  Breadcrumbs,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
+import { Home as HomeIcon } from "@mui/icons-material";
 
-/*css imports*/
-/*antD library imports begin*/
-import "antd/dist/antd.css";
-import React from "react";
-import { Link, useHistory } from "react-router-dom";
-/*css imports*/
+import { PageHeader, DataTable } from "../../../design-system";
 import "./NewVendorHead.css";
-import { useParams } from "react-router-dom";
-import { auditlogVendorOverview } from "../../../store/services/ContractService";
 
 const NewVendorHead = (props) => {
   const [visible, setVisible] = useState(false);
-  const [dataSource, setDataSource] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const [btnDisable, setBtnDisable] = useState(false);
+  const [dataSource] = useState([]);
+  const [columns] = useState([]);
   const history = useHistory();
   const params = useParams();
-  const navigateToAddContract = () => {
-    history.push("addContract");
-  };
   const cancelHandler = () => {
     history.push("/masterData");
   };
 
   return (
     <div className="header-one">
-      <Modal
-        title="Audit Log"
-        centered
-        visible={visible}
-        onOk={() => setVisible(false)}
-        onCancel={() => setVisible(false)}
-        width={1200}
+      <Dialog
+        open={visible}
+        onClose={() => setVisible(false)}
+        maxWidth="lg"
+        fullWidth
       >
-        <Table
-          dataSource={dataSource}
-          columns={columns}
-          pagination={false}
-          size="middle"
-          scroll={{
-            y: 500,
-            x: 1800,
-          }}
-        />
-      </Modal>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: "2px",
-        }}
-      >
-        <Breadcrumb style={{ margin: "16px 0" }}>
-          <Breadcrumb.Item>
-            <Link to="/catalog">
-              <HomeOutlined />
-            </Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>
-            {" "}
-            <Link to="/masterData">Entities </Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>
-            {" "}
-            {params.id ? "Edit entity" : "Add entity"}{" "}
-          </Breadcrumb.Item>
-        </Breadcrumb>
-        <div>
-          <Button type="default" onClick={() => cancelHandler()}>
+        <DialogTitle>Audit Log</DialogTitle>
+        <DialogContent>
+          <DataTable columns={columns} data={dataSource} pagination={false} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setVisible(false)} variant="contained">
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <div className="nvh-top-bar">
+        <Breadcrumbs className="nvh-breadcrumb" separator="/">
+          <Link to="/catalog" style={{ display: "inline-flex" }}>
+            <HomeIcon fontSize="small" />
+          </Link>
+          <Link to="/masterData">Entities</Link>
+          <Box component="span">
+            {params.id ? "Edit entity" : "Add entity"}
+          </Box>
+        </Breadcrumbs>
+        <div className="nvh-actions">
+          <Button variant="outlined" onClick={cancelHandler}>
             Cancel
           </Button>
           <Button
             onClick={props.handleSubmitSuccess}
-            type="primary"
-            style={{ margin: "11px 5px" }}
+            variant="contained"
             disabled={props.activeSubmit || props.isSubmitted}
           >
             Submit
@@ -89,8 +71,8 @@ const NewVendorHead = (props) => {
           title={params.id ? "Edit Entity" : "Add Entity"}
           ghost={false}
           onBack={() => history.push("/masterData")}
-          className="pt-10 pb-0  home-page"
-        ></PageHeader>
+          className="home-page"
+        />
       </div>
     </div>
   );

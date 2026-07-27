@@ -1,9 +1,6 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Steps, Button } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
 import RequestFormSteps from "../../../components/requestAccess/RequestFormSteps";
-
-configure({ adapter: new Adapter() });
 
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
@@ -18,42 +15,48 @@ jest.mock("react-router-dom", () => ({
   }),
 }));
 
+// The step bodies are lazy-loaded; stub them so the stepper chrome renders
+// synchronously and we do not pull in their redux/router dependencies here.
+jest.mock("../../../components/requestAccess/BusinessRequirements", () => ({
+  __esModule: true,
+  default: () => <div>Business Requirements step</div>,
+}));
+jest.mock("../../../components/requestAccess/Usage", () => ({
+  __esModule: true,
+  default: () => <div>Usage step</div>,
+}));
+jest.mock("../../../components/requestAccess/TermsConditions", () => ({
+  __esModule: true,
+  default: () => <div>Terms step</div>,
+}));
+jest.mock("../../../components/requestAccess/ReviewSubmit", () => ({
+  __esModule: true,
+  default: () => <div>Review step</div>,
+}));
+
 describe("RequestFormSteps", () => {
   const mockStepsLength = jest.fn();
-  let wrapper;
 
-  beforeEach(() => {
-    wrapper = shallow(
-      <RequestFormSteps
-        contractManagement={false}
-        stepsLength={mockStepsLength}
-      />
+  it("should render the three step titles", () => {
+    render(
+      <RequestFormSteps contractManagement={false} stepsLength={mockStepsLength} />
     );
+    expect(screen.getByText("Business Requirements")).toBeInTheDocument();
+    expect(screen.getByText("Terms & Conditions")).toBeInTheDocument();
+    expect(screen.getByText("Review & Submit")).toBeInTheDocument();
   });
 
-  it("should render Steps component", () => {
-    expect(wrapper.find(Steps).length).toBe(1);
-  });
-
-  it("should render 3 Step components", () => {
-    expect(wrapper.find(Steps.Step || "Step").length).toBe(3);
-  });
-
-  it("should render Next button initially", () => {
-    const buttons = wrapper.find(Button);
-    const nextBtn = buttons.filterWhere(
-      (btn) => btn.prop("type") === "primary"
+  it("should render the Next button on the first step", () => {
+    render(
+      <RequestFormSteps contractManagement={false} stepsLength={mockStepsLength} />
     );
-    expect(nextBtn.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("button", { name: "Next" })).toBeInTheDocument();
   });
 
-  it("should not render Previous button on first step", () => {
-    const html = wrapper.debug();
-    expect(html).not.toContain("Previous");
-  });
-
-  it("should have step titles", () => {
-    const steps = wrapper.find(Steps.Step || "Step");
-    expect(steps.length).toBe(3);
+  it("should not render the Previous button on the first step", () => {
+    render(
+      <RequestFormSteps contractManagement={false} stepsLength={mockStepsLength} />
+    );
+    expect(screen.queryByText("Previous")).not.toBeInTheDocument();
   });
 });

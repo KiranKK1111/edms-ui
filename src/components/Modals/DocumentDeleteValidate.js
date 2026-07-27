@@ -1,29 +1,33 @@
-import { useState, createRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Col, Form, Input, Row, Tooltip, message } from "antd";
+import { useHistory } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { Box, Tooltip } from "@mui/material";
+
 import RequestModal from "../myTasks/RequestModal";
+import { FormField, useSnackbar } from "../../design-system";
 import {
   getAllTasks,
-  getOverViewRecordsList,
   updateTaskAction,
 } from "../../store/actions/MyTasksActions.js";
-import {
-  startDeleteDocument,
-  startGetAllDocuments,
-} from "../../store/actions/datafeedAction";
-import { useHistory } from "react-router-dom";
-
-const { TextArea } = Input;
+import { startDeleteDocument } from "../../store/actions/datafeedAction";
 
 const DocumentDeleteValidate = (props) => {
   const [approveModal, setApproveModal] = useState(false);
   const [editReplaceModal, setEditReplaceModal] = useState(false);
-  const [currentActionData, setCurrentActionData] = useState({});
-  const [isActionSubmitted, setisActionSubmitted] = useState(false);
   const [rejectModal, setRejectModal] = useState(false);
+  const [currentActionData, setCurrentActionData] = useState({});
   const dispatch = useDispatch();
-  const formRef = createRef();
+  const snackbar = useSnackbar();
   const history = useHistory();
+
+  const {
+    control,
+    handleSubmit,
+    setError,
+    reset,
+    getValues,
+  } = useForm({ defaultValues: { reason: "" } });
 
   useEffect(() => {
     setApproveModal(props.deleteModal);
@@ -44,23 +48,20 @@ const DocumentDeleteValidate = (props) => {
       currentActionData.docObjectId
     );
     if (res && res.data) {
-      setisActionSubmitted(true);
       props.getDocuments();
-
-      // dispatch(startGetAllDocuments());
       const message1 =
         res && res.data && res.data.statusMessage
           ? res.data.statusMessage.message
           : null;
-      message.success(message1);
+      if (message1) snackbar.success(message1);
       if (props.getStatus) props.getStatus(res);
-
       history.push(`/masterData/${currentActionData.docObjectId}/addDocuments`);
     }
     setApproveModal(false);
     props.setDisabledSubmitBtn(false);
     props.setDeleteModal(false);
   };
+
   const handleApproveCancel = () => {
     setApproveModal(false);
     setEditReplaceModal(false);
@@ -68,40 +69,39 @@ const DocumentDeleteValidate = (props) => {
   };
 
   const submitReason = async () => {
+    const value = getValues();
+    if (!value.reason || !value.reason.length) {
+      setError("reason", { type: "required", message: "reason is mandatory !" });
+      return;
+    }
     props.setDisabledSubmitBtn(true);
-    const value = formRef.current.getFieldsValue();
     const payload = {
       ...currentActionData,
       taskListRejectionReason: value.reason,
       taskListTaskStatus: "Rejected",
     };
-    if (value.reason && value.reason.length) {
-      const res = await dispatch(updateTaskAction(payload));
-      if (res && res.data) {
-        try {
-          formRef.current.setFieldsValue({ reason: "" });
-        } catch (err) {}
-        setRejectModal(false);
-
-        dispatch(getAllTasks());
-        setisActionSubmitted(true);
-        const message1 =
-          res && res.data && res.data.statusMessage
-            ? res.data.statusMessage.message
-            : null;
-        message.success(message1);
-        if (props.getStatus) props.getStatus(res);
-      }
+    const res = await dispatch(updateTaskAction(payload));
+    if (res && res.data) {
+      reset({ reason: "" });
+      setRejectModal(false);
+      dispatch(getAllTasks());
+      const message1 =
+        res && res.data && res.data.statusMessage
+          ? res.data.statusMessage.message
+          : null;
+      if (message1) snackbar.success(message1);
+      if (props.getStatus) props.getStatus(res);
     }
     props.refreshPage();
   };
+
   const handleRejectCancel = () => {
     setRejectModal(false);
     props.setDisabledSubmitBtn(false);
   };
 
   return (
-    <div>
+    <Box>
       <RequestModal
         isModalVisible={approveModal}
         handleOk={handleApprove}
@@ -120,34 +120,28 @@ const DocumentDeleteValidate = (props) => {
       </RequestModal>
       <RequestModal
         isModalVisible={rejectModal}
-        handleOk={submitReason}
+        handleOk={handleSubmit(submitReason)}
         handleCancel={handleRejectCancel}
         title="Reject Task"
       >
-        <p>
+        <Box component="p" sx={{ mt: 0 }}>
           Are you sure you want to proceed? Please provide your reason for
           rejecting below.
-        </p>
-        <Form ref={formRef} onFinish={submitReason}>
-          <Row>
-            <Col className="gutter-row" span={24}>
-              <Form.Item
-                label={
-                  <Tooltip placement="top" title="reason">
-                    {" "}
-                    Reason{" "}
-                  </Tooltip>
-                }
-                name="reason"
-                rules={[{ required: true, message: "reason is mandatory !" }]}
-              >
-                <TextArea rows={4} name="reason" />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
+        </Box>
+        <Tooltip placement="top" title="reason">
+          <span>
+            <FormField
+              name="reason"
+              label="Reason"
+              control={control}
+              type="textarea"
+              rows={4}
+              required="reason is mandatory !"
+            />
+          </span>
+        </Tooltip>
       </RequestModal>
-    </div>
+    </Box>
   );
 };
 

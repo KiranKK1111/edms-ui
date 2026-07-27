@@ -1,8 +1,7 @@
 import { useEffect, memo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Spin, Alert } from "antd";
+import { Alert, CircularProgress } from "@mui/material";
 import { useSelector, useDispatch } from "react-redux";
-import Header from "../pages/header/Header";
 import Panel from "../components/requestAccess/Panel";
 
 import { RequestFormSteps } from "../components/requestAccess";
@@ -126,16 +125,15 @@ const RequestAccess = () => {
         className="spin-container"
         style={{ display: response.loading && "flex" }}
       >
-        <Spin />
+        <CircularProgress />
       </div>
-      <Header />
       <Panel
         allowSubmit={submitStatus}
         reqTaskStatus={reqTaskStatus}
         subId={""}
       />
 
-      {isSaveAsDraft ? <Alert message={draftMsg} banner /> : ""}
+      {isSaveAsDraft ? <Alert severity="info">{draftMsg}</Alert> : ""}
       <div className="content-area">
         <div className="content-wrapper">
           <RequestFormSteps

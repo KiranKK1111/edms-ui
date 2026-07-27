@@ -1,0 +1,91 @@
+/* PageHero — shared header card for top-of-page rhythm */
+
+.page-hero {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  padding: clamp(16px, 2.2vw, 22px) clamp(18px, 2.6vw, 26px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.page-hero .MuiBreadcrumbs-root {
+  margin: 0;
+  font-size: 13px;
+}
+
+.page-hero-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.page-hero-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.page-hero-title {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(20px, 2.1vw, 26px);
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.012em;
+  line-height: 1.2;
+}
+
+.page-hero-back {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md) !important;
+  color: var(--color-text);
+  flex: 0 0 auto;
+  transition: background 0.2s, color 0.2s;
+}
+
+.page-hero-back:hover {
+  background: var(--color-bg-hover) !important;
+  color: var(--color-primary) !important;
+}
+
+.page-hero-title-text {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.page-hero-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+  max-width: 760px;
+  margin-top: 4px;
+}
+
+.page-hero-actions {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.page-hero-extra {
+  margin-top: var(--space-3);
+}
+
+.page-hero-crumb-link {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.page-hero-crumb-link:hover {
+  color: var(--color-primary);
+}

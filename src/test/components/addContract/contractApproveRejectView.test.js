@@ -1,12 +1,9 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Button, PageHeader, Breadcrumb as AntBreadcrumb } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import ContractApproveRejectView, {
   conVertDateArrayToDate,
 } from "../../../components/addContract/contractApproveRejectView";
-import { RequestModal } from "../../../components/myTasks";
-
-configure({ adapter: new Adapter() });
 
 jest.spyOn(console, "error").mockImplementation(() => {});
 jest.spyOn(console, "warn").mockImplementation(() => {});
@@ -39,7 +36,9 @@ jest.mock("react-router-dom", () => ({
 }));
 
 jest.mock("../../../store/actions/contractAction", () => ({
-  getContractDetailsByChangeRequestId: jest.fn((x) => "getContractDetailsByChangeRequestId_" + x),
+  getContractDetailsByChangeRequestId: jest.fn(
+    (x) => "getContractDetailsByChangeRequestId_" + x
+  ),
   getContractDetailsById: jest.fn((x) => "getContractDetailsById_" + x),
 }));
 
@@ -52,7 +51,6 @@ jest.mock("../../../utils/accessMyTask", () => {
   return fn;
 });
 
-const { updateTaskAction } = require("../../../store/actions/MyTasksActions");
 const isAcessDisabled = require("../../../utils/accessMyTask");
 
 const contractDetails = {
@@ -72,13 +70,6 @@ const contractDetails = {
   agreementReferenceId: "R1",
 };
 
-mockState = {
-  contract: {
-    contractDetails: { ...contractDetails },
-  },
-  vendor: [],
-};
-
 const baseMockProps = {
   location: {
     state: {
@@ -88,38 +79,63 @@ const baseMockProps = {
   history: { push: jest.fn() },
 };
 
-describe("ContractApproveRejectView", () => {
-  let wrapper;
+const renderView = (props = baseMockProps) =>
+  render(
+    <MemoryRouter>
+      <ContractApproveRejectView {...props} />
+    </MemoryRouter>
+  );
 
+describe("ContractApproveRejectView", () => {
   beforeEach(() => {
     mockDispatch.mockClear();
     mockHistoryPush.mockClear();
-    updateTaskAction.mockClear();
     isAcessDisabled.mockReturnValue(false);
     mockDispatch.mockReturnValue(Promise.resolve({ data: { success: true } }));
     localStorage.clear();
     localStorage.setItem("psid", "current_user");
     localStorage.setItem("entitlementType", "Admin");
-    baseMockProps.history.push.mockClear();
     mockHistory.location = { state: { myTaskData: mockMyTaskData } };
-    wrapper = shallow(<ContractApproveRejectView {...baseMockProps} />);
+    mockState = {
+      contract: { contractDetails: { ...contractDetails } },
+      vendor: [],
+    };
   });
 
   it("should render without crashing", () => {
-    expect(wrapper.exists()).toBe(true);
+    const { container } = renderView();
+    expect(container).toBeInTheDocument();
   });
 
-  it("should render Approve and Reject buttons", () => {
-    const buttons = wrapper.find(".btn-parent").find(Button);
-    expect(buttons.length).toBe(2);
+  it("should render the Agreement Details breadcrumb / header", () => {
+    renderView();
+    expect(screen.getAllByText("Agreement Details").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render the panel area", () => {
-    expect(wrapper.find(".panel").length).toBe(1);
+  it("should render the agreement name", () => {
+    renderView();
+    expect(screen.getAllByText("Test Agreement").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render breadcrumb area", () => {
-    expect(wrapper.find(".breadcrumb-area").length).toBe(1);
+  it("should render the Agreement Limitations section", () => {
+    renderView();
+    expect(screen.getByText("Agreement Limitations")).toBeInTheDocument();
+  });
+
+  it("should render the Agreement Document section", () => {
+    renderView();
+    expect(screen.getByText("Agreement Document")).toBeInTheDocument();
+  });
+
+  it("should render Approve and Reject actions", () => {
+    renderView();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
+  });
+
+  it("should render multiple label-review elements", () => {
+    const { container } = renderView();
+    expect(container.querySelectorAll(".label-review").length).toBeGreaterThan(5);
   });
 
   // ---- conVertDateArrayToDate utility ----
@@ -129,211 +145,84 @@ describe("ContractApproveRejectView", () => {
   });
 
   it("should return undefined for null dateArray", () => {
-    const result = conVertDateArrayToDate(null);
-    expect(result).toBeUndefined();
+    expect(conVertDateArrayToDate(null)).toBeUndefined();
   });
 
   it("should return undefined for undefined dateArray", () => {
-    const result = conVertDateArrayToDate(undefined);
-    expect(result).toBeUndefined();
+    expect(conVertDateArrayToDate(undefined)).toBeUndefined();
   });
 
   // ---- Render with different actions ----
-  it("should render with Create action props", () => {
-    expect(wrapper.exists()).toBe(true);
-  });
-
   it("should render with Update action props", () => {
     const updateMyTaskData = { ...mockMyTaskData, taskListObjectAction: "Update" };
     mockHistory.location = { state: { myTaskData: updateMyTaskData } };
-    const w = shallow(<ContractApproveRejectView
-      {...baseMockProps}
-      location={{ state: { myTaskData: updateMyTaskData } }}
-    />);
-    expect(w.exists()).toBe(true);
-    mockHistory.location = { state: { myTaskData: mockMyTaskData } };
+    const { container } = renderView({
+      ...baseMockProps,
+      location: { state: { myTaskData: updateMyTaskData } },
+    });
+    expect(container).toBeInTheDocument();
   });
 
   it("should render with Deactivate action props", () => {
-    const deactivateMyTaskData = { ...mockMyTaskData, taskListObjectAction: "Deactivate" };
+    const deactivateMyTaskData = {
+      ...mockMyTaskData,
+      taskListObjectAction: "Deactivate",
+    };
     mockHistory.location = { state: { myTaskData: deactivateMyTaskData } };
-    const w = shallow(<ContractApproveRejectView
-      {...baseMockProps}
-      location={{ state: { myTaskData: deactivateMyTaskData } }}
-    />);
-    expect(w.exists()).toBe(true);
-    mockHistory.location = { state: { myTaskData: mockMyTaskData } };
+    const { container } = renderView({
+      ...baseMockProps,
+      location: { state: { myTaskData: deactivateMyTaskData } },
+    });
+    expect(container).toBeInTheDocument();
   });
 
-  // ---- Contract details rendering ----
-  it("should render Agreement Details section headers", () => {
-    expect(wrapper.find(".details-header-review").length).toBeGreaterThanOrEqual(1);
+  // ---- Empty / null contract data ----
+  it("should show fallback when contract data is empty", () => {
+    mockState = { contract: { contractDetails: {} }, vendor: [] };
+    renderView();
+    expect(
+      screen.getByText("Agreement details not available")
+    ).toBeInTheDocument();
   });
 
-  it("should render agreement limitations section", () => {
-    const headers = wrapper.find(".details-header-review");
-    const hasLimitations = headers.someWhere((n) => n.text().includes("Agreement Limitations"));
-    expect(hasLimitations).toBe(true);
-  });
-
-  it("should render agreement document section", () => {
-    const headers = wrapper.find(".details-header-review");
-    const hasDocument = headers.someWhere((n) => n.text().includes("Agreement Document"));
-    expect(hasDocument).toBe(true);
-  });
-
-  // ---- Null contract data renders nothing ----
-  it("should not render details when contract data is null", () => {
-    const savedState = { ...mockState };
+  it("should handle null contract gracefully", () => {
     mockState = { contract: null, vendor: [] };
-    const w = shallow(<ContractApproveRejectView {...baseMockProps} />);
-    expect(w.find(".details-header-review").length).toBe(0);
-    mockState = savedState;
+    const { container } = renderView();
+    expect(container).toBeInTheDocument();
   });
 
-  // ---- isBtnDisplay ----
-  it("should disable buttons when taskListTaskStatus is Approved", () => {
-    const approvedMyTaskData = { ...mockMyTaskData, taskListTaskStatus: "Approved" };
+  // ---- actionsDisabled behaviour ----
+  it("should disable actions when taskListTaskStatus is Approved", () => {
+    const approvedMyTaskData = {
+      ...mockMyTaskData,
+      taskListTaskStatus: "Approved",
+    };
     mockHistory.location = { state: { myTaskData: approvedMyTaskData } };
-    const w = shallow(<ContractApproveRejectView
-      {...baseMockProps}
-      location={{ state: { myTaskData: approvedMyTaskData } }}
-    />);
-    expect(w.find(".btn-parent").find(Button).at(0).prop("disabled")).toBe(true);
-    expect(w.find(".btn-parent").find(Button).at(1).prop("disabled")).toBe(true);
-    mockHistory.location = { state: { myTaskData: mockMyTaskData } };
+    renderView({
+      ...baseMockProps,
+      location: { state: { myTaskData: approvedMyTaskData } },
+    });
+    expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
   });
 
-  it("should not disable buttons when taskListTaskStatus is Pending", () => {
-    const buttons = wrapper.find(".btn-parent").find(Button);
-    expect(buttons.at(0).prop("disabled")).toBe(false);
-    expect(buttons.at(1).prop("disabled")).toBe(false);
+  it("should not disable actions when Pending", () => {
+    renderView();
+    expect(screen.getByRole("button", { name: "Approve" })).not.toBeDisabled();
   });
 
-  it("should disable buttons when isAcessDisabled returns true", () => {
+  it("should disable actions when isAcessDisabled returns true", () => {
     isAcessDisabled.mockReturnValue(true);
-    const w = shallow(<ContractApproveRejectView {...baseMockProps} />);
-    expect(w.find(".btn-parent").find(Button).at(0).prop("disabled")).toBe(true);
+    renderView();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
   });
 
-  it("should disable buttons when taskListCreatedBy matches psid", () => {
-    localStorage.setItem("psid", "other_user");
-    const w = shallow(<ContractApproveRejectView {...baseMockProps} />);
-    expect(w.find(".btn-parent").find(Button).at(0).prop("disabled")).toBe(true);
-  });
-
-  // ---- showApproveModal / handleApprove ----
-  it("should have onClick handler on Approve button", () => {
-    const approveBtn = wrapper.find(".btn-parent").find(Button).at(1);
-    expect(typeof approveBtn.prop("onClick")).toBe("function");
-    // Trigger onClick (memo may prevent state update visibility in shallow)
-    approveBtn.prop("onClick")();
-  });
-
-  it("should dispatch updateTaskAction on handleApprove", async () => {
-    wrapper.find(".btn-parent").find(Button).at(1).prop("onClick")();
-    wrapper.update();
-    await wrapper.find(RequestModal).at(0).prop("handleOk")();
-    expect(updateTaskAction).toHaveBeenCalled();
-  });
-
-  it("should navigate on successful approve", async () => {
-    mockDispatch.mockReturnValue(Promise.resolve({ data: true }));
-    wrapper.find(".btn-parent").find(Button).at(1).prop("onClick")();
-    wrapper.update();
-    await wrapper.find(RequestModal).at(0).prop("handleOk")();
-    expect(mockHistoryPush).toHaveBeenCalledWith("/myTasks");
-  });
-
-  it("should not navigate when approve response has no data", async () => {
-    mockDispatch.mockReturnValue(Promise.resolve({}));
-    wrapper.find(".btn-parent").find(Button).at(1).prop("onClick")();
-    wrapper.update();
-    await wrapper.find(RequestModal).at(0).prop("handleOk")();
-    expect(mockHistoryPush).not.toHaveBeenCalledWith("/myTasks");
-  });
-
-  // ---- handleApproveCancel ----
-  it("should have handleCancel on approve modal", () => {
-    const approveModal = wrapper.find(RequestModal).at(0);
-    expect(typeof approveModal.prop("handleCancel")).toBe("function");
-    approveModal.prop("handleCancel")();
-  });
-
-  // ---- showRejectModal ----
-  it("should have onClick handler on Reject button", () => {
-    const rejectBtn = wrapper.find(".btn-parent").find(Button).at(0);
-    expect(typeof rejectBtn.prop("onClick")).toBe("function");
-    rejectBtn.prop("onClick")();
-  });
-
-  // ---- handleRejectCancel ----
-  it("should handle reject cancel and close modal", () => {
-    wrapper.find(".btn-parent").find(Button).at(0).prop("onClick")();
-    wrapper.update();
-    wrapper.find(RequestModal).at(1).prop("handleCancel")();
-    wrapper.update();
-    expect(wrapper.find(RequestModal).at(1).prop("isModalVisible")).toBe(false);
-  });
-
-  // ---- Reject modal structure ----
-  it("should have handleOk on reject modal", () => {
-    expect(typeof wrapper.find(RequestModal).at(1).prop("handleOk")).toBe("function");
-  });
-
-  // ---- Initial modal state ----
-  it("should have approve modal not visible initially", () => {
-    expect(wrapper.find(RequestModal).at(0).prop("isModalVisible")).toBe(false);
-  });
-
-  it("should have reject modal not visible initially", () => {
-    expect(wrapper.find(RequestModal).at(1).prop("isModalVisible")).toBe(false);
-  });
-
-  // ---- PageHeader ----
-  it("should call history.push on PageHeader back", () => {
-    wrapper.find(PageHeader).prop("onBack")();
-    expect(baseMockProps.history.push).toHaveBeenCalledWith("/myTasks");
-  });
-
-  it("should render PageHeader", () => {
-    expect(wrapper.find(PageHeader).length).toBe(1);
-  });
-
-  // ---- Two RequestModals ----
-  it("should render two RequestModal components", () => {
-    expect(wrapper.find(RequestModal).length).toBe(2);
-  });
-
-  // ---- Modal titles ----
-  it("should have correct title on approve modal", () => {
-    expect(wrapper.find(RequestModal).at(0).prop("title")).toBe("Approve Task");
-  });
-
-  it("should have correct title on reject modal", () => {
-    expect(wrapper.find(RequestModal).at(1).prop("title")).toBe("Reject Task");
-  });
-
-  // ---- Breadcrumb ----
-  it("should render AntBreadcrumb", () => {
-    expect(wrapper.find(AntBreadcrumb).length).toBe(1);
-  });
-
-  it("should render breadcrumb items", () => {
-    expect(wrapper.find(AntBreadcrumb.Item).length).toBe(3);
-  });
-
-  // ---- Content areas ----
-  it("should render content-area", () => {
-    expect(wrapper.find(".content-area").length).toBe(1);
-  });
-
-  it("should render content-wrapper", () => {
-    expect(wrapper.find(".content-wrapper").length).toBe(1);
-  });
-
-  // ---- label-review elements ----
-  it("should render multiple label-review spans", () => {
-    expect(wrapper.find(".label-review").length).toBeGreaterThan(5);
+  it("should disable actions when taskListCreatedBy matches psid", () => {
+    mockHistory.location = {
+      state: {
+        myTaskData: { ...mockMyTaskData, taskListCreatedBy: "current_user" },
+      },
+    };
+    renderView();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
   });
 });

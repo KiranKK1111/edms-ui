@@ -18,7 +18,7 @@
 }*/
 
 .steps-content {
-    border: 1px solid #f1eded;
+    border: 1px solid var(--color-border-secondary);
     padding:10px;  
 }
 

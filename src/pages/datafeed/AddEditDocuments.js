@@ -1,28 +1,33 @@
-import { useState, useEffect, createRef, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { useLocation, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import {
-  Button,
-  PageHeader,
-  message,
   Alert,
-  Layout,
-  Row,
-  Col,
-  Space,
-  Input,
-  Radio,
+  Box,
+  Button,
+  CircularProgress,
   Divider,
+  FormControlLabel,
+  Grid,
+  InputAdornment,
+  Paper,
+  Radio,
+  RadioGroup,
+  Stack,
   Table,
-  Form,
-  Upload,
-  Modal,
-  Spin,
-  Empty,
-} from "antd";
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+} from "@mui/material";
+import { PageHeader, FormField, EmptyState } from "../../design-system";
+import { toast as message } from "../../design-system/toast";
+import imperativeConfirm from "../../design-system/imperativeConfirm";
 import { useSelector, useDispatch } from "react-redux";
 import { useHistory, useParams } from "react-router-dom";
-import moment from "moment";
-import Headers from "../header/Header";
+import dayjs from "../../design-system/dayjs";
 import Breadcrumb from "../../components/breadcrumb/Breadcrumb";
 import {
   startSubmittingDocumentsOrUrl,
@@ -35,15 +40,12 @@ import {
 import "./datafeed.css";
 import "./addDocument.css";
 import {
-  HomeOutlined,
-  DownOutlined,
-  UploadOutlined,
-  PaperClipOutlined,
-  DeleteOutlined,
-  LinkOutlined,
-  CloseCircleOutlined,
-} from "@ant-design/icons";
-import TextArea from "antd/lib/input/TextArea";
+  KeyboardArrowDown as DownOutlined,
+  UploadFile as UploadOutlined,
+  AttachFile as PaperClipOutlined,
+  Delete as DeleteOutlined,
+  Link as LinkOutlined,
+} from "@mui/icons-material";
 import DocumentDeleteValidate from "../../components/Modals/DocumentDeleteValidate";
 import { startGetDatasets } from "../../store/actions/DatasetPageActions";
 import {
@@ -53,10 +55,15 @@ import {
 } from "../../utils/Constants";
 import isButtonObject from "../../utils/accessButtonCheck";
 
-const { Content } = Layout;
-const { confirm } = Modal;
-
 const location = window.location.pathname;
+
+const deleteIconStyle = {
+  border: "1px solid var(--color-error)",
+  color: "var(--color-error)",
+  width: 20,
+  height: 20,
+  margin: 0,
+};
 
 const AddEditDocuments = (props) => {
   const editObj = (props.location.state && props.location.state.editObj) || {};
@@ -72,6 +79,7 @@ const AddEditDocuments = (props) => {
   const [columns, setColumns] = useState([]);
   const [radioSelectType, setRadioSelectType] = useState("fileUpload");
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
 
   const [data, setData] = useState(
     props.location.state && props.location.state.data
@@ -90,8 +98,14 @@ const AddEditDocuments = (props) => {
     setRadioSelectType(e.target.value);
   };
   const [docObj, setDocObj] = useState({});
-  const formRef = createRef();
-  const [form] = Form.useForm();
+  const { control, handleSubmit, reset, setValue } = useForm({
+    defaultValues: {
+      docTitle: "",
+      docDescription: "",
+      docDisplayFilename: "",
+    },
+    mode: "onChange",
+  });
   const [fileList, setFileList] = useState();
   const [disabledSubmitBtn, setDisabledSubmitBtn] = useState(false);
   const [currentActionData, setCurrentActionData] = useState({});
@@ -183,38 +197,6 @@ const AddEditDocuments = (props) => {
   const dsName = getDSName();
   const dfName = isDfSelected && isDfSelected.includes("DS") ? "" : getDFName();
 
-  const propsFile = {
-    showUploadList: false,
-    name: "file",
-    maxCount: 1,
-    accept: ".pptx,.docx,.pdf,.xslx,.csv ",
-    beforeUpload: (file, fileList) => {
-      if (file.size > 100 * 1024 * 1024) {
-        message.error(
-          "File not uploaded due to: Max File size upload allowed is 100MB"
-        );
-      } else {
-        // setFileObj(file);
-      }
-    },
-    onRemove: () => {
-      setUploadOn(false);
-      setEditOn(true);
-    },
-    async customRequest({
-      action,
-      data,
-      file,
-      filename,
-      headers,
-      onError,
-      onProgress,
-      onSuccess,
-      withCredentials,
-    }) { },
-    onChange(info) { },
-  };
-
   const DSbreadcrumb = [
     { name: "Entities", url: "/masterData" },
     {
@@ -245,11 +227,6 @@ const AddEditDocuments = (props) => {
       url: {
         pathname: `/masterData`,
       },
-      // state: {
-      //   //dataset: row,
-      //   isView: false,
-      //   //datafeedRecord: record,
-      // },
       isView: false,
     },
     {
@@ -262,7 +239,7 @@ const AddEditDocuments = (props) => {
   const cancelUpload = () => {
     setShowFileNew(false);
     setEditOn(false);
-    form.resetFields();
+    reset();
     setUploadOn(false);
     setShowPdf(false);
     setRadioSelectType("fileUpload");
@@ -361,7 +338,7 @@ const AddEditDocuments = (props) => {
     }
 
     if (res && res.statusMessage) {
-      form.resetFields();
+      reset();
       message.success(
         docObjectIds
           ? ` The File/Link has been successfully updated!`
@@ -382,7 +359,7 @@ const AddEditDocuments = (props) => {
     setLoading(false);
     setShowFileNew(false);
     setFileObj();
-    //form.resetFields();
+    //reset();
   };
 
   const copyHandler = (value) => {
@@ -403,34 +380,32 @@ const AddEditDocuments = (props) => {
         uploadOn: false,
         fileObj: {},
       };
-      confirm({
+      imperativeConfirm({
         title: "Do you want to replace the item",
-        icon: <CloseCircleOutlined style={{ color: "red" }} />,
-        okType: "danger",
         content: "This file/link is already existing. Replace? ",
-        onOk() {
+        okColor: "error",
+      }).then((ok) => {
+        if (ok) {
           handleDeleteFileUpload(data);
-        },
-        onCancel() {
+        } else {
           //setShowPdf(true);
           setUploadOn(true);
           setShowFileNew(true);
-        },
+        }
       });
     } else {
-      confirm({
+      imperativeConfirm({
         title: "Do you want to replace the item",
-        icon: <CloseCircleOutlined style={{ color: "red" }} />,
-        okType: "danger",
         content: "This file/link is already existing. Replace? ",
-        onOk() {
+        okColor: "error",
+      }).then((ok) => {
+        if (ok) {
           setShowPdf(false);
           setUploadOn(false);
-        },
-        onCancel() {
+        } else {
           setShowPdf(true);
           setUploadOn(false);
-        },
+        }
       });
     }
   };
@@ -462,25 +437,25 @@ const AddEditDocuments = (props) => {
   };
 
   const handleDeleteDocuments = (record) => {
-    confirm({
-      icon: <CloseCircleOutlined style={{ color: "red" }} />,
-      title: deleteMessage(record),
-      okType: "danger",
-      onOk() {
+    imperativeConfirm({
+      title: "Delete document",
+      content: deleteMessage(record),
+      okColor: "error",
+    }).then((ok) => {
+      if (ok) {
         const res = deleteDocuments(record.docDid, record.docObjectId);
         setShowFileNew(false);
         setEditOn(false);
-        form.resetFields();
+        reset();
         setUploadOn(false);
         setShowPdf(false);
         setRadioSelectType("fileUpload");
-      },
-      onCancel() { },
+      }
     });
   };
 
   useEffect(() => {
-    form.resetFields();
+    reset();
     setShowPdf(false);
     //If Access this page
     !isButtonDisabled && getDocuments();
@@ -522,23 +497,23 @@ const AddEditDocuments = (props) => {
     }
   }, [editRecordData]);
 
-  const showDeleteModal = (record) => { };
+  const showDeleteModal = (record) => {};
 
   useEffect(() => {
     setUploadOn(fileObj ? true : false);
     setEditOn(!fileObj && docObjectIds ? true : false);
   }, [fileObj]);
 
-  const checkUrlValidation = (rule, value) => {
+  const checkUrlValidation = (value) => {
     if (value === undefined) {
-      return Promise.reject("");
+      return "Please add a valid url";
     }
     var res = value.match(
       /(http(s)?:\/\/.)(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g
     );
 
-    if (res == null) return Promise.reject("Url Validation failed");
-    else return Promise.resolve();
+    if (res == null) return "Url Validation failed";
+    else return true;
   };
 
   useEffect(() => {
@@ -559,15 +534,14 @@ const AddEditDocuments = (props) => {
         ellipsis: false,
         width: "30%",
         render: (text, record) => (
-          <Space size="middle">
+          <Stack direction="row" spacing={2} alignItems="center">
             {!record.docDisplayFilename.includes("http") && (
               <>
                 <PaperClipOutlined />
                 <Button
                   disabled={isButtonDisabled}
-                  type="button"
+                  variant="text"
                   className="link-button talign"
-                  alt={text}
                   onClick={() => downloadFiles(record)}
                   style={{ marginLeft: "-12px" }}
                 >
@@ -577,7 +551,7 @@ const AddEditDocuments = (props) => {
             )}
             {record.docDisplayFilename.includes("http") && (
               <div style={{ display: "flex" }}>
-                <Form.Item>
+                <Box>
                   <div
                     style={{
                       display: "flex",
@@ -595,10 +569,10 @@ const AddEditDocuments = (props) => {
                       </Link>
                     </div>
                   </div>
-                </Form.Item>
+                </Box>
               </div>
             )}
-          </Space>
+          </Stack>
         ),
       },
       {
@@ -625,10 +599,10 @@ const AddEditDocuments = (props) => {
           return (
             <>
               <div style={{ fontWeight: "normal" }}>
-                {moment(record.docCreatedOn).format("DD MMM YYYY")}
+                {dayjs(record.docCreatedOn).format("DD MMM YYYY")}
               </div>
               <div style={{ fontWeight: "normal" }}>
-                {moment(record.docUpdatedOn).format("DD MMM YYYY")}
+                {dayjs(record.docUpdatedOn).format("DD MMM YYYY")}
               </div>
             </>
           );
@@ -644,7 +618,6 @@ const AddEditDocuments = (props) => {
             <div style={{ fontWeight: "normal" }}>
               <Link
                 className="link-button talign"
-                disabled={isButtonDisabled}
                 to={{
                   pathname: `/masterData/${record.docObjectId}/editDocuments/${record.docDid}`,
                   state: {
@@ -659,7 +632,7 @@ const AddEditDocuments = (props) => {
               <Button
                 disabled={isButtonDisabled}
                 style={{ marginLeft: 20 }}
-                type="link"
+                variant="text"
                 className="link-button talign"
                 onClick={() => handleDeleteDocuments(record)}
               >
@@ -673,6 +646,12 @@ const AddEditDocuments = (props) => {
   }, []);
 
   const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (file && file.size > 100 * 1024 * 1024) {
+      message.error(
+        "File not uploaded due to: Max File size upload allowed is 100MB"
+      );
+    }
     setFileObj(e.target.files[0]);
     setShowFileNew(true);
     setUploadOn(true);
@@ -684,7 +663,7 @@ const AddEditDocuments = (props) => {
     const res = await dispatch(
       startDownloadDocument(record.docDisplayFilename, record.docDid)
     );
-    setTimeout(() => { }, 8000);
+    setTimeout(() => {}, 8000);
     if (res && res.includes("Successfully")) {
       setLoading(false);
       message.success(res);
@@ -695,18 +674,12 @@ const AddEditDocuments = (props) => {
   };
 
   const handleMapping = () => {
-    if (docObjectIds && formRef.current) {
+    if (docObjectIds) {
       if (editRecordData) {
-        const { docTitle, docObjectType, docDescription, docDisplayFilename } =
-          editRecordData;
-        formRef.current.setFieldsValue({
-          fileObj,
-          docTitle,
-          radioSelectType,
-          docDescription,
-          docDisplayFilename: docDisplayFilename,
-          docObjectType,
-        });
+        const { docTitle, docDescription, docDisplayFilename } = editRecordData;
+        setValue("docTitle", docTitle);
+        setValue("docDescription", docDescription);
+        setValue("docDisplayFilename", docDisplayFilename);
       }
     }
   };
@@ -719,23 +692,28 @@ const AddEditDocuments = (props) => {
     return retVal;
   };
 
+  const rows = fileList || [];
+  const rowsPerPage = 5;
+  const pagedRows = rows.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
   return (
     <div id="main">
-      <Headers />
       {loading ? (
-        <Col
-          span={24}
-          style={{
+        <Box
+          sx={{
             textAlign: "center",
-            background: "#f0f2f5",
+            background: "var(--color-bg-layout)",
             paddingTop: "8%",
           }}
         >
-          <Spin tip="Loading..." />
-        </Col>
+          <CircularProgress size={40} />
+        </Box>
       ) : (
-        <Layout style={{ width: "99%" }}>
-          <Content>
+        <Box sx={{ width: "99%" }}>
+          <Box>
             <div className="rectangleone">
               <div
                 style={{
@@ -763,31 +741,31 @@ const AddEditDocuments = (props) => {
                 ></PageHeader>
               </div>
               {props.location.state &&
-                props.location.state.record &&
-                props.location.state.record.licenseStatus.toLowerCase() ===
+              props.location.state.record &&
+              props.location.state.record.licenseStatus.toLowerCase() ===
                 "pending" ? (
                 <div style={{ marginTop: "40px" }}>
-                  <Alert
-                    message="This Licence is currently under review. You will be able to add Datasets once the Licence is approved and the status is “Active” or “Planned”."
-                    type="warning"
-                    showIcon
-                  />
+                  <Alert severity="warning">
+                    This Licence is currently under review. You will be able to
+                    add Datasets once the Licence is approved and the status is
+                    “Active” or “Planned”.
+                  </Alert>
                 </div>
               ) : null}
               <div
                 style={{
                   marginTop:
                     props.location.state &&
-                      props.location.state.record &&
-                      props.location.state.record.licenseStatus.toLowerCase() ===
+                    props.location.state.record &&
+                    props.location.state.record.licenseStatus.toLowerCase() ===
                       "pending"
                       ? "10px"
                       : "50px",
                 }}
               ></div>
-              <Form form={form} ref={formRef} onFinish={submitDocument}>
-                <Row style={{ backgroundColor: "white" }}>
-                  <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+              <Box component="form" onSubmit={handleSubmit(submitDocument)}>
+                <Grid container sx={{ backgroundColor: "var(--color-bg)" }}>
+                  <Grid size={12}>
                     <div
                       style={{
                         width: "100%",
@@ -799,76 +777,57 @@ const AddEditDocuments = (props) => {
                       <DownOutlined /> &nbsp; &nbsp; &nbsp;
                       <strong>Document details</strong>
                     </div>
-                  </Col>
-                  <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-                    <Form.Item
-                      name="docTitle"
-                      label="Name"
-                      initialValue={undefined}
-                      value={valDocTitle}
-                      style={{ width: "80%", marginLeft: 58 }}
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please Enter Title",
-                        },
-                      ]}
-                      className="err-adjust"
-                    >
-                      <Input
-                        style={{ marginLeft: 50 }}
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Box sx={{ width: "80%", ml: "58px", mb: 2 }}>
+                      <FormField
+                        name="docTitle"
+                        label="Name"
+                        control={control}
+                        required="Please Enter Title"
                         disabled={showPdf || isButtonDisabled}
                       />
-                    </Form.Item>
-                    <Form.Item
-                      name="docDescription"
-                      label="Description"
-                      style={{ width: "87%", marginLeft: 58 }}
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please add Description",
-                        },
-                      ]}
-                    >
-                      <TextArea
+                    </Box>
+                    <Box sx={{ width: "87%", ml: "58px" }}>
+                      <FormField
+                        name="docDescription"
+                        label="Description"
+                        type="textarea"
+                        rows={4}
+                        control={control}
+                        required="Please add Description"
                         disabled={showPdf || isButtonDisabled}
-                        style={{ minHeight: 109 }}
-                        showCount
-                        maxLength={1000}
-                        value={valDocDescription}
+                        inputProps={{ maxLength: 1000 }}
                       />
-                    </Form.Item>
-                    &nbsp; &nbsp;
-                    <Col xs={24} sm={24} md={24} lg={12} xl={12}></Col>
-                  </Col>
-                  <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <div
                       style={{
-                        border: "3px solid #F9F8F8",
+                        border: "3px solid var(--color-border-secondary)",
                         width: "97%",
                       }}
                     >
-                      <Form.Item name="radioSelectType">
-                        <p hidden>{radioSelectType}</p>
-                        <Radio.Group
-                          disabled={docObjectIds || isButtonDisabled}
-                          onChange={onChangeRadio}
-                          defaultValue="fileUpload"
+                      <Box sx={{ ml: 2.5, mt: 1.25 }}>
+                        <RadioGroup
+                          row
                           value={radioSelectType}
-                          style={{
-                            width: "100%",
-                            marginLeft: 20,
-                            marginTop: 10,
-                            height: 20,
-                          }}
+                          onChange={onChangeRadio}
                         >
-                          <Radio value="fileUpload" defaultChecked>
-                            Add file
-                          </Radio>
-                          <Radio value="uploadUrl">Add URL</Radio>
-                        </Radio.Group>
-                      </Form.Item>
+                          <FormControlLabel
+                            value="fileUpload"
+                            control={<Radio />}
+                            label="Add file"
+                            disabled={!!docObjectIds || isButtonDisabled}
+                          />
+                          <FormControlLabel
+                            value="uploadUrl"
+                            control={<Radio />}
+                            label="Add URL"
+                            disabled={!!docObjectIds || isButtonDisabled}
+                          />
+                        </RadioGroup>
+                      </Box>
                       <Divider />
                       {radioSelectType === "fileUpload" ? (
                         <div>
@@ -881,48 +840,31 @@ const AddEditDocuments = (props) => {
                                 marginLeft: 30,
                               }}
                             >
-                              <Form.Item
-                                name="file"
-                                type="file"
-                                id="fileInput"
-                                onChange={handleFile}
-                                rules={[
-                                  {
-                                    required: true,
-                                    message: "Please Upload a valid file",
-                                  },
-                                ]}
-                                className="err1-adjust"
+                              <Button
+                                variant="outlined"
+                                component="label"
+                                disabled={
+                                  showPdf ||
+                                  uploadOn ||
+                                  showFileNew ||
+                                  isButtonDisabled
+                                }
+                                startIcon={<UploadOutlined />}
                               >
-                                <Space
-                                  direction="vertical"
-                                  style={{
-                                    width: "100%",
-                                  }}
-                                  size="large"
-                                >
-                                  <Upload {...propsFile} maxCount={1}>
-                                    <Button
-                                      disabled={
-                                        showPdf ||
-                                        uploadOn ||
-                                        showFileNew ||
-                                        isButtonDisabled
-                                      }
-                                      icon={<UploadOutlined />}
-                                    >
-                                      Click to Upload
-                                    </Button>
-                                  </Upload>
-                                </Space>
-                              </Form.Item>{" "}
+                                Click to Upload
+                                <input
+                                  type="file"
+                                  hidden
+                                  accept=".pptx,.docx,.pdf,.xslx,.csv "
+                                  onChange={handleFile}
+                                />
+                              </Button>{" "}
                               {showFileNew &&
                                 radioSelectType === "fileUpload" && (
                                   <Button
                                     disabled={isButtonDisabled}
-                                    type="button"
+                                    variant="text"
                                     className="link-button talign"
-                                    alt={fileObj.name}
                                     style={{ marginLeft: 30 }}
                                     onClick={() =>
                                       handleDeleteFile(fileObj, "upload")
@@ -932,24 +874,15 @@ const AddEditDocuments = (props) => {
                                       &nbsp;&nbsp; &nbsp;&nbsp;{" "}
                                       <PaperClipOutlined /> &nbsp;
                                       {fileObj.name}&nbsp;&nbsp;
-                                      <DeleteOutlined
-                                        style={{
-                                          border: "1px solid red",
-                                          color: "red",
-                                          width: 20,
-                                          height: 20,
-                                          margin: 0,
-                                        }}
-                                      />
+                                      <DeleteOutlined style={deleteIconStyle} />
                                     </strong>
                                   </Button>
                                 )}
                               {showPdf && radioSelectType === "fileUpload" && (
                                 <Button
                                   disabled={isButtonDisabled}
-                                  type="button"
+                                  variant="text"
                                   className="link-button talign"
-                                  alt={docDisplayFilename}
                                   style={{ marginLeft: 30 }}
                                   onClick={() =>
                                     handleDeleteFile(editRecordData[0])
@@ -959,22 +892,13 @@ const AddEditDocuments = (props) => {
                                     &nbsp;&nbsp; &nbsp;&nbsp;{" "}
                                     <PaperClipOutlined /> &nbsp;
                                     {docDisplayFilename}&nbsp;&nbsp;
-                                    <DeleteOutlined
-                                      style={{
-                                        border: "1px solid red",
-                                        color: "red",
-                                        width: 20,
-                                        height: 20,
-                                        margin: 0,
-                                      }}
-                                    />
+                                    <DeleteOutlined style={deleteIconStyle} />
                                   </strong>
                                 </Button>
                               )}
                             </div>
                             <div
                               style={{
-                                //textAlign: "left",
                                 marginTop: "auto",
                                 marginLeft: 0,
                               }}
@@ -984,8 +908,7 @@ const AddEditDocuments = (props) => {
                                   marginLeft: 30,
                                   fontSize: "12px",
                                   fontWeight: "bold",
-                                  input: "read-only",
-                                  color: "#ccc",
+                                  color: "var(--color-text-quaternary)",
                                   paddingTop: "5px",
                                 }}
                               >
@@ -1000,16 +923,14 @@ const AddEditDocuments = (props) => {
                             style={{ marginLeft: 30, height: 50 }}
                             className="link-input"
                           >
-                            <Row gutter={[78, 0]} className="pt-head">
+                            <Grid container className="pt-head">
                               {showPdf && (
                                 <Button
-                                  type="button"
+                                  variant="text"
                                   className="link-button talign"
-                                  //disabled={showPdf}
-                                  alt={docDisplayFilename}
                                   style={{
                                     height: "auto",
-                                    "white-space": "pre-wrap",
+                                    whiteSpace: "pre-wrap",
                                   }}
                                   onClick={() =>
                                     handleDeleteFile(editRecordData)
@@ -1024,58 +945,41 @@ const AddEditDocuments = (props) => {
                                         overflow: "hidden",
                                         display: "inline-block",
                                         verticalAlign: "top",
-                                        "word-break": "break-all",
+                                        wordBreak: "break-all",
                                       }}
                                     >
                                       {docDisplayFilename}
                                     </div>
                                     &nbsp;&nbsp;
-                                    <DeleteOutlined
-                                      style={{
-                                        border: "1px solid red",
-                                        color: "red",
-                                        width: 20,
-                                        height: 20,
-                                        margin: 0,
-                                      }}
-                                    />
+                                    <DeleteOutlined style={deleteIconStyle} />
                                   </strong>
                                 </Button>
                               )}
                               {!showPdf && (
-                                <Col span={24}>
-                                  <Form.Item
+                                <Grid size={12}>
+                                  <FormField
                                     name="docDisplayFilename"
-                                    rules={[
-                                      {
-                                        required: true,
-                                        message: "Please add a valid url",
-                                      },
-                                      { validator: checkUrlValidation },
-                                    ]}
-                                  >
-                                    <Input
-                                      prefix={<LinkOutlined />}
-                                      placeholder="Add URL"
-                                      name="docDisplayFilename"
-                                      value={docDisplayFilename}
-                                      type="text"
-                                      style={{
-                                        width: "95%",
-                                      }}
-                                    />
-                                  </Form.Item>
-                                </Col>
+                                    control={control}
+                                    placeholder="Add URL"
+                                    required="Please add a valid url"
+                                    rules={{ validate: checkUrlValidation }}
+                                    startAdornment={
+                                      <InputAdornment position="start">
+                                        <LinkOutlined />
+                                      </InputAdornment>
+                                    }
+                                    sx={{ width: "95%" }}
+                                  />
+                                </Grid>
                               )}
-                            </Row>
+                            </Grid>
                           </div>
                         </div>
                       )}
                       {radioSelectType === "urlUpload" && (
                         <Button
-                          type="button"
+                          variant="text"
                           className="link-button talign"
-                          alt={docDisplayFilename}
                           style={{
                             marginLeft: 30,
                           }}
@@ -1084,94 +988,111 @@ const AddEditDocuments = (props) => {
                           &nbsp;&nbsp; &nbsp;&nbsp; <LinkOutlined /> &nbsp;
                           {docDisplayFilename}
                           &nbsp;&nbsp;
-                          <DeleteOutlined
-                            style={{
-                              border: "1px solid red",
-                              color: "red",
-                              width: 20,
-                              height: 20,
-                              margin: 0,
-                            }}
-                          />
+                          <DeleteOutlined style={deleteIconStyle} />
                         </Button>
                       )}
                       &nbsp; &nbsp;&nbsp; &nbsp;
                     </div>
-                  </Col>
-                  <Col
-                    span={24}
-                    style={{
+                  </Grid>
+                  <Grid
+                    size={12}
+                    sx={{
                       display: "flex",
                       justifyContent: "right",
-                      paddingRight: 20,
+                      paddingRight: "20px",
                       marginTop: 0,
-                      paddingBottom: 20,
+                      paddingBottom: "20px",
                     }}
                   >
                     <Button
-                      type="ghost"
+                      variant="outlined"
                       disabled={isButtonDisabled}
                       onClick={cancelUpload}
-                    //disabled={docObjectIds}
                     >
                       Cancel
                     </Button>{" "}
                     &nbsp;
                     <Button
                       disabled={showPdf || isButtonDisabled}
-                      type="primary"
-                      htmlType="submit"
-                    // disabled={docObjectIds}
+                      variant="contained"
+                      type="submit"
                     >
                       Add
                     </Button>
-                  </Col>
-                </Row>
-              </Form>
+                  </Grid>
+                </Grid>
+              </Box>
               <div
                 style={{
-                  backgroundColor: "white",
+                  backgroundColor: "var(--color-bg)",
                   marginTop: 10,
                   minHeight: 300,
                 }}
               >
-                <Table
-                  locale={{
-                    emptyText: (
-                      <Empty
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description="No Documents / Link Uploaded"
-                      />
-                    ),
-                  }}
-                  size="small"
-                  // rowKey={(record) => record.taskListId}
-                  style={{ padding: 24 }}
-                  columns={columns}
-                  dataSource={fileList}
-                  pagination={{
-                    pageSize: 5,
-                    hideOnSinglePage: true,
-                    defaultCurrent: 1,
-                  }}
-                />
+                <TableContainer component={Paper} sx={{ padding: 3 }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        {columns.map((col) => (
+                          <TableCell
+                            key={col.key || col.dataIndex || col.title}
+                            sx={{ width: col.width }}
+                          >
+                            {col.title}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {rows.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={columns.length}>
+                            <EmptyState
+                              title=""
+                              description="No Documents / Link Uploaded"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        pagedRows.map((row, index) => (
+                          <TableRow key={row.docDid || index}>
+                            {columns.map((col) => (
+                              <TableCell
+                                key={col.key || col.dataIndex || col.title}
+                              >
+                                {col.render
+                                  ? col.render(row[col.dataIndex], row)
+                                  : row[col.dataIndex]}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                  {rows.length > rowsPerPage && (
+                    <TablePagination
+                      component="div"
+                      count={rows.length}
+                      page={page}
+                      onPageChange={(e, p) => setPage(p)}
+                      rowsPerPage={rowsPerPage}
+                      rowsPerPageOptions={[rowsPerPage]}
+                    />
+                  )}
+                </TableContainer>
               </div>
             </div>
-          </Content>
-        </Layout>
+          </Box>
+        </Box>
       )}
       <DocumentDeleteValidate
         deleteModal={deleteModal}
         setDeleteModal={setDeleteModal}
-        // editReplaceModal={editReplaceModal}
         currentActionData={currentActionData}
-        // getStatus={null}
         getDocuments={getDocuments}
         setDisabledSubmitBtn={setDisabledSubmitBtn}
         disabledSubmitBtn={disabledSubmitBtn}
-      // refreshPage={refreshPage}
-      // data={data}
-      // setData={setData}
       />
     </div>
   );

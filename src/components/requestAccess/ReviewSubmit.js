@@ -1,11 +1,11 @@
 import { useEffect, useState, memo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Row, Col, Divider } from "antd";
+import { Grid, Divider } from "@mui/material";
 import { getCustomLabels } from "../stringConversion";
 import { saveFinalData } from "../../store/actions/requestAccessActions";
 import DisplayTC from "./DisplayTC";
-import lodash from 'lodash';
+import omit from "lodash/omit";
 
 const ReviewSubmit = (props) => {
   const [finalData, setFinalData] = useState({});
@@ -18,7 +18,7 @@ const ReviewSubmit = (props) => {
 
   let businessResponse = Object.assign({}, ...businessRequirements);
 
-  const brResult = lodash.omit(businessResponse, "vendorRequest");
+  const brResult = omit(businessResponse, "vendorRequest");
   let brData = Object.keys(brResult);
   brData = brData.filter((item) => item!="reasonForSubscription");
   const location = useLocation();
@@ -66,29 +66,29 @@ const ReviewSubmit = (props) => {
     <div className="review-submit">
       <h3>Business Requirements </h3>
 
-      <Row gutter={[2, 4]}>
+      <Grid container spacing={1}>
         {brData.map((item, i) => (
-          <Col span={8} key={i}>
+          <Grid size={4} key={i}>
             <span className="label-review">
               {getCustomLabels(item)} :
             </span>
             {brResult[item]}
-          </Col>
+          </Grid>
         ))}
-      </Row>
-      <Row>
-        <Col span={24}>
+      </Grid>
+      <Grid container>
+        <Grid size={12}>
           <span className="label-review">Reason for Subscription :</span>
           {brResult["reasonForSubscription"]}
-        </Col>
-      </Row>
+        </Grid>
+      </Grid>
 
-      { props.vendorRequest ? <> <Divider/>
+      { props.vendorRequest ? <> <Divider sx={{ my: 1 }} />
         <h4 style={{fontWeight: "bold"}}>On-Demand Vendor request</h4>
         <div style={{"display": "flex"}}>
         <h4 style={{"paddingRight": "5%"}}>Enable On-Demand Vendor request : {props.vendorRequest==='Y' ? "Yes" : "No"}</h4>
         </div></> : null }
-      <Divider />
+      <Divider sx={{ my: 1 }} />
       <DisplayTC view={props.view} subForFlag={props.subForFlag} vendorRequest={props.vendorRequest}/>
       <br />
     </div>

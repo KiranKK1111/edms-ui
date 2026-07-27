@@ -1,75 +1,40 @@
-.label-wrap .ant-form-item-label {
-    /* overflow-wrap: break-word !important; */
-    /* word-wrap: break-word !important; */
-    overflow-wrap: break-word !important;
-    word-wrap: break-word !important;
-    white-space: normal !important;
-    
+/*
+  Page-specific styles for the General Configuration step. Most of the
+  layout (label position, asterisk, tooltip icon, vertical labels) now
+  comes from `design-system/PageFormLayout.css` so every wizard step
+  looks identical.
+
+  The configuration form has many rows of fields. They were rendered as a
+  series of separate MUI Grid containers stacked directly on top of each
+  other, which left no vertical breathing room between rows (and the labels
+  sat flush against their inputs / radio groups). Turning the form into a
+  flex column with a consistent gap gives uniform spacing between every row,
+  section header and divider, and a small label gap separates each label
+  from its control.
+*/
+
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 
-.required-span:not(.ant-form-item-required-mark-optional)::before {
-    display: inline-block !important ;
-    margin-right: 4px !important;
-    color: #ff4d4f !important;
-    font-size: 14px !important;
-    font-family: SimSun, sans-serif !important;
-    line-height: 1 !important;
-    content: '*' !important;
+/* Each field label gets a little breathing room above its control so inputs
+   and radio groups no longer hug the label. */
+.config-form .page-form-label {
+  display: flex;
+  margin-bottom: 6px;
 }
 
-
-/*.ant-from-sourceProperty .ant-form-item-label > label {
-    display: inline !important;
-}*/
-
-
-.label-wrap .ant-form-item-label {
-    text-align: left ;
+/* Section headers and dividers rely on the flex gap for spacing, so drop
+   their intrinsic margins to keep the rhythm even. */
+.config-form .content-header {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
 }
 
-.listFiles .ant-form-item .ant-form-item-label {
-    max-width:20.5% !important;
-}
-
-.listFiles .ant-form-item-control {
-    max-width: 79.5% !important;
-}
-
-.histsourcefolder .ant-form-item .ant-form-item-label {
-    max-width:20.5% !important;
-}
-
-.histsourcefolder .ant-form-item-control {
-    max-width: 100%;
-}
-
-.sourcefolder .ant-form-item .ant-form-item-label {
-    max-width:20% !important;
-}
-
-.sourcefolder .ant-form-item-control {
-    max-width: 80%;
-}
-
-.storageLocation .ant-form-item .ant-form-item-label {
-    max-width:20% !important;
-}
-
-.storageLocation .ant-form-item-control {
-    max-width: 80%;
-}
-
-
-@media  only screen and (min-width: 1920px) {
-    .label-wrap .ant-form-item-label {
-        text-align: left !important;
-        
-    }
-    /*.ant-from-sourceProperty .ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
-        margin-right: 4px !important;
-        display: inline !important;
-        
-        flex: 0 0 20.3%!important;
-    
-    }*/
+.config-form .MuiDivider-root {
+  margin: 0;
 }

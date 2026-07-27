@@ -1,43 +1,42 @@
-import React, { useState, useEffect, memo, createRef } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import {
-  Button,
-  Col,
-  DatePicker,
-  Form,
-  Input,
-  Row,
-  Select,
-  Tooltip,
-  Checkbox,
-  Divider,
-  Radio,
-  message,
-  Modal,
-  Space,
-  Upload,
-} from "antd";
-import {
-  UploadOutlined,
-  PaperClipOutlined,
-  DeleteOutlined,
-  CloseCircleOutlined,
-} from "@ant-design/icons";
+import { useForm } from "react-hook-form";
+import { Box, Button, Grid } from "@mui/material";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { FieldLabel, FormField, imperativeConfirm } from "../../design-system";
+import { toast as message } from "../../design-system/toast";
 import "./SplittingConfiguration.css";
 import { configUiFn, getSchemasID } from "../../store/actions/datafeedAction";
-const { confirm } = Modal;
+
+const DEFAULT_DATAFEED_TYPE =
+  "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute";
+
+const EXISTING_SCHEMA_OPTIONS = [
+  { value: "Yes", label: "Yes" },
+  { value: "No", label: "No" },
+];
+
+const DATAFEED_TYPE_OPTIONS = [
+  { value: "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute", label: "xml" },
+  { value: "com.scb.edms.edmsdataflowsvc.routes.JSONSplitValidateRoute", label: "json" },
+  { value: "com.scb.edms.edmsdataflowsvc.routes.XpathSplitValidateRoute", label: "xpath" },
+  { value: "com.scb.edms.edmsdataflowsvc.routes.CSVInitialRoute", label: "csv" },
+];
+
+// Reject whitespace-only input (parity with the old antd validator).
+const noWhitespace = (value) =>
+  /^\s+$/.test(value) ? "Not a valid input" : true;
 
 const SplittingConfiguration = (props) => {
-  const formRef = createRef();
   const dispatch = useDispatch();
   const params = useParams();
   const configValues = useSelector((state) => state.datafeedInfo.congigUi);
   const [exitingSchema, setExitingSchema] = useState("No");
   const [schemaId, setSchemaId] = useState("NA");
-  const [dataFeedType, setDataFeedType] = useState(
-    "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute"
-  );
+  const [dataFeedType, setDataFeedType] = useState(DEFAULT_DATAFEED_TYPE);
   const [uploadSchemaDataOn, setUploadSchemaDataOn] = useState(false);
   const [uploadSchemaMetaDataOn, setUploadSchemaMetaDataOn] = useState(false);
 
@@ -50,15 +49,20 @@ const SplittingConfiguration = (props) => {
     useState(false);
   const [schemaDataObj, setSchemaDataObj] = useState();
   const [schemaMetaDataObj, setSchemaMetaDataObj] = useState();
-  const layout = {
-    labelCol: {
-      span: 8,
+
+  const { control, watch, setValue, getValues, trigger } = useForm({
+    defaultValues: {
+      exitingSchema: "No",
+      schemaId: "NA",
+      dataFeedType: DEFAULT_DATAFEED_TYPE,
+      splittingPathExpression: "",
+      splittingSourceExpression: "",
     },
-    wrapperCol: {
-      span: 16,
-    },
-    labelWrap: true,
-  };
+    mode: "onChange",
+  });
+
+  const exitingSchemaWatch = watch("exitingSchema");
+
   useEffect(() => {
     if (!props.formData && Object.keys(configValues).length > 0) {
       let dataFeedTypeText =
@@ -70,26 +74,28 @@ const SplittingConfiguration = (props) => {
             : configValues["dataFeedType"] != undefined &&
               configValues["dataFeedType"] != "string"
               ? configValues["dataFeedType"]
-              : "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute"
-          : "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute";
-      formRef.current.setFieldsValue({
-        exitingSchema:
-          configValues["schemaId"] != undefined &&
-            configValues["schemaId"] != "string" &&
-            configValues["schemaId"] != "NA" &&
-            configValues["schemaId"] != null
-            ? "Yes"
-            : "No",
-        dataFeedType: dataFeedTypeText, //configValues.hasOwnProperty("splitterCanonicalClass") ? (configValues["splitterCanonicalClass"]!=undefined && configValues["splitterCanonicalClass"]!="string")?configValues["splitterCanonicalClass"] :"com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute": "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute",
-        schemaId: configValues.hasOwnProperty("schemaId")
+              : DEFAULT_DATAFEED_TYPE
+          : DEFAULT_DATAFEED_TYPE;
+      setValue(
+        "exitingSchema",
+        configValues["schemaId"] != undefined &&
+          configValues["schemaId"] != "string" &&
+          configValues["schemaId"] != "NA" &&
+          configValues["schemaId"] != null
+          ? "Yes"
+          : "No"
+      );
+      setValue("dataFeedType", dataFeedTypeText);
+      setValue(
+        "schemaId",
+        configValues.hasOwnProperty("schemaId")
           ? configValues["schemaId"] != undefined &&
             configValues["schemaId"] != "string"
             ? configValues["schemaId"]
             : "NA"
-          : "NA",
-      });
+          : "NA"
+      );
       setDataFeedType(dataFeedTypeText);
-      //setDataFeedType((configValues["splitterCanonicalClass"]!=undefined && configValues["splitterCanonicalClass"]!="string")?configValues["splitterCanonicalClass"] :"com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute");
       setExitingSchema(
         configValues["schemaId"] != undefined &&
           configValues["schemaId"] != "string" &&
@@ -100,14 +106,36 @@ const SplittingConfiguration = (props) => {
       );
       dispatch(getSchemasID());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const schemas = useSelector((state) => state.datafeedInfo.allSchemas);
+
   useEffect(() => {
     if (props.formData) {
-      formRef.current.submit();
+      trigger().then((ok) => {
+        if (ok) onFinish(getValues());
+      });
       props.next(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.formData]);
+
+  // Parent flips `prevData` when Previous is clicked: persist the draft as-is
+  // (no validation — possibly incomplete input must survive the round trip)
+  // and then navigate back.
+  useEffect(() => {
+    if (props.prevData) {
+      const values = getValues();
+      values.schemaDataObj = schemaDataObj != undefined ? schemaDataObj : {};
+      values.schemaMetaDataObj =
+        schemaMetaDataObj != undefined ? schemaMetaDataObj : {};
+      const finalData = { ...configValues, ...values };
+      dispatch(configUiFn(finalData));
+      props.previous(true, finalData);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.prevData]);
 
   const bindData = (data) => {
     const items = Object.keys(data);
@@ -128,14 +156,14 @@ const SplittingConfiguration = (props) => {
               : "NA"
           );
         }
-        formRef.current.setFieldsValue({
-          [subItem]:
-            subItem == "schemaId"
-              ? data[subItem] != "string" && data[subItem] != undefined
-                ? data[subItem]
-                : "NA"
-              : data[subItem],
-        });
+        setValue(
+          subItem,
+          subItem == "schemaId"
+            ? data[subItem] != "string" && data[subItem] != undefined
+              ? data[subItem]
+              : "NA"
+            : data[subItem]
+        );
       });
     }
   };
@@ -160,16 +188,8 @@ const SplittingConfiguration = (props) => {
           : "NA"
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configValues]);
-
-  const checkValidation = (rule, value) => {
-    const RGX = /^\s+$/;
-    if (RGX.test(value)) {
-      return Promise.reject("Not a valid input");
-    } else {
-      return Promise.resolve("");
-    }
-  };
 
   const onFinish = (values) => {
     if (values["exitingSchema"] === "No") {
@@ -193,11 +213,11 @@ const SplittingConfiguration = (props) => {
     }
   };
 
-  const handleSelect = (event, type) => {
+  const handleSelect = (value, type) => {
     if (type == "schema") {
-      setSchemaId(event);
+      setSchemaId(value);
     } else {
-      setDataFeedType(event);
+      setDataFeedType(value);
     }
   };
 
@@ -213,68 +233,19 @@ const SplittingConfiguration = (props) => {
     }
   };
 
-  const propsSchemaDataFile = {
-    showUploadList: false,
-    name: "schemaData",
-    maxCount: 1,
-    accept: ".csv,.json,.xml,.xpath,.xsd",
-    beforeUpload: (file, fileList) => {
-      if (file.size > 100 * 1024 * 1024) {
-        message.error(
-          "File not uploaded due to: Max File size upload allowed is 100MB"
-        );
-      } else {
-        // setFileObj(file);
-      }
-    },
-    onRemove: () => {
-      setUploadSchemaDataOn(false);
-      setEditSchemaDataOn(true);
-    },
-    async customRequest({
-      action,
-      data,
-      file,
-      filename,
-      headers,
-      onError,
-      onProgress,
-      onSuccess,
-      withCredentials,
-    }) { },
-    onChange(info) { },
-  };
-
-  const propsSchemaMetaDataFile = {
-    showUploadList: false,
-    name: "schemaMetaData",
-    maxCount: 1,
-    accept: ".csv,.json,.xml,.xpath",
-    beforeUpload: (file, fileList) => {
-      if (file.size > 100 * 1024 * 1024) {
-        message.error(
-          "File not uploaded due to: Max File size upload allowed is 100MB"
-        );
-      } else {
-        // setFileObj(file);
-      }
-    },
-    onRemove: () => {
-      setUploadSchemaMetaDataOn(false);
-      setEditSchemaMetaDataOn(true);
-    },
-    async customRequest({
-      action,
-      data,
-      file,
-      filename,
-      headers,
-      onError,
-      onProgress,
-      onSuccess,
-      withCredentials,
-    }) { },
-    onChange(info) { },
+  // Replaces antd Upload beforeUpload — enforce the 100MB size cap then store.
+  const handleSchemaFileChange = (e, type) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (file.size > 100 * 1024 * 1024) {
+      message.error(
+        "File not uploaded due to: Max File size upload allowed is 100MB"
+      );
+      e.target.value = "";
+      return;
+    }
+    handleSchemaData(e, type);
+    e.target.value = "";
   };
 
   const handleDeleteSchemaDataFileUpload = (data, objectType) => {
@@ -289,7 +260,7 @@ const SplittingConfiguration = (props) => {
     }
   };
 
-  const handleDeleteSchemaDataFile = (record, type, objectType) => {
+  const handleDeleteSchemaDataFile = async (record, type, objectType) => {
     if (type === "upload") {
       let objType =
         objectType === "schemaMetaData"
@@ -308,506 +279,311 @@ const SplittingConfiguration = (props) => {
         [uploadOn]: false,
         [fileObj]: {},
       };
-      confirm({
+      const ok = await imperativeConfirm({
         title: "Do you want to replace the item",
-        icon: <CloseCircleOutlined style={{ color: "red" }} />,
-        okType: "danger",
         content: "This file/link is already existing. Replace? ",
-        onOk() {
-          handleDeleteSchemaDataFileUpload(data, objectType);
-        },
-        onCancel() {
-          if (objectType === "schemaMetaData") {
-            setUploadSchemaMetaDataOn(true);
-            setShowSchemaMetaDataFileNew(true);
-          } else {
-            //setShowSchemaDataPdf(true);
-            setUploadSchemaDataOn(true);
-            setShowSchemaDataFileNew(true);
-          }
-        },
+        okText: "OK",
+        okColor: "error",
       });
+      if (ok) {
+        handleDeleteSchemaDataFileUpload(data, objectType);
+      } else {
+        if (objectType === "schemaMetaData") {
+          setUploadSchemaMetaDataOn(true);
+          setShowSchemaMetaDataFileNew(true);
+        } else {
+          setUploadSchemaDataOn(true);
+          setShowSchemaDataFileNew(true);
+        }
+      }
     } else {
-      confirm({
+      const ok = await imperativeConfirm({
         title: "Do you want to replace the item",
-        icon: <CloseCircleOutlined style={{ color: "red" }} />,
-        okType: "danger",
         content: "This file/link is already existing. Replace? ",
-        onOk() {
-          setShowSchemaDataPdf(false);
-          setUploadSchemaDataOn(false);
-        },
-        onCancel() {
-          setShowSchemaDataPdf(true);
-          setUploadSchemaDataOn(false);
-        },
+        okText: "OK",
+        okColor: "error",
       });
+      if (ok) {
+        setShowSchemaDataPdf(false);
+        setUploadSchemaDataOn(false);
+      } else {
+        setShowSchemaDataPdf(true);
+        setUploadSchemaDataOn(false);
+      }
     }
   };
 
-  const {
-    docTitle = "string",
-    docDescription = "string",
-    docDisplayFilename = "string",
-  } = configValues || {
-    docTitle: "",
-    docDescription: "",
-    docDisplayFilename: "",
-  };
+  const splittingPathRequired =
+    dataFeedType ==
+      "com.scb.edms.edmsdataflowsvc.routes.JSONSplitValidateRoute" ||
+    dataFeedType == "json" ||
+    dataFeedType == "xpath" ||
+    dataFeedType ==
+      "com.scb.edms.edmsdataflowsvc.routes.XpathSplitValidateRoute";
+
+  const schemaDataDisabled =
+    exitingSchema == "Yes"
+      ? true
+      : false &&
+        (showSchemaDataPdf ||
+          uploadSchemaDataOn ||
+          showSchemaDataFileNew) &&
+        schemaDataObj &&
+        schemaDataObj?.name;
+
+  const schemaMetaDataDisabled =
+    exitingSchema == "Yes"
+      ? true
+      : false &&
+        (showSchemaMetaDataPdf ||
+          uploadSchemaMetaDataOn ||
+          showSchemaMetaDataFileNew) &&
+        schemaMetaDataObj &&
+        schemaMetaDataObj.name;
+
   return (
-    <Form
-      name="br-one"
-      {...layout}
-      onFinish={onFinish}
-      className="label-wrap"
+    <Box
+      component="form"
+      noValidate
+      className="config-form"
       style={{
         overflowWrap: "break-word",
         wordWrap: "break-word",
         whiteSpace: "normal",
       }}
-      ref={formRef}
     >
-      <Row gutter={[78, 0]}>
-        <Col span={8}>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <h3
             className="content-header"
             style={{ paddingBottom: "16px", fontWeight: "bold" }}
           >
             Splitting Configuration
           </h3>
-        </Col>
-      </Row>
-      <Row gutter={[78, 0]}>
-        <Col span={12}>
-          <Form.Item
-            label={
-              <Tooltip
-                title="Specify if the schema already exists or will a new schema data need to be created.  Yes = schema already exists.
-              "
-              >
-                Existing schema
-              </Tooltip>
-            }
+        </Grid>
+      </Grid>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel
+            text="Existing schema"
+            tooltip="Specify if the schema already exists or will a new schema data need to be created.  Yes = schema already exists."
+          />
+          <FormField
             name="exitingSchema"
-            rules={[
-              { required: true, message: "Existing schema is mandatory !" },
-            ]}
-          >
-            <Radio.Group value={exitingSchema} onChange={isExitingSchema}>
-              <Radio value={"Yes"}>Yes</Radio>
-              <Radio value={"No"}>No</Radio>
-            </Radio.Group>
-          </Form.Item>
-        </Col>
-      </Row>
-      <Row gutter={[78, 0]}>
-        <Col span={12}>
-          <Form.Item
-            name="schemaId"
-            label={
-              <Tooltip title="Choose the existing schema id from the dropdown list if it's an existing schema.  For new schemas, this will be blank and will be auto-generated upon submission.">
-                Schema ID
-              </Tooltip>
-            }
-            rules={[{ required: true, message: "Schema ID is mandatory !" }]}
-          >
-            {exitingSchema === "Yes" ? (
-              <Select
-                defaultValue={schemaId}
-                value={schemaId}
-                onChange={(e) => handleSelect(e, "schema")}
-                disabled={false}
-                id="schema-select"
+            type="radio"
+            row
+            control={control}
+            required="Existing schema is mandatory !"
+            onChange={isExitingSchema}
+            options={EXISTING_SCHEMA_OPTIONS}
+          />
+        </Grid>
+      </Grid>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel
+            text="Schema ID"
+            tooltip="Choose the existing schema id from the dropdown list if it's an existing schema.  For new schemas, this will be blank and will be auto-generated upon submission."
+          />
+          {exitingSchemaWatch === "Yes" ? (
+            <FormField
+              name="schemaId"
+              type="select"
+              control={control}
+              required="Schema ID is mandatory !"
+              onChange={(e) => handleSelect(e.target.value, "schema")}
+              options={
+                schemas && schemas.length > 0
+                  ? schemas.map((s) => ({
+                      value: s.schemaName,
+                      label: s.schemaName,
+                    }))
+                  : [{ value: "NA", label: "NA" }]
+              }
+            />
+          ) : (
+            <FormField
+              name="schemaId"
+              type="select"
+              control={control}
+              required="Schema ID is mandatory !"
+              disabled
+              options={[{ value: "NA", label: "NA" }]}
+            />
+          )}
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel text="Schema data" />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadFileIcon />}
+                disabled={!!schemaDataDisabled}
               >
-                {schemas && schemas.length > 0 ? (
-                  schemas.map((schemasData) => (
-                    <Option value={schemasData.schemaName}>
-                      {schemasData.schemaName}
-                    </Option>
-                  ))
-                ) : (
-                  <Option value={"NA"}>NA</Option>
-                )}
-              </Select>
-            ) : (
-              <Select defaultValue={schemaId} value={schemaId} disabled={true}>
-                <Option value={"NA"}>NA</Option>
-              </Select>
+                Click to Upload
+                <input
+                  type="file"
+                  hidden
+                  accept=".csv,.json,.xml,.xpath,.xsd"
+                  onChange={(e) => handleSchemaFileChange(e, "schemaData")}
+                />
+              </Button>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  color: "var(--color-text-tertiary)",
+                }}
+              >
+                Supported formats : .json, .xsd
+              </div>
+            </Box>
+            {showSchemaDataFileNew && schemaDataObj && schemaDataObj?.name && (
+              <Button
+                type="button"
+                className="link-button talign"
+                onClick={() =>
+                  handleDeleteSchemaDataFile(
+                    schemaDataObj,
+                    "upload",
+                    "schemaData"
+                  )
+                }
+              >
+                <strong
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <AttachFileIcon fontSize="small" />
+                  {schemaDataObj && schemaDataObj?.name ? schemaDataObj?.name : ""}
+                  <DeleteIcon
+                    fontSize="small"
+                    style={{
+                      border: "1px solid var(--color-error)",
+                      color: "var(--color-error)",
+                    }}
+                  />
+                </strong>
+              </Button>
             )}
-          </Form.Item>
-        </Col>
-        <Col span={12} style={{ paddingLeft: "0" }}>
-          <Form.Item
-            name="schemaData"
-            label={"Schema data"}
-            type="file"
-            id="fileInput"
-            onChange={(e) => handleSchemaData(e, "schemaData")}
-            rules={
-              exitingSchema === "Yes"
-                ? ""
-                : [
-                  {
-                    required: true,
-                    message: "Please Upload a valid file",
-                  },
-                ]
-            }
-          >
-            <Space
-              direction="vertical"
-              style={{
-                width: "100%",
-              }}
-              size="large"
-            >
-              <div
-                style={{
-                  display: "flex",
-                  //height: 30,
-                  //marginLeft: 77,
-                  //marginBottom: 15,
-                  //marginTop:5
-                }}
-              >
-                <Upload {...propsSchemaDataFile} maxCount={1}>
-                  <Button
-                    disabled={
-                      exitingSchema == "Yes"
-                        ? true
-                        : false &&
-                        (showSchemaDataPdf ||
-                          uploadSchemaDataOn ||
-                          showSchemaDataFileNew) &&
-                        schemaDataObj &&
-                        schemaDataObj?.name
-                    }
-                    icon={<UploadOutlined />}
-                  >
-                    Click to Upload
-                  </Button>
-
-                  <div
-                    style={{
-                      //textAlign: "left",
-                      marginTop: "auto",
-                      marginLeft: 0,
-                    }}
-                  >
-                    <div
-                      style={{
-                        //marginBottom:5,
-                        //marginLeft: 190,
-                        fontSize: "10px",
-                        fontWeight: "bold",
-                        input: "read-only",
-                        color: "gray",
-                      }}
-                    >
-                      Supported formats : .json, .xsd
-                    </div>
-                  </div>
-                </Upload>
-                {showSchemaDataFileNew &&
-                  schemaDataObj &&
-                  schemaDataObj?.name && (
-                    <Button
-                      //disabled={isButtonDisabled}
-                      type="button"
-                      className="link-button talign"
-                      alt={
-                        schemaDataObj && schemaDataObj?.name
-                          ? schemaDataObj?.name
-                          : ""
-                      }
-                      //style={{ marginLeft: 30 }}
-                      onClick={() =>
-                        handleDeleteSchemaDataFile(
-                          schemaDataObj,
-                          "upload",
-                          "schemaData"
-                        )
-                      }
-                    >
-                      <strong>
-                        &nbsp;&nbsp; &nbsp;&nbsp; <PaperClipOutlined /> &nbsp;
-                        {schemaDataObj && schemaDataObj?.name
-                          ? schemaDataObj?.name
-                          : ""}
-                        &nbsp;&nbsp;
-                        <DeleteOutlined
-                          style={{
-                            border: "1px solid red",
-                            color: "red",
-                            width: 20,
-                            height: 20,
-                            margin: 0,
-                          }}
-                        />
-                      </strong>
-                    </Button>
-                  )}
-              </div>
-            </Space>
-          </Form.Item>
-          {/*showSchemaDataPdf && (
-            <Button
-              //disabled={isButtonDisabled}
-              type="button"
-              className="link-button talign"
-              alt={docDisplayFilename}
-              style={{ marginLeft: 30 }}
-
-            >
-              <strong>
-                &nbsp;&nbsp; &nbsp;&nbsp;{" "}
-                <PaperClipOutlined /> &nbsp;
-                                    {docDisplayFilename}&nbsp;&nbsp;
-                                    <DeleteOutlined
-                  style={{
-                    border: "1px solid red",
-                    color: "red",
-                    width: 20,
-                    height: 20,
-                    margin: 0,
-                  }}
-                />
-              </strong>
-            </Button>
-                )}*/}
-        </Col>
-      </Row>
-      <Row gutter={[78, 0]}>
-        <Col span={12}>
-          <Form.Item
+          </Box>
+        </Grid>
+      </Grid>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel text="Data format" />
+          <FormField
             name="dataFeedType"
-            label="Data format"
-            rules={[
-              { required: true, message: "Data Feed type is mandatory !" },
-            ]}
-          >
-            <Select
-              defaultValue={dataFeedType}
-              value={dataFeedType}
-              onChange={(e) => handleSelect(e, "dataFeedType")}
-            >
-              <Option value="com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute">
-                xml
-              </Option>
-              <Option value="com.scb.edms.edmsdataflowsvc.routes.JSONSplitValidateRoute">
-                json
-              </Option>
-              <Option value="com.scb.edms.edmsdataflowsvc.routes.XpathSplitValidateRoute">
-                xpath
-              </Option>
-              <Option value="com.scb.edms.edmsdataflowsvc.routes.CSVInitialRoute">
-                csv
-              </Option>
-            </Select>
-          </Form.Item>
-        </Col>
+            type="select"
+            control={control}
+            required="Data Feed type is mandatory !"
+            onChange={(e) => handleSelect(e.target.value, "dataFeedType")}
+            options={DATAFEED_TYPE_OPTIONS}
+          />
+        </Grid>
 
-        <Col span={12} style={{ paddingLeft: "0" }}>
-          <Form.Item
-            name="schemaMetaData"
-            label={"Schema metadata"}
-            type="file"
-            id="fileInput"
-            onChange={handleSchemaData}
-            rules={
-              exitingSchema === "Yes"
-                ? ""
-                : [
-                  {
-                    required: true,
-                    message: "Please Upload a valid file",
-                  },
-                ]
-            }
-          >
-            <Space
-              direction="vertical"
-              style={{
-                width: "100%",
-              }}
-              size="large"
-            >
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel text="Schema metadata" />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadFileIcon />}
+                disabled={!!schemaMetaDataDisabled}
+              >
+                Click to Upload
+                <input
+                  type="file"
+                  hidden
+                  accept=".csv,.json,.xml,.xpath"
+                  onChange={(e) => handleSchemaFileChange(e, "schemaMetaData")}
+                />
+              </Button>
               <div
                 style={{
-                  display: "flex",
-                  //height: 30,
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  color: "var(--color-text-tertiary)",
                 }}
               >
-                <Upload {...propsSchemaMetaDataFile} maxCount={1}>
-                  <Button
-                    disabled={
-                      exitingSchema == "Yes"
-                        ? true
-                        : false &&
-                        (showSchemaMetaDataPdf ||
-                          uploadSchemaMetaDataOn ||
-                          showSchemaMetaDataFileNew) &&
-                        schemaMetaDataObj &&
-                        schemaMetaDataObj.name
-                    }
-                    icon={<UploadOutlined />}
-                  >
-                    Click to Upload
-                  </Button>
-                  <div
+                Supported format : .json
+              </div>
+            </Box>
+            {showSchemaMetaDataFileNew &&
+              schemaMetaDataObj &&
+              schemaMetaDataObj.name && (
+                <Button
+                  type="button"
+                  className="link-button talign"
+                  onClick={() =>
+                    handleDeleteSchemaDataFile(
+                      schemaMetaDataObj,
+                      "upload",
+                      "schemaMetaData"
+                    )
+                  }
+                >
+                  <strong
                     style={{
-                      //textAlign: "left",
-                      marginTop: "auto",
-                      marginLeft: 0,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
                     }}
                   >
-                    <div
+                    <AttachFileIcon fontSize="small" />
+                    {schemaMetaDataObj && schemaMetaDataObj.name
+                      ? schemaMetaDataObj.name
+                      : ""}
+                    <DeleteIcon
+                      fontSize="small"
                       style={{
-                        //marginBottom:5,
-                        //marginLeft: 190,
-                        fontSize: "10px",
-                        fontWeight: "bold",
-                        input: "read-only",
-                        color: "gray",
+                        border: "1px solid var(--color-error)",
+                        color: "var(--color-error)",
                       }}
-                    >
-                      Supported format : .json
-                    </div>
-                  </div>
-                </Upload>
-                {showSchemaMetaDataFileNew &&
-                  schemaMetaDataObj &&
-                  schemaMetaDataObj.name && (
-                    <Button
-                      //disabled={isButtonDisabled}
-                      type="button"
-                      className="link-button talign"
-                      alt={
-                        schemaMetaDataObj && schemaMetaDataObj.name
-                          ? schemaMetaDataObj.name
-                          : ""
-                      }
-                      //style={{ marginLeft: 30 }}
-                      onClick={() =>
-                        handleDeleteSchemaDataFile(
-                          schemaMetaDataObj,
-                          "upload",
-                          "schemaMetaData"
-                        )
-                      }
-                    >
-                      <strong>
-                        &nbsp;&nbsp; &nbsp;&nbsp; <PaperClipOutlined /> &nbsp;
-                        {schemaMetaDataObj && schemaMetaDataObj.name
-                          ? schemaMetaDataObj.name
-                          : ""}
-                        &nbsp;&nbsp;
-                        <DeleteOutlined
-                          style={{
-                            border: "1px solid red",
-                            color: "red",
-                            width: 20,
-                            height: 20,
-                            margin: 0,
-                          }}
-                        />
-                      </strong>
-                    </Button>
-                  )}
-                {/*showSchemaDataPdf && (
-            <Button
-              //disabled={isButtonDisabled}
-              type="button"
-              className="link-button talign"
-              alt={docDisplayFilename}
-              style={{ marginLeft: 30 }}
-
-            >
-              <strong>
-                &nbsp;&nbsp; &nbsp;&nbsp;{" "}
-                <PaperClipOutlined /> &nbsp;
-                                    {docDisplayFilename}&nbsp;&nbsp;
-                                    <DeleteOutlined
-                  style={{
-                    border: "1px solid red",
-                    color: "red",
-                    width: 20,
-                    height: 20,
-                    margin: 0,
-                  }}
-                />
-              </strong>
-            </Button>
-                )*/}
-              </div>
-            </Space>
-          </Form.Item>
-        </Col>
-      </Row>
-      <Row gutter={[78, 0]}>
-        <Col span={12}>
-          <Form.Item
-            label={
-              <Tooltip
-                title="Camel expression for polling the source of the data for splitting.  Must be a valid camel expression.
-              "
-              >
-                Splitting path expression
-              </Tooltip>
-            }
+                    />
+                  </strong>
+                </Button>
+              )}
+          </Box>
+        </Grid>
+      </Grid>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel
+            text="Splitting path expression"
+            tooltip="Camel expression for polling the source of the data for splitting.  Must be a valid camel expression."
+          />
+          <FormField
             name="splittingPathExpression"
-            rules={
-              dataFeedType ==
-                "com.scb.edms.edmsdataflowsvc.routes.JSONSplitValidateRoute" ||
-                dataFeedType == "json" ||
-                dataFeedType == "xpath" ||
-                dataFeedType ==
-                "com.scb.edms.edmsdataflowsvc.routes.XpathSplitValidateRoute"
-                ? [
-                  {
-                    required: true,
-                    message: "Splitting path expression is mandatory !",
-                  },
-                  { validator: checkValidation },
-                ]
-                : ""
+            control={control}
+            required={
+              splittingPathRequired
+                ? "Splitting path expression is mandatory !"
+                : false
             }
-          >
-            <Input
-              name="splittingPathExpression"
-              type="text"
-              id="splittingPathExp"
-            />
-          </Form.Item>
-        </Col>
-        <Col span={12} style={{ paddingLeft: "0px" }}>
-          <Form.Item
-            label={
-              <Tooltip
-                title={`Enter in this format: "direct://"+Vendor+"-"+ "dataset" + feedname+"splitting-queue"
-            .`}
-              >
-                Splitting source expression
-              </Tooltip>
-            }
+            rules={splittingPathRequired ? { validate: noWhitespace } : {}}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel
+            text="Splitting source expression"
+            tooltip={`Enter in this format: "direct://"+Vendor+"-"+ "dataset" + feedname+"splitting-queue".`}
+          />
+          <FormField
             name="splittingSourceExpression"
-            rules={[
-              {
-                required: true,
-                message: "Splitting source expression is mandatory !",
-              },
-              { validator: checkValidation },
-            ]}
-          >
-            <Input
-              name="splittingSourceExpression"
-              type="text"
-              id="splittingSourceExp"
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-    </Form>
+            control={control}
+            required="Splitting source expression is mandatory !"
+            rules={{ validate: noWhitespace }}
+          />
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 

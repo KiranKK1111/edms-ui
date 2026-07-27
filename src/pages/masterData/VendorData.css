@@ -3,7 +3,7 @@
   width: auto;
   font-size: 14px;
   border-radius: 2px 2px 0 0;
-  box-shadow: 0 1px 0 0 #efefef;
+  box-shadow: 0 1px 0 0 var(--color-border-secondary);
   box-sizing: border-box;
 }
 
@@ -15,9 +15,9 @@
 }
 
 .inactive-tag {
-  color: #FA8C16;
-  background-color: #FFF7E6;
-  border: 1px solid #FFD591
+  color: var(--color-warning-text);
+  background-color: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
 }
 
 .license-nested-table {
@@ -46,7 +46,7 @@
   display: flex;
 }
 .blue-menu {
-  color: #1890ff;
+  color: var(--color-primary);
   display: flex;
 }
 
@@ -64,7 +64,7 @@
 .thick {
   font-weight: bold;
   font-family: "Inter-SemiBold";
-  color: #000;
+  color: var(--color-text);
 }
 
 .agreementname-disp {
@@ -78,9 +78,31 @@
 }
 
 .license-nested-table .ant-table-title {
-  border-bottom: 1px solid #f0f0f0 !important;
+  border-bottom: 1px solid var(--color-border-secondary) !important;
 }
 
 .license-nested-table .ant-table-thead > tr > th {
-  background: #ffffff !important;
+  background: var(--color-bg-elevated) !important;
+}
+
+/* Consistent table row action alignment (Add Dataset / Add Licence / Add Feeds
+   / Edit + More) across all master-data tables. */
+.row-actions {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.row-actions .MuiButton-root {
+  min-width: 0;
+  font-weight: 600;
+  padding-inline: 6px;
+}
+
+.row-actions .MuiButton-root.Mui-disabled {
+  color: var(--color-text-tertiary);
+}
+
+/* Keep the "More" trailing icon snug against its label */
+.row-actions .MuiButton-endIcon {
+  margin-left: 2px;
 }

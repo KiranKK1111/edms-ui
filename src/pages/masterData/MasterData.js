@@ -1,10 +1,31 @@
-//__________Lib imports begin_____________
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { connect, useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import {
+  Alert,
+  Box,
+  Button,
+  ButtonGroup,
+  Chip,
+  CircularProgress,
+  IconButton,
+  InputAdornment,
+  Menu,
+  MenuItem,
+  Tab,
+  Tabs,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
+import {
+  ArrowDropDown as ArrowDropDownIcon,
+  Edit as EditIcon,
+  RemoveCircleOutlined as RemoveCircleOutlineIcon,
+  Search as SearchIcon,
+} from "@mui/icons-material";
 
-//__________ component imports begin__________
-import Headers from "../header/Header";
 import VendorData from "./VendorData";
 import DataSetData from "./DataSetData";
 import {
@@ -15,34 +36,13 @@ import { startGetContracts } from "../../store/actions/contractAction";
 import { startGetLicenses } from "../../store/actions/licenseAction";
 import { startGetDatasets } from "../../store/actions/DatasetPageActions";
 import { startGetDatafeeds } from "../../store/actions/datafeedAction";
-
-//___________CSS imports_______________
-import "./VendorDashboard.css";
-
-//_____________AntD library imports begin_____________
-import "antd/dist/antd.css";
-import { Tabs, Col, Spin } from "antd";
-import {
-  Menu,
-  Badge,
-  Alert,
-  Empty,
-  Dropdown,
-  Modal,
-  Layout,
-  Button,
-  Divider,
-  Descriptions,
-  Input,
-  message,
-  Radio,
-} from "antd";
-import {
-  EditOutlined,
-  SearchOutlined,
-  MinusCircleOutlined,
-} from "@ant-design/icons";
 import { resetState } from "../../store/actions/contractAction";
+import {
+  selectDatasetsInfo,
+  selectDatafeedsInfo,
+  selectContractData,
+  selectVendorState,
+} from "../../store/selectors";
 import isAcessMasterDataDisabled from "../../utils/accessMasterData";
 import isButtonObject from "../../utils/accessButtonCheck";
 import {
@@ -51,108 +51,205 @@ import {
   MASTERDATA_ENTITY_EDIT_DEACTIVATE_BTN,
   MASTERDATA_AGREMENT_PAGE_AND_BUTTON,
 } from "../../utils/Constants";
-import { warning } from "../../utils/warningUtils";
+import {
+  EmptyState,
+  PageLayout,
+  SideNav,
+  useConfirm,
+  useSnackbar,
+} from "../../design-system";
+import { getPageConfig } from "../../config/pageConfig";
 
-const { Sider, Content, Header } = Layout;
-const { TabPane } = Tabs;
-//_________________ VendorDashboard ___________________________________________________
+import "./VendorDashboard.css";
+
+const StatusBadge = ({ status }) => {
+  if (!status) return null;
+  const s = status.toLowerCase();
+  if (s === "active") {
+    return <Chip size="small" color="success" variant="outlined" label="Active" />;
+  }
+  if (s === "pending") {
+    return <Chip size="small" color="warning" variant="outlined" label="Pending" />;
+  }
+  if (s === "inactive") {
+    return (
+      <Chip
+        size="small"
+        variant="outlined"
+        label="Inactive"
+        sx={{ color: "var(--color-text-tertiary)", borderColor: "var(--color-border)" }}
+      />
+    );
+  }
+  return <Chip size="small" variant="outlined" label={status} />;
+};
+
+const DetailField = ({ label, children, full }) => (
+  <Box
+    sx={{
+      gridColumn: full ? "1 / -1" : "auto",
+      display: "flex",
+      flexDirection: "column",
+      gap: 0.25,
+      minWidth: 0,
+    }}
+  >
+    <Typography
+      component="div"
+      sx={{
+        fontWeight: 600,
+        fontSize: 12,
+        color: "text.secondary",
+        textTransform: "uppercase",
+        letterSpacing: "0.04em",
+      }}
+    >
+      {label}
+    </Typography>
+    <Box
+      sx={{
+        fontSize: 14,
+        color: "text.primary",
+        wordBreak: "break-word",
+        minHeight: 22,
+      }}
+    >
+      {children || (
+        <Typography component="span" sx={{ color: "text.disabled", fontSize: 13 }}>
+          —
+        </Typography>
+      )}
+    </Box>
+  </Box>
+);
+
+const ManageMenu = ({ entity, disabled, onDeactivate, warning }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+
+  const status = (entity && entity.entityStatus ? entity.entityStatus : "").toLowerCase();
+  const updateFlag =
+    entity && entity.entityUpdateFlag != null
+      ? entity.entityUpdateFlag.toString().toLowerCase()
+      : "";
+  const canEdit = updateFlag === "n";
+  const deactivateWarn =
+    updateFlag === "y" && (status === "pending" || status === "active");
+  const deactivateDisabled =
+    !deactivateWarn &&
+    (status === "inactive" || (updateFlag === "n" && status === "pending"));
+
+  return (
+    <>
+      <ButtonGroup variant="outlined" size="small" disabled={disabled}>
+        <Button onClick={(e) => setAnchorEl(e.currentTarget)}>Manage</Button>
+        <Button
+          size="small"
+          aria-label="Open manage menu"
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+        >
+          <ArrowDropDownIcon fontSize="small" />
+        </Button>
+      </ButtonGroup>
+      <Menu anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)}>
+        <MenuItem
+          component={canEdit ? Link : "div"}
+          to={canEdit ? `/masterData/modifyEntity/${entity?.entityId}` : undefined}
+          onClick={() => {
+            setAnchorEl(null);
+            if (!canEdit && warning) warning();
+          }}
+          sx={{ gap: 1 }}
+        >
+          <EditIcon fontSize="small" />
+          <strong>Edit</strong>
+        </MenuItem>
+        <MenuItem
+          disabled={deactivateDisabled}
+          onClick={() => {
+            setAnchorEl(null);
+            if (deactivateWarn) {
+              warning && warning();
+            } else {
+              onDeactivate(entity);
+            }
+          }}
+          sx={{ gap: 1, color: "error.main" }}
+        >
+          <RemoveCircleOutlineIcon fontSize="small" />
+          <strong>Deactivate</strong>
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
+
 const MasterData = (props) => {
   const [vendorID, setVendorId] = useState(0);
   const dispatch = useDispatch();
-  const datasetsInfo = useSelector(
-    (infoState) => infoState.dataset.datasetsInfo
-  );
-  const datafeedsInfo = useSelector(
-    (infoState) => infoState.datafeedInfo.datafeedsData
-  );
+  const datasetsInfo = useSelector(selectDatasetsInfo);
+  const datafeedsInfo = useSelector(selectDatafeedsInfo);
+  const contractInfo = useSelector(selectContractData);
+  const vendorState = useSelector(selectVendorState);
 
-  const contractInfo = useSelector(
-    (infoState) => infoState && infoState.contract && infoState.contract.data
-  );
-
-  const state = useSelector(
-    (infoState) => infoState
-  );
-
-  const [buttonShow, setButtonShow] = useState(true);
+  const [activeTab, setActiveTab] = useState("1");
   const [entitySiderType, setEntitySiderType] = useState("activeAndPending");
   const [loading, setLoading] = useState(false);
   const [filterEntityList, setFilterEntityList] = useState([]);
   const [outerEntityList, setOuterEntityList] = useState([]);
+  const [pendingAlertOpen, setPendingAlertOpen] = useState(true);
+
+  const confirmer = useConfirm();
+  const snackbar = useSnackbar();
 
   const isMasterDataDisabled = isAcessMasterDataDisabled();
   const isAddEntity = isButtonObject(
     MASTERDATA_MANAGEMENT_PAGE,
     MASTERDATA_MANAGEMENT_ENTITY_BTN
   );
-
   const isEditDeactivateEntity = isButtonObject(
     MASTERDATA_MANAGEMENT_PAGE,
     MASTERDATA_ENTITY_EDIT_DEACTIVATE_BTN
   );
-  let agreementList = state && state.contract && state.contract.data[0];
+  const agreementList = contractInfo && contractInfo[0];
 
-  const masterDataMgmt = (dispEntity) => {
-    return (
-      <Header className="dashboard-header">
-        <div className="dashboard-header-line1">
-          <h1 className="mainHeader">
-            Master Data Management
-            <Badge
-              color="#52c41a"
-              style={{ verticalAlign: "-webkit-baseline-middle", left: "0.9%" }}
-            />
-          </h1>
-          {dispEntity && dispEntity === true ? (
-            <Button
-              className="dashboard-header-button"
-              type="primary"
-              disabled={isAddEntity}
-            >
-              <Link to="/masterData/addEntity"> + Add entity </Link>
-            </Button>
-          ) : (
-            " "
-          )}
-        </div>
-      </Header>
-    );
-  };
+  const headerActions = (
+    <Button
+      component={Link}
+      to="/masterData/addEntity"
+      variant="contained"
+      disabled={isAddEntity}
+    >
+      + Add entity
+    </Button>
+  );
 
   let vendorDetails = {};
-  let fixingVendorKey = sessionStorage.getItem("dashKey")
+  const fixingVendorKey = sessionStorage.getItem("dashKey")
     ? sessionStorage.getItem("dashKey")
     : 0;
 
-  const getData = () => {
-    let result = dispatch(startGetVendors(true));
-    return result;
-  };
+  const getData = useCallback(() => dispatch(startGetVendors(true)), [dispatch]);
 
-  //Clear agreement fields & other fields
   useEffect(() => {
     dispatch(resetState());
-  }, []);
+  }, [dispatch]);
 
-  //*FETCHING ALL VENDOR RECORDS (Fixing Vendor Key for Persistence on page refresh );
   useEffect(() => {
+    let mounted = true;
     setLoading(true);
-
-    //*FETCHING ALL CONTRACTS
     dispatch(startGetContracts());
-
-    //*FETCHING ALL Datasets
     dispatch(startGetDatasets());
-
-    //*FETCHING ALL Datafeeds
     dispatch(startGetDatafeeds());
-
-    //*FETCHING ALL LICENSES
     dispatch(startGetLicenses());
     getData().then((res) => {
+      if (!mounted) return;
       if (res.status === 200) {
         if (vendorID === 0) {
-          if (Number(fixingVendorKey) === 0 && res.data.entityManagementList.length > 0) {
+          if (
+            Number(fixingVendorKey) === 0 &&
+            res.data.entityManagementList.length > 0
+          ) {
             setVendorId(res.data.entityManagementList[0].entityId);
             setLoading(false);
           } else {
@@ -160,174 +257,111 @@ const MasterData = (props) => {
             setLoading(false);
           }
         }
-        let entList = [];
-        entList = res.data.entityManagementList.filter((el) => {
-          return (
-            el.entityStatus.toLowerCase() === "active" ||
-            el.entityStatus.toLowerCase() === "pending"
-          );
+        const entList = res.data.entityManagementList.filter((el) => {
+          const s = (el.entityStatus || "").toLowerCase();
+          return s === "active" || s === "pending";
         });
         setFilterEntityList(entList);
         setOuterEntityList(res.data.entityManagementList);
       }
     });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  //SETTING VENDOR ID FOR SIDER
-  if (state && state.vendor && state.vendor.list && state.vendor.list.length > 0) {
-    vendorDetails = state.vendor.list.find((ele) => ele.entityId === vendorID);
+  if (vendorState && vendorState.list && vendorState.list.length > 0) {
+    vendorDetails = vendorState.list.find((ele) => ele.entityId === vendorID);
   }
 
-  useEffect(() => {
-    if (state && state.vendor && state.vendor.list && state.vendor.list.length > 0) {
-      vendorDetails = state.vendor.list.find((ele) => ele.entityId === vendorID);
+  if (
+    vendorState &&
+    vendorState.list &&
+    vendorState.list.length > 0 &&
+    !vendorDetails
+  ) {
+    const paramID = vendorState.list[0].vendorId;
+    vendorDetails = vendorState.list.find((ele) => ele.entityId === paramID);
+  }
+
+  const renderEntityUrl = (entityUrl) => {
+    if (!entityUrl) return entityUrl;
+    if (entityUrl.includes("http://") || entityUrl.includes("https://")) {
+      return entityUrl;
     }
-  }, [state.vendors]);
+    return entityUrl.trim().length > 0 ? "https://" + entityUrl : entityUrl;
+  };
 
-  //VENDORDETAILS FOR DASHBOARD PAGE
-  if (state && state.vendor && state.vendor.list && state.vendor.list.length > 0 && !vendorDetails) {
-    const paramID = state.vendor.list[0].vendorId;
-    vendorDetails = state.vendor.list.find((ele) => ele.entityId === paramID);
-  }
-
-  function renderEntityUrl(entityUrl) {
-    return (entityUrl && entityUrl.includes("http://")) ||
-      (entityUrl && entityUrl.includes("https://"))
-      ? entityUrl
-      : entityUrl && entityUrl.trim().length > 0
-        ? "https://" + entityUrl
-        : entityUrl;
-  }
-
-  //SETTING NESTED TABLE KEYS ON VENDOR RECORD CLICK
   const handleVendorClick = (paramId, i) => {
-    sessionStorage.setItem("dashKey", [`${i}`]);
+    sessionStorage.setItem("dashKey", `${i}`);
     sessionStorage.setItem("vendorid", paramId);
     setVendorId(paramId);
   };
 
-  //DEACTIVATE ENTITY BUTTON
-  const handleDeleteVendor = (Data) => {
-    let dataObj = { ...Data };
-    let agreementListByEntity = agreementList.filter((id) => {
-      return dataObj.entityId === id.agreementEdmsEntiryId;
-    });
-    let agreementStatusArr = agreementListByEntity.find((sub) => {
-      return (
-        sub.agreementStatus.toLowerCase() === "active" ||
-        sub.agreementStatus.toLowerCase() === "pending"
-      );
-    });
-    if (agreementStatusArr && agreementListByEntity.length > 0) {
-      Modal.confirm({
-        title: (
-          <h3>
-            <b>Unable to Deactivate Entity! </b>{" "}
-          </h3>
-        ),
-        content: `Status of Agreements(s) under this Entity is still active.`,
-        okButtonProps: { style: { display: "none" } },
-        cancelText: "Ok",
-      });
-    } else {
-      Modal.confirm({
-        title: (
-          <h3>
-            <b>Deactivate Entity ? </b>{" "}
-          </h3>
-        ),
-        content: "Are you sure you want to proceed?",
-        okText: "Deactivate",
-        okButtonProps: { style: { backgroundColor: "#FF4C4F", border: 0 } },
-        onOk: async () => {
-          dataObj.entityStatus = "Deactivate";
-          dataObj.entityUpdateFlag = "Y";
-          dataObj.lastUpdatedBy = localStorage.getItem("psid");
-          const res = await startUpdateEntity(dataObj);
-          if (res && res.data) {
-            message.success(
-              "Entity deactivation request submitted successfully."
-            );
-          }
-          dispatch(startGetVendors(false));
-        },
-      });
-    }
-  };
+  const vendorMenuItems = useMemo(
+    () =>
+      filterEntityList && filterEntityList.length > 0
+        ? filterEntityList.map((ele, i) => ({
+            key: i,
+            label: ele.shortName,
+            onClick: () => handleVendorClick(ele.entityId, i),
+          }))
+        : [],
+    [filterEntityList]
+  );
 
-  const checkEntityUpdateFlag = (Data, flag) => {
-    let returnCheck = false;
-    if (Data !== null && Data.entityUpdateFlag !== null && flag === "N") {
-      returnCheck =
-        Data.entityUpdateFlag.toString().toLowerCase() === "n" ? true : false;
-    } else if (
-      Data !== null &&
-      Data.entityUpdateFlag !== null &&
-      flag === "Y"
-    ) {
-      returnCheck =
-        Data.entityUpdateFlag.toString().toLowerCase() === "y" &&
-          (Data.entityStatus.toLowerCase() === "pending" ||
-            Data.entityStatus.toLowerCase() === "active")
-          ? true
-          : false;
-    }
-    return returnCheck;
-  };
-
-  //"MANAGE BUTTON" ON VENDOR DETAILS
-  const manageVendorMenu = (Data) => {
-    const manageMenu = (
-      <Menu className="more-vendor-menu">
-        <Menu.Item className="edit-vendor-menu">
-          <EditOutlined />
-          {checkEntityUpdateFlag(Data, "N") ? (
-            <Link to={`/masterData/modifyEntity/${Data.entityId}`}>
-              {" "}
-              <b>Edit</b>{" "}
-            </Link>
-          ) : (
-            <b onClick={warning}>Edit</b>
-          )}
-        </Menu.Item>
-        {checkEntityUpdateFlag(Data, "Y") ? (
-          <Menu.Item className="warn-vendor-menu" onClick={warning}>
-            <span>
-              <MinusCircleOutlined /> <b>Deactivate</b>
-            </span>
-          </Menu.Item>
-        ) : (
-          <Menu.Item
-            className="warn-vendor-menu"
-            onClick={() => handleDeleteVendor(Data)}
-            disabled={
-              (Data.entityStatus.toLowerCase() === "inactive" ? true : false) ||
-              (Data.entityUpdateFlag.toString().toLowerCase() === "n" &&
-                Data.entityStatus.toLowerCase() === "pending")
-            }
-          >
-            <span>
-              <MinusCircleOutlined /> <b>Deactivate</b>
-            </span>
-          </Menu.Item>
-        )}
-      </Menu>
+  const handleDeleteVendor = async (Data) => {
+    const dataObj = { ...Data };
+    const agreementListByEntity = (agreementList || []).filter(
+      (id) => dataObj.entityId === id.agreementEdmsEntiryId
     );
-    return manageMenu;
+    const agreementStatusArr = agreementListByEntity.find((sub) => {
+      const s = (sub.agreementStatus || "").toLowerCase();
+      return s === "active" || s === "pending";
+    });
+
+    if (agreementStatusArr && agreementListByEntity.length > 0) {
+      await confirmer.info({
+        title: "Unable to Deactivate Entity!",
+        content: "Status of Agreement(s) under this Entity is still active.",
+        okText: "Ok",
+      });
+      return;
+    }
+
+    const ok = await confirmer.confirm({
+      title: "Deactivate Entity?",
+      content: "Are you sure you want to proceed?",
+      okText: "Deactivate",
+      okColor: "error",
+    });
+    if (!ok) return;
+    dataObj.entityStatus = "Deactivate";
+    dataObj.entityUpdateFlag = "Y";
+    dataObj.lastUpdatedBy = localStorage.getItem("psid");
+    const res = await startUpdateEntity(dataObj);
+    if (res && res.data) {
+      snackbar.success("Entity deactivation request submitted successfully.");
+    }
+    dispatch(startGetVendors(false));
   };
 
-  //ENABLING & DISABLING OF BUTTONS ON VENDOR DASHBOARD
+  const showWarning = () =>
+    confirmer.info({
+      title: "Notice",
+      content: "This entity has a pending update request.",
+      okText: "Ok",
+    });
+
   let disableAddContract = false;
   let disableManage = false;
   let disableAll = false;
 
   if (vendorDetails) {
-    const isAccess = !!isMasterDataDisabled;
-    let venStatus =
+    const venStatus =
       vendorDetails && vendorDetails.taskStatus
         ? vendorDetails.taskStatus.toLowerCase()
         : "";
-
     if (venStatus === "approved") {
       disableAddContract = false;
       disableManage = false;
@@ -348,402 +382,346 @@ const MasterData = (props) => {
 
   const wordSearchHandler = (e) => {
     setEntitySiderType("all");
-    if (e.target.value && e.target.value.length > 0) {
-      let filterVendorsList = outerEntityList.filter(
-        (element) =>
-          element &&
-          element.shortName &&
-          element.shortName.toLowerCase().includes(e.target.value.toLowerCase())
-      );
-      if (filterVendorsList && filterVendorsList.length > 0) {
+    const value = e.target.value || "";
+    if (value.length > 0) {
+      const term = value.toLowerCase().trim();
+      const filterVendorsList = outerEntityList.filter((element) => {
+        if (!element) return false;
+        const fields = [
+          element.entityId,
+          element.shortName,
+          element.longName,
+        ];
+        return fields.some(
+          (field) => field && field.toString().toLowerCase().includes(term)
+        );
+      });
+      if (filterVendorsList.length > 0) {
         setVendorId(filterVendorsList[0].entityId);
         setFilterEntityList(filterVendorsList);
       } else {
         setFilterEntityList([]);
       }
-    } else if (e.target.value.length === 0) {
+    } else {
       setFilterEntityList(outerEntityList);
     }
   };
 
-  const handleTabClick = (key) => {
-    key === "1" ? setButtonShow(true) : setButtonShow(false);
+  const handleTabChange = (_, key) => {
+    setActiveTab(key);
   };
 
-  function extraTabContent() {
+  const renderAgreementButton = () => {
+    if (activeTab !== "1") return null;
     const isDisabled = !isButtonObject(
       MASTERDATA_MANAGEMENT_PAGE,
       MASTERDATA_AGREMENT_PAGE_AND_BUTTON
     );
-    let agreementButtonDispFlag =
-      isDisabled &&
-        vendorDetails.entityStatus &&
-        (vendorDetails.entityStatus.toLowerCase() === "active" ||
-          vendorDetails.entityStatus.toLowerCase() === "planned")
-        ? false
-        : true;
-    return buttonShow ? (
-      <Button type="link" disabled={agreementButtonDispFlag}>
-        <Link
-          to={`/masterData/${vendorDetails.shortName}/addAgreement`}
-          onClick={() =>
-            localStorage.setItem("entityIdInfo", vendorDetails.entityId)
-          }
-        >
-          + Add Agreement
-        </Link>
+    const status = vendorDetails && vendorDetails.entityStatus
+      ? vendorDetails.entityStatus.toLowerCase()
+      : "";
+    const agreementButtonDispFlag =
+      isDisabled && (status === "active" || status === "planned") ? false : true;
+    return (
+      <Button
+        component={Link}
+        to={`/masterData/${vendorDetails.shortName}/addAgreement`}
+        onClick={() =>
+          localStorage.setItem("entityIdInfo", vendorDetails.entityId)
+        }
+        disabled={agreementButtonDispFlag}
+        variant="text"
+      >
+        + Add Agreement
       </Button>
-    ) : (
-      ""
     );
-  }
-
-  const handleEntitySiderType = (e) => {
-    let entList = [];
-    if (e && e.target.value === "activeAndPending") {
-      entList = outerEntityList.filter(
-        (el) =>
-          el.entityStatus.toLowerCase() === "active" ||
-          el.entityStatus.toLowerCase() === "pending"
-      );
-      setFilterEntityList(entList);
-    } else if (e && e.target.value === "inactive") {
-      entList = outerEntityList.filter(
-        (el) => el.entityStatus.toLowerCase() === "inactive"
-      );
-      setFilterEntityList(entList);
-    } else {
-      entList = outerEntityList;
-      setFilterEntityList(entList);
-    }
-
-    if (entList && entList.length > 0) {
-      setVendorId(entList[0].entityId);
-    }
-    setEntitySiderType(e.target.value);
   };
 
-  return loading !== undefined && loading === false ? (
-    <div className="dashboard-main">
-      <Headers />
-      <Layout className="dashboard-page">
-        {masterDataMgmt(true)}
-        <Layout className="dashboard-content">
-          <Header className="dashboard-content-title">
-            <div className="dashboard-content-search">
-              <Input
-                name="Search entity"
-                suffix={<SearchOutlined />}
-                onChange={(e) => {
-                  let InpValue = e.target.value;
-                  InpValue = InpValue ? InpValue.toLowerCase() : InpValue;
-                  const findVal = ["re", "reg"].includes(InpValue);
-                  if (!findVal) {
-                    wordSearchHandler(e);
-                  }
-                }}
-                placeholder="Search entity"
-                id="inp-search"
-              />
-            </div>
-            <Divider />
-          </Header>
+  const handleEntitySiderType = (_, value) => {
+    if (!value) return;
+    let entList = [];
+    if (value === "activeAndPending") {
+      entList = outerEntityList.filter((el) => {
+        const s = (el.entityStatus || "").toLowerCase();
+        return s === "active" || s === "pending";
+      });
+    } else if (value === "inactive") {
+      entList = outerEntityList.filter(
+        (el) => (el.entityStatus || "").toLowerCase() === "inactive"
+      );
+    } else {
+      entList = outerEntityList;
+    }
+    setFilterEntityList(entList);
+    if (entList.length > 0) setVendorId(entList[0].entityId);
+    setEntitySiderType(value);
+  };
 
-          {/*SIDER DISPLAYED ON DASHBOARD */}
-          {vendorDetails ? (
-            <>
-              <Layout className="dashboard-vendors">
-                <div style={{ height: "100%" }}>
-                  <Sider
-                    className="dashboard-vendors-sider"
-                    width={216}
-                    style={{
-                      height: "inherit",
-                      left: 0,
-                    }}
-                  >
-                    <Radio.Group
-                      className="sider-radio-group"
-                      value={entitySiderType}
-                      onChange={handleEntitySiderType}
-                    >
-                      <Radio.Button
-                        className="sider-radio"
-                        value="activeAndPending"
-                      >
-                        Active & Pending
-                      </Radio.Button>
-                      <Radio.Button className="sider-radio" value="inactive">
-                        Inactive
-                      </Radio.Button>
-                      <Radio.Button className="sider-radio" value="all">
-                        All
-                      </Radio.Button>
-                    </Radio.Group>
-                    <div
-                      style={{
-                        height: "100%",
-                        overflow: "auto",
-                        position: "relative",
-                      }}
-                    >
-                      <Menu
-                        mode="inline"
-                        defaultSelectedKeys={
-                          fixingVendorKey ? [`${fixingVendorKey}`] : ["0"]
-                        }
-                        style={{ height: "auto" }}
-                      >
-                        {filterEntityList &&
-                          filterEntityList.length > 0 &&
-                          filterEntityList.map((ele, i) => {
-                            return (
-                              <Menu.Item
-                                key={i}
-                                onClick={() => {
-                                  handleVendorClick(ele.entityId, i);
-                                }}
-                              >
-                                {ele.shortName}
-                              </Menu.Item>
-                            );
-                          })}
-                      </Menu>
-                    </div>
-                  </Sider>
-                </div>
-                {/*VENDOR DETAILS DISPLAYED ON DASHBOARD */}
-                <Content className="dashboard-vendors-data">
-                  {vendorDetails &&
-                    vendorDetails.entityStatus &&
-                    vendorDetails.entityStatus.toLowerCase() === "pending" && (
-                      <Alert
-                        className="dashboard-vendors-alert"
-                        message="This Entity is currently under review. You will be able to add Agreements once the Entity is approved and the status is “Active” or “Planned”."
-                        type="warning"
-                        showIcon
-                        closable
-                      />
-                    )}
+  const masterDataPage = getPageConfig("masterData");
 
-                  <Descriptions
-                    className="dashboard-vendors-descriptions"
-                    size="small"
-                    title="Entity Details"
-                    extra={
-                      <Dropdown.Button
-                        overlay={() => {
-                          return manageVendorMenu(vendorDetails);
-                        }}
-                        disabled={isDisableManage}
-                      >
-                        <b>Manage</b>
-                      </Dropdown.Button>
-                    }
-                  >
-                    <Descriptions.Item label={<b>Entity ID</b>}>
-                      {vendorDetails.entityId}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label={<b>Long Name</b>}>
-                      {vendorDetails.longName}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label={<b>Short Name</b>}>
-                      {vendorDetails.shortName}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label={<b>Entity Type</b>}>
-                      {vendorDetails.entityType}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label={<b>Website</b>}>
-                      <a
-                        href={renderEntityUrl(
-                          vendorDetails.website !== null
-                            ? vendorDetails.website
-                            : ""
-                        )}
-                        target="_blank"
-                      >
-                        {vendorDetails.website}
-                      </a>
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label={<b>Status</b>}>
-                      {vendorDetails &&
-                        vendorDetails.entityStatus &&
-                        vendorDetails.entityStatus.toLowerCase() ===
-                        "active" && (
-                          <Badge
-                            className="style-badge"
-                            status="success"
-                            text="Active"
-                          />
-                        )}
-                      {vendorDetails &&
-                        vendorDetails.entityStatus &&
-                        vendorDetails.entityStatus.toLowerCase() ===
-                        "pending" && (
-                          <Badge
-                            className="style-badge"
-                            status="warning"
-                            text="Pending"
-                          />
-                        )}
-                      {vendorDetails &&
-                        vendorDetails.entityStatus &&
-                        vendorDetails.entityStatus.toLowerCase() ===
-                        "inactive" && (
-                          <Badge
-                            className="style-badge"
-                            color="#979797"
-                            text="Inactive"
-                          />
-                        )}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item>
-                      {vendorDetails.entityDescription}{" "}
-                    </Descriptions.Item>
-                  </Descriptions>
-                  <Descriptions className="dashboard-allmodules-descriptions">
-                    <Descriptions.Item>
-                      <b style={{ fontSize: "16px" }}>
-                        Agreements, Licences, Datasets and Data Feeds
-                      </b>
-                    </Descriptions.Item>
-                  </Descriptions>
-
-                  <Tabs
-                    defaultActiveKey="1"
-                    onTabClick={handleTabClick}
-                    tabBarExtraContent={extraTabContent()}
-                    className="dashboard-vendors-tab1"
-                    style={{ fontWeight: "bold" }}
-                  >
-                    <TabPane
-                      tab="Agreements & Licences"
-                      key="1"
-                      style={{ fontWeight: "normal" }}
-                    >
-                      <Layout className="dash-dash-dash">
-                        <Content className="dashboard-vendors-contracts">
-                          {
-                            contractInfo ? (
-                              contractInfo.length > 0 ? (
-                                <VendorData
-                                  className="dashboard-data-table"
-                                  vendorId={vendorID}
-                                  disableAllButtons={disableAll}
-                                  entityName={vendorDetails.shortName}
-                                  entityId={vendorDetails.entityId}
-                                />
-                              ) : (
-                                <Col
-                                  span={24}
-                                  style={{
-                                    textAlign: "center",
-                                    paddingTop: "8%",
-                                    paddingBottom: "8%"
-                                  }}
-                                >
-                                  <Spin tip="Loading..." />
-                                </Col>
-                              )
-                            ) : (
-                              <Content className="dashboard-vendors-contracts-empty">
-                                <h2> No agreements</h2>
-                              </Content>
-                            )
-                          }
-                        </Content>
-                      </Layout>
-                    </TabPane>
-                    <TabPane
-                      tab="Datasets & Data Feeds"
-                      key="2"
-                      style={{ fontWeight: "normal" }}
-                    >
-                      <Layout className="dash-dash-dash">
-                        <Content className="dashboard-vendors-contracts">
-                          {
-                            datasetsInfo ? (
-                              datasetsInfo.length > 0 ? (
-                                <DataSetData
-                                  className="dashboard-data-table"
-                                  dataSetEntityId={vendorDetails.entityId}
-                                  datasetsInfo={datasetsInfo}
-                                  datafeedsInfo={datafeedsInfo}
-                                  vendorId={vendorID}
-                                  handleTabClick={handleTabClick}
-                                />
-                              ) : (
-                                <Col
-                                  span={24}
-                                  style={{
-                                    textAlign: "center",
-                                    paddingTop: "8%",
-                                    paddingBottom: "8%"
-                                  }}
-                                >
-                                  <Spin tip="Loading..." />
-                                </Col>
-                              )
-                            ) : (
-                              <Content className="dashboard-vendors-contracts-empty">
-                                <h2> No Datasets</h2>
-                              </Content>
-                            )}
-                        </Content>
-                      </Layout>
-                    </TabPane>
-                  </Tabs>
-
-                  {/* CALLING VENDOR DATA COMPONENT FOR DISPLAYING CONTRACT & LICENSES USING EXPANDABLE TABLE */}
-                </Content>
-              </Layout>
-            </>
-          ) : (
-            <Layout>
-              {" "}
-              {/*NO VENDORS IN DATABASE*/}
-              <Content className="dashboard-vendors-empty-page">
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  imageStyle={{
-                    height: 60,
-                  }}
-                  description={<span>There are no active vendors</span>}
-                >
-                  <Button type="primary" disabled={isAddEntity}>
-                    <Link to="/masterData/addEntity">+ Add entity</Link>
-                  </Button>
-                </Empty>
-                ,
-              </Content>
-            </Layout>
-          )}
-        </Layout>
-      </Layout>
-    </div>
-  ) : (
-    <div className="dashboard-main">
-      <Headers />
-      <Layout className="dashboard-page" style={{ background: "#f0f2f5" }}>
-        {masterDataMgmt(false)}
-        <Col
-          span={24}
-          style={{
-            textAlign: "center",
-            background: "#f0f2f5",
-            paddingTop: "8%",
+  return (
+    <PageLayout
+      bounded
+      breadcrumb={masterDataPage.breadcrumb}
+      title={masterDataPage.title}
+      subtitle={masterDataPage.subtitle}
+      backTo={masterDataPage.backTo}
+      badge={masterDataPage.badge}
+      actions={headerActions}
+    >
+      {loading ? (
+        <Box
+          className="dashboard-content"
+          sx={{
+            flex: "1 1 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 320,
           }}
         >
-          <Spin tip="Loading..." />
-        </Col>
-      </Layout>
-    </div>
+          <CircularProgress size={48} />
+        </Box>
+      ) : (
+        <Box className="dashboard-content">
+          <Box className="dashboard-content-title">
+            <Box
+              className="dashboard-content-toolbar"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 2,
+                flexWrap: "wrap",
+              }}
+            >
+              <ToggleButtonGroup
+                size="small"
+                color="primary"
+                exclusive
+                value={entitySiderType}
+                onChange={handleEntitySiderType}
+              >
+                <ToggleButton value="activeAndPending">Active & Pending</ToggleButton>
+                <ToggleButton value="inactive">Inactive</ToggleButton>
+                <ToggleButton value="all">All</ToggleButton>
+              </ToggleButtonGroup>
+              <Box className="dashboard-content-search" sx={{ minWidth: 240 }}>
+                <TextField
+                  name="Search entity"
+                  size="small"
+                  fullWidth
+                  placeholder="Search entity"
+                  id="inp-search"
+                  onChange={(e) => wordSearchHandler(e)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
+          </Box>
+
+            {vendorDetails ? (
+              <Box className="dashboard-vendors" sx={{ display: "flex", gap: 2 }}>
+                <Box
+                  className="dashboard-vendors-sider"
+                  sx={{ width: 240, flex: "0 0 auto" }}
+                >
+                  <Box className="dashboard-vendors-list">
+                    <SideNav
+                      defaultSelectedKey={
+                        fixingVendorKey ? `${fixingVendorKey}` : "0"
+                      }
+                      items={vendorMenuItems}
+                    />
+                  </Box>
+                </Box>
+                <Box className="dashboard-vendors-data" sx={{ flex: 1, minWidth: 0 }}>
+                  {vendorDetails &&
+                    vendorDetails.entityStatus &&
+                    vendorDetails.entityStatus.toLowerCase() === "pending" &&
+                    pendingAlertOpen && (
+                      <Alert
+                        className="dashboard-vendors-alert"
+                        severity="warning"
+                        onClose={() => setPendingAlertOpen(false)}
+                        sx={{ mb: 2 }}
+                      >
+                        This Entity is currently under review. You will be able to add Agreements once the Entity is approved and the status is &ldquo;Active&rdquo; or &ldquo;Planned&rdquo;.
+                      </Alert>
+                    )}
+
+                  <Box className="dashboard-entity-details">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 2,
+                        mb: 2,
+                      }}
+                    >
+                      <Typography
+                        component="h3"
+                        sx={{ fontSize: 16, fontWeight: 600, m: 0 }}
+                      >
+                        Entity Details
+                      </Typography>
+                      <ManageMenu
+                        entity={vendorDetails}
+                        disabled={isDisableManage}
+                        onDeactivate={handleDeleteVendor}
+                        warning={showWarning}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: {
+                          xs: "1fr",
+                          sm: "repeat(2, minmax(0, 1fr))",
+                          md: "repeat(3, minmax(0, 1fr))",
+                        },
+                        rowGap: 2,
+                        columnGap: 3,
+                      }}
+                    >
+                      <DetailField label="Entity ID">{vendorDetails.entityId}</DetailField>
+                      <DetailField label="Long Name">{vendorDetails.longName}</DetailField>
+                      <DetailField label="Short Name">{vendorDetails.shortName}</DetailField>
+                      <DetailField label="Entity Type">{vendorDetails.entityType}</DetailField>
+                      <DetailField label="Website">
+                        {vendorDetails.website ? (
+                          <a
+                            href={renderEntityUrl(vendorDetails.website)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {vendorDetails.website}
+                          </a>
+                        ) : null}
+                      </DetailField>
+                      <DetailField label="Status">
+                        <StatusBadge status={vendorDetails.entityStatus} />
+                      </DetailField>
+                      {vendorDetails.entityDescription && (
+                        <DetailField label="Description" full>
+                          {vendorDetails.entityDescription}
+                        </DetailField>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Box className="dashboard-entity-modules">
+                    <Typography
+                      component="h3"
+                      sx={{ fontSize: 16, fontWeight: 700, mb: 1 }}
+                    >
+                      Agreements, Licences, Datasets and Data Feeds
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 2,
+                        borderBottom: "1px solid var(--color-border-secondary)",
+                      }}
+                    >
+                      <Tabs
+                        value={activeTab}
+                        onChange={handleTabChange}
+                        sx={{ minHeight: 44 }}
+                      >
+                        <Tab value="1" label="Agreements & Licences" />
+                        <Tab value="2" label="Datasets & Data Feeds" />
+                      </Tabs>
+                      {renderAgreementButton()}
+                    </Box>
+
+                    {activeTab === "1" && (
+                      <Box className="dashboard-modules-content">
+                        {contractInfo ? (
+                          contractInfo.length > 0 ? (
+                            <VendorData
+                              className="dashboard-data-table"
+                              vendorId={vendorID}
+                              disableAllButtons={disableAll}
+                              entityName={vendorDetails.shortName}
+                              entityId={vendorDetails.entityId}
+                            />
+                          ) : (
+                            <Box sx={{ textAlign: "center", py: 6 }}>
+                              <CircularProgress size={40} />
+                            </Box>
+                          )
+                        ) : (
+                          <Box className="dashboard-vendors-contracts-empty">
+                            <Typography component="h2" sx={{ fontSize: 18 }}>
+                              No agreements
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+
+                    {activeTab === "2" && (
+                      <Box className="dashboard-modules-content">
+                        {datasetsInfo ? (
+                          datasetsInfo.length > 0 ? (
+                            <DataSetData
+                              className="dashboard-data-table"
+                              dataSetEntityId={vendorDetails.entityId}
+                              datasetsInfo={datasetsInfo}
+                              datafeedsInfo={datafeedsInfo}
+                              vendorId={vendorID}
+                              handleTabClick={(key) => setActiveTab(String(key))}
+                            />
+                          ) : (
+                            <Box sx={{ textAlign: "center", py: 6 }}>
+                              <CircularProgress size={40} />
+                            </Box>
+                          )
+                        ) : (
+                          <Box className="dashboard-vendors-contracts-empty">
+                            <Typography component="h2" sx={{ fontSize: 18 }}>
+                              No Datasets
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+            ) : (
+              <Box className="dashboard-vendors-empty-page" sx={{ py: 6 }}>
+                <EmptyState
+                  title="There are no active vendors"
+                  action={
+                    <Button
+                      component={Link}
+                      to="/masterData/addEntity"
+                      variant="contained"
+                      disabled={isAddEntity}
+                    >
+                      + Add entity
+                    </Button>
+                  }
+                />
+              </Box>
+            )}
+          </Box>
+      )}
+    </PageLayout>
   );
 };
 

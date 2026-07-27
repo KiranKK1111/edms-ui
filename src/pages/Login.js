@@ -1,66 +1,41 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
 
 import {
+  Box,
   Button,
-  Divider,
+  CircularProgress,
   Tooltip,
-  Col,
-  Spin,
-  Result,
-  Typography,
-  Switch,
-} from "antd";
-import {
-  CloseCircleOutlined,
-  CheckOutlined,
-  CloseOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
-import LoginForm from "../components/login/LoginForm";
-import {
-  startUserLogin,
-  startUserLoginForgerock,
-} from "../store/actions/loginActions";
-import {
-  API_FORGEROCK_URL,
-  API_FORGEROCK_PROD_URL,
-  BUILD_ID,
-  API_MS_ENTRA_URL,
-} from "../utils/Config";
+} from "@mui/material";
+import { Person as PersonIcon } from "@mui/icons-material";
+
+import { startUserLoginForgerock } from "../store/actions/loginActions";
+import { BUILD_ID } from "../utils/Config";
 
 import "./login.css";
 import { fetchUserMatrix } from "../store/services/AuthService";
 import { LOCAL_STORAGE_OBJECT_MATRIX } from "../utils/Constants";
+import BrandLogo from "./header/BrandLogo";
+import ScbLogo from "../components/login/ScbLogo";
 import { CLIENT_ID, ENTRA_URL } from "../urlMappings";
-
-const { Paragraph, Text } = Typography;
 
 const Login = (props) => {
   const [envInfo, setEnvInfo] = useState("Local");
   const [isStage, setIsStage] = useState(false);
   const [displayErrorTemplate, setDisplayErrorTemplate] = useState(false);
-  const [switchFR, setSwitchFR] = useState(false);
   const dispatch = useDispatch();
 
   const redirect = () => {
     props.history.push("/catalog");
   };
 
-  const redirectToEntraLoginScreen = () => {
-    // let url = window.location.host;
-    // window.location.assign(
-    //   `${ENTRA_URL}/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=https://${url}&response_mode=query&scope=openid+profile+offline_access&sso_nonce=AwABEgEAAAADAOz_BQD0_85qFlR47QFPg77hd0J0P545DJiVNfBTxx5LN0IegzlnzxhcPKodamMqYJmHhfiYdDUXiuD4p_-E1Cbn_vrwnm0gAA&client-request-id=e650f9b4-d135-41df-9423-9d96770fb5ad&mscrid=e650f9b4-d135-41df-9423-9d96770fb5ad`
-    // );
-    userLogin(); //this is only meant for local changes and it should not be committed.
-  };
-
-  function findParam(url, param) {
-    var check = "" + param;
+  const findParam = (url, param) => {
+    const check = String(param);
     if (url.search(check) >= 0) {
       return url.substring(url.search(check)).split("&")[0].split("=")[1];
     }
-  }
+    return undefined;
+  };
 
   const userLogin = async () => {
     const codeVal = localStorage.getItem("code");
@@ -68,15 +43,17 @@ const Login = (props) => {
     const res = await dispatch(
       startUserLoginForgerock(code, redirect, props.viewAsGuest)
     );
-    if ((res && res.message) || (res && res.response && res.response.data && res.response.data.errorMsg) || (res && res.response && res.response.data && res.response.data.error) || (res && res.response && res.response.data && res.response.data.role === null)) {
+    const isError =
+      (res && res.message) ||
+      (res && res.response && res.response.data && res.response.data.errorMsg) ||
+      (res && res.response && res.response.data && res.response.data.error) ||
+      (res && res.response && res.response.data && res.response.data.role === null);
+    if (isError) {
       setDisplayErrorTemplate(true);
-    }
-    else {
+    } else {
       const resUserMatrix = await fetchUserMatrix(res.data.role[0]);
-      if (!resUserMatrix || !resUserMatrix.data) {
-        return null;
-      }
-      var { objectMatrix } = resUserMatrix.data;
+      if (!resUserMatrix || !resUserMatrix.data) return null;
+      const { objectMatrix } = resUserMatrix.data;
       localStorage.setItem(
         LOCAL_STORAGE_OBJECT_MATRIX,
         JSON.stringify(objectMatrix)
@@ -84,35 +61,34 @@ const Login = (props) => {
     }
   };
 
+  const redirectToEntraLoginScreen = () => {
+    let url = window.location.host;
+    // window.location.assign(
+    //   `${ENTRA_URL}/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=https://${url}&response_mode=query&scope=openid+profile+offline_access&sso_nonce=AwABEgEAAAADAOz_BQD0_85qFlR47QFPg77hd0J0P545DJiVNfBTxx5LN0IegzlnzxhcPKodamMqYJmHhfiYdDUXiuD4p_-E1Cbn_vrwnm0gAA&client-request-id=e650f9b4-d135-41df-9423-9d96770fb5ad&mscrid=e650f9b4-d135-41df-9423-9d96770fb5ad`
+    // );
+    userLogin();
+  };
+
   useEffect(() => {
     const codeVal = localStorage.getItem("code");
     const code = codeVal ? codeVal : findParam(window.location.href, "code");
     if (code) {
       localStorage.setItem("code", code);
-      const userLogin = async () => {
+      const run = async () => {
         const res = await dispatch(
           startUserLoginForgerock(code, redirect, props.viewAsGuest)
         );
-        if (
+        const isError =
           (res && res.message) ||
-          (res &&
-            res.response &&
-            res.response.data &&
-            res.response.data.errorMsg) ||
-          (res &&
-            res.response &&
-            res.response.data &&
-            res.response.data.error) ||
-          (res &&
-            res.response &&
-            res.response.data &&
-            res.response.data.role === null)
-        ) {
+          (res && res.response && res.response.data && res.response.data.errorMsg) ||
+          (res && res.response && res.response.data && res.response.data.error) ||
+          (res && res.response && res.response.data && res.response.data.role === null);
+        if (isError) {
           setDisplayErrorTemplate(true);
           localStorage.removeItem("code");
         }
       };
-      userLogin();
+      run();
     }
   }, []);
 
@@ -120,99 +96,89 @@ const Login = (props) => {
     const domain = /:\/\/([^\/]+)/
       .exec(window.location.href)[1]
       .replace("edp-", "");
-    const chkStage = domain.includes("stage");
-    setIsStage(chkStage);
-    let subdomain = domain.split(".")[0];
+    setIsStage(domain.includes("stage"));
+    const subdomain = domain.split(".")[0];
     if (!subdomain.includes("localhost")) {
       setEnvInfo(subdomain);
     }
   }, []);
 
-  const switchChange = (checked) => {
-    setSwitchFR(checked);
-  };
+  if (findParam(window.location.href, "code") && displayErrorTemplate === false) {
+    return (
+      <Box sx={{ width: "100%", textAlign: "center", pt: "20%" }}>
+        <CircularProgress size={48} />
+      </Box>
+    );
+  }
 
   return (
-    <>
-      {findParam(window.location.href, "code") &&
-      displayErrorTemplate === false ? (
-        <Col span={24} style={{ textAlign: "center", paddingTop: "20%" }}>
-          <Spin tip="Loading..." />
-        </Col>
-      ) : (
-        <div className="login-wrapper" id="main">
-          <div className="login-container">
-            <div className="logo-left">
-              <span className="logo-bg"></span>
+    <div className="login-wrapper" id="main">
+      <div className="login-container">
+        <div className="logo-left">
+          <BrandLogo className="login-edp-logo logo-bg" />
+        </div>
+        <div className="login-quote">
+          One-stop shop for all external data feeds.
+        </div>
+      </div>
+      <div className="login-panel">
+        <div className="env-left-logo">
+          {envInfo === "edp" ? null : (
+            <div className="env-info">
+              <div>Test Env: {envInfo}</div>
+              <div style={{ paddingTop: "10px" }}>Version No: {BUILD_ID}</div>
             </div>
-            <div className="login-quote">
-              One-stop shop for all external data feeds.
-            </div>
-          </div>
-          <div className="login-panel">
-            <div className="env-left-logo">
-              {envInfo === "edp" ? null : (
-                <div className="env-info">
-                  <div>Test Env: {envInfo}</div>
-                  <div style={{ paddingTop: "10px" }}>
-                    Version No: {BUILD_ID}
-                  </div>
-                </div>
-              )}
-              <div className="logo-right"></div>
-            </div>
-            <div className="login-box">
-              <h3 style={{ textAlign: "center" }}>
-                <div>Welcome to</div> External Data Platform
-              </h3>
-              <div style={{ textAlign: "center" }}>
-                <Button
-                  type="primary"
-                  className="login-form-button"
-                  size="large"
-                  // onClick={props.viewAsGuest}
-                  onClick={() => redirectToEntraLoginScreen()}
-                  id="btn-forgeRock"
-                >
-                  Continue to Catalogue
-                </Button>
-              </div>
-              <Button
-                type="link"
-                className="btn-link need-help"
-                icon={<UserOutlined />}
-              >
-                <Tooltip
-                  title={
-                    <div>
-                      <p>
-                        If you need help with the system or subscription, please
-                        don't hesitate to
-                        <a
-                          href="mailto:CCIBDATA-T&I-EDP@exchange.standardchartered.com"
-                          target="_blank"
-                          style={{ color: "white", padding: "0 3px" }}
-                        >
-                          <u>contact the EDP team.</u>
-                        </a>{" "}
-                        <br />
-                        We're here to help with any questions or concerns you
-                        may have
-                      </p>
-                    </div>
-                  }
-                  placement="bottomRight"
-                  overlayStyle={{ color: "#1e1e1e" }}
-                  overlayInnerStyle={{ textAlign: "center", fontSize: "12px" }}
-                >
-                  Contact us
-                </Tooltip>
-              </Button>
-            </div>
+          )}
+          <div className="logo-right">
+            <ScbLogo className="login-scb-logo" />
           </div>
         </div>
-      )}
-    </>
+        <div className="login-box">
+          <h3 style={{ textAlign: "center" }}>
+            <div>Welcome to</div> External Data Platform
+          </h3>
+          <div style={{ textAlign: "center" }}>
+            <Button
+              variant="contained"
+              size="large"
+              className="login-form-button"
+              onClick={redirectToEntraLoginScreen}
+              id="btn-forgeRock"
+            >
+              Continue to Catalogue
+            </Button>
+          </div>
+          <Tooltip
+            placement="bottom-end"
+            title={
+              <Box sx={{ textAlign: "center", fontSize: 12 }}>
+                If you need help with the system or subscription, please
+                don&apos;t hesitate to{" "}
+                <a
+                  href="mailto:CCIBDATA-T&I-EDP@exchange.standardchartered.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "white", padding: "0 3px" }}
+                >
+                  <u>contact the EDP team.</u>
+                </a>{" "}
+                <br />
+                We&apos;re here to help with any questions or concerns you may
+                have
+              </Box>
+            }
+          >
+            <Button
+              variant="text"
+              className="btn-link need-help"
+              startIcon={<PersonIcon fontSize="small" />}
+            >
+              Contact us
+            </Button>
+          </Tooltip>
+        </div>
+      </div>
+    </div>
   );
 };
 

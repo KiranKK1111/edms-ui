@@ -1,4 +1,4 @@
-import { CheckCircleFilled } from "@ant-design/icons";
+import { CheckCircle as CheckCircleFilled } from "@mui/icons-material";
 export const TCGeneralSubscription = (props) => {
     return (
         <>
@@ -7,7 +7,7 @@ export const TCGeneralSubscription = (props) => {
                 {props.view != "tc" ? <span>
                     <CheckCircleFilled
                         style={{
-                            color: "green",
+                            color: "var(--color-success)",
                             fontSize: "18px",
                             verticalAlign: "middle",
                             marginRight: "5px",

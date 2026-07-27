@@ -1,24 +1,64 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Card, Result, Alert, Divider, Row, Col, Badge, Tooltip } from "antd";
 import {
-  ExclamationCircleFilled,
-  QuestionCircleOutlined,
-} from "@ant-design/icons";
+  Alert,
+  Box,
+  Card,
+  Chip,
+  Divider,
+  Grid,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import {
+  ErrorOutlineOutlined as ExclamationCircleIcon,
+  HelpOutlined as QuestionCircleIcon,
+} from "@mui/icons-material";
+
 import { normalText } from "../stringConversion";
 import { subscriptionTabInfo } from "../../store/actions/DatasetPageActions";
 import DisplayTC from "../requestAccess/DisplayTC";
 
-const SubscriptionsTab = () => {
+const isQuestionTooltip = (val) => {
+  switch (val) {
+    case "department":
+      return "The department this subscription will be used under.";
+    case "clarityId":
+      return "Enter the clarity ID of the project this subscription is under.";
+    case "numberOfLicences":
+      return "Number of end users who will have access to the data from this subscriptions.";
+    default:
+      return "";
+  }
+};
 
+const LabelTooltip = ({ field }) => {
+  const toolTip = isQuestionTooltip(field);
+  if (!toolTip) return null;
+  return (
+    <Tooltip title={toolTip}>
+      <QuestionCircleIcon sx={{ fontSize: 14, color: "primary.main", ml: 0.25 }} />
+    </Tooltip>
+  );
+};
+
+const StatusChip = ({ status }) => {
+  if (!status) return null;
+  return <Chip size="small" variant="outlined" color={status} />;
+};
+
+const SubscriptionsTab = () => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const subscription = useSelector((state) => state.requestAccess.businessRequirements[0]);
+  const subscription = useSelector(
+    (state) => state.requestAccess.businessRequirements[0]
+  );
   const subscriptionId =
     location.state && location.state.data && location.state.data.subscription
       ? location.state.data.subscription.subscriptionId
       : null;
+
   useEffect(() => {
     if (subscriptionId) {
       dispatch(subscriptionTabInfo(subscriptionId));
@@ -38,136 +78,100 @@ const SubscriptionsTab = () => {
     "reasonForSubscription",
   ];
 
-  let data1 = data ? { ...data } : {};
-  let {
+  const data1 = data ? { ...data } : {};
+  const {
     licensesSubscribed: numberOfLicences,
-    subscriptionStatus: status,
+    subscriptionStatus: status0,
     subscriber: subscriptionFor,
     reason: reasonForSubscription,
     ...rest
-  } = data1 ? data1 : {};
+  } = data1;
 
   const objRevised = {
     numberOfLicences,
-    status,
+    status: status0,
     subscriptionFor,
     reasonForSubscription,
     ...rest,
   };
 
-  const isQuestionTooltip = (val) => {
-    let isToolTip;
-    switch (val) {
-      case "department":
-        isToolTip = "The department this subscription will be used under.";
-        break;
-      case "clarityId":
-        isToolTip =
-          "Enter the clarity ID of the project this subscription is under.";
-        break;
-      case "numberOfLicences":
-        isToolTip =
-          "Number of end users who will have access to the data from this subscriptions.";
-        break;
-      default:
-        isToolTip = "";
-    }
-    return isToolTip;
-  };
+  let statusKind;
+  const s = (objRevised.status || "").toLowerCase();
+  if (s === "active") statusKind = "success";
+  else if (s === "pending") statusKind = "warning";
+  else if (s === "inactive") statusKind = "error";
 
-  const labelTooltip = (tooltipTxt) => {
-    const toolTip = isQuestionTooltip(tooltipTxt);
+  if (!subscriptionId) {
     return (
-      <Tooltip title={toolTip}>
-        {toolTip && (
-          <span style={{ color: "#007AFF" }}>
-            <QuestionCircleOutlined />
-          </span>
-        )}
-      </Tooltip>
+      <Card sx={{ p: 4, textAlign: "center" }}>
+        <ExclamationCircleIcon sx={{ color: "error.main", fontSize: 48 }} />
+        <Typography
+          component="h3"
+          className="result-head"
+          sx={{ fontWeight: 700, fontSize: 18, mt: 1 }}
+        >
+          You are not currently subscribed
+        </Typography>
+        <Typography component="p" className="result-text" sx={{ mt: 1 }}>
+          To subscribe to this dataset, please request access from the Licence
+          Owner.
+        </Typography>
+      </Card>
     );
-  };
-
-  if (
-    objRevised &&
-    objRevised.status &&
-    objRevised.status.toLowerCase() === "active"
-  ) {
-    status = "success";
-  }
-  if (
-    objRevised &&
-    objRevised.status &&
-    objRevised.status.toLowerCase() === "pending"
-  ) {
-    status = "warning";
-  }
-  if (
-    objRevised &&
-    objRevised.status &&
-    objRevised.status.toLowerCase() === "inactive"
-  ) {
-    status = "error";
   }
 
-  let content = (
-    <Card>
-      <Result
-        icon={<ExclamationCircleFilled style={{ color: "red" }} />}
-        title={
-          <h3 className="result-head">You are not currently subscribed</h3>
-        }
-        extra={
-          <p className="result-text">
-            To subscribe to this dataset, please request access from the Licence
-            Owner.
-          </p>
-        }
-      />
-    </Card>
+  return (
+    <Box>
+      {subscriptionStatus && subscriptionStatus.toLowerCase() === "pending" && (
+        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => {}}>
+          Your access request is currently under review. This view will be
+          refreshed once your request is approved. Please check back later.
+        </Alert>
+      )}
+      <Card sx={{ p: 2 }}>
+        <Box className="review-submit">
+          <Typography component="h3" sx={{ pb: 0, fontSize: 18, fontWeight: 600 }}>
+            Subscription Details
+          </Typography>
+          <Divider sx={{ my: 2 }} />
+          <Typography component="h3" sx={{ fontSize: 16, fontWeight: 600, mb: 1 }}>
+            Business Requirements
+          </Typography>
+          <Grid container spacing={1}>
+            {brArr.map((item, i) => (
+              <Grid
+                item
+                xs={12}
+                sm={brArr.length === i + 1 ? 16 : 8}
+                md={brArr.length === i + 1 ? 16 : 8}
+                key={i}
+              >
+                <Typography component="span" className="label-review">
+                  {normalText(item).replace("Id", "ID")}
+                  <LabelTooltip field={item} />:
+                </Typography>{" "}
+                {item === "status" ? <StatusChip status={statusKind} /> : ""}
+                {objRevised[item]}
+              </Grid>
+            ))}
+          </Grid>
+          <Divider sx={{ my: 2 }} />
+          <DisplayTC
+            view="st"
+            subForFlag={
+              subscription &&
+              subscription.subscriptionType &&
+              subscription.subscriptionType.toLowerCase() ===
+                "individual subscription"
+                ? true
+                : false
+            }
+            vendorRequest={subscription && subscription.subscriptionVendorRequest}
+          />
+        </Box>
+      </Card>
+    </Box>
   );
-
-  if (subscriptionId) {
-    content = (
-      <div>
-        {subscriptionStatus &&
-          subscriptionStatus.toLowerCase() === "pending" && (
-            <Alert
-              style={{ marginBottom: "10px" }}
-              message="Your access request is currently under review. This view will be refreshed once your request is approved. Please check back later."
-              type="warning"
-              showIcon
-              closable
-            />
-          )}
-        <Card>
-          <div className="review-submit">
-            <h3 style={{ paddingBottom: "0" }}>Subscription Details</h3>
-            <Divider />
-            <h3>Business Requirements</h3>
-            <Row gutter={[0, 7]}>
-              {brArr.map((item, i) => (
-                <Col span={brArr.length === i + 1 ? 16 : 8} key={i}>
-                  <span className="label-review">
-                    {normalText(item).replace("Id", "ID")}
-                    {labelTooltip(item)}:
-                  </span>
-                  {item === "status" ? <Badge status={status} /> : ""}
-                  {objRevised[item]}
-                </Col>
-              ))}
-            </Row>
-            <Divider />
-            <DisplayTC
-              view="st"
-              subForFlag={subscription && subscription.subscriptionType && subscription.subscriptionType.toLowerCase() === 'individual subscription' ? true : false}
-              vendorRequest={subscription && subscription.subscriptionVendorRequest} />
-          </div>
-        </Card>
-      </div>
-    );
-  }
-  return <>{content}</>;
 };
 
 export default SubscriptionsTab;

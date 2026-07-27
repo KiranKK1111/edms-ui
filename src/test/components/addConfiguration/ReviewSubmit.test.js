@@ -1,19 +1,7 @@
 import React from "react";
 import * as redux from "react-redux";
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Form, Row, Col, Divider } from "antd";
+import { render, screen } from "@testing-library/react";
 import ReviewSubmit from "../../../components/addConfiguration/ReviewSubmit";
-
-const mockUseLocationValue = {
-  pathname: "/masterData/DF2025224459333400/addConfiguration",
-  state: { isUpdate: true },
-  search: "",
-  hash: "",
-  key: "dcvlbu",
-};
-
-configure({ adapter: new Adapter() });
 
 jest.spyOn(console, "error").mockImplementation(() => {});
 jest.mock("react-redux", () => ({
@@ -21,7 +9,13 @@ jest.mock("react-redux", () => ({
   useDispatch: () => jest.fn(),
 }));
 jest.mock("react-router-dom/cjs/react-router-dom.min", () => ({
-  useLocation: jest.fn().mockImplementation(() => mockUseLocationValue),
+  useLocation: () => ({
+    pathname: "/masterData/DF2025224459333400/addConfiguration",
+    state: { isUpdate: true },
+    search: "",
+    hash: "",
+    key: "dcvlbu",
+  }),
 }));
 
 const setupSelector = (configValues = {}, loadingConfig = false) => {
@@ -34,7 +28,7 @@ const setupSelector = (configValues = {}, loadingConfig = false) => {
   redux.useSelector.mockImplementation((cb) => cb(state));
 };
 
-describe("ReviewSubmit", () => {
+describe("ReviewSubmit (Configuration)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
@@ -42,98 +36,39 @@ describe("ReviewSubmit", () => {
     setupSelector({ proxyRequirement: "No" });
   });
 
-  it("should render a Form component", () => {
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find(Form).length).toBe(1);
+  it("should render the review-submit wrapper", () => {
+    const { container } = render(<ReviewSubmit />);
+    expect(container.querySelector(".review-submit")).toBeInTheDocument();
   });
 
-  it("should render Main Configuration header", () => {
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find("h3").at(0).text()).toBe("Main Configuration");
+  it("should render the Main Configuration, Proxy and Vendor headers", () => {
+    render(<ReviewSubmit />);
+    expect(screen.getByText("Main Configuration")).toBeInTheDocument();
+    expect(screen.getByText("Proxy")).toBeInTheDocument();
+    expect(screen.getByText("On-Demand Vendor request")).toBeInTheDocument();
   });
 
-  it("should render Proxy section header", () => {
-    const wrapper = shallow(<ReviewSubmit />);
-    const headers = wrapper.find("h3");
-    const proxyHeader = headers.filterWhere((h) => h.text() === "Proxy");
-    expect(proxyHeader.length).toBe(1);
-  });
-
-  it("should render On-Demand Vendor request header", () => {
-    const wrapper = shallow(<ReviewSubmit />);
-    const headers = wrapper.find("h3");
-    const vendorHeader = headers.filterWhere(
-      (h) => h.text() === "On-Demand Vendor request"
-    );
-    expect(vendorHeader.length).toBe(1);
-  });
-
-  it("should render Dividers between sections", () => {
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find(Divider).length).toBeGreaterThanOrEqual(3);
-  });
-
-  it("should render with proxy requirement Yes", () => {
-    setupSelector({
-      proxyRequirement: "Yes",
-      proxyHostname: "10.0.0.1",
-      proxyPort: "8080",
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find(Form).length).toBe(1);
-  });
-
-  it("should render with splitting requirement Yes", () => {
+  it("should render the Splitting Configuration section when applicable", () => {
     setupSelector({
       proxyRequirement: "No",
       splittingRequirement: "Yes",
       exitingSchema: "No",
       schemaId: "NA",
-      dataFeedType:
-        "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute",
+      dataFeedType: "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute",
       schemaDataObj: { name: "data.json" },
       schemaMetaDataObj: { name: "meta.json" },
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    const headers = wrapper.find("h3");
-    const splitHeader = headers.filterWhere(
-      (h) => h.text() === "Splitting Configuration"
-    );
-    expect(splitHeader.length).toBe(1);
+    render(<ReviewSubmit />);
+    expect(screen.getByText("Splitting Configuration")).toBeInTheDocument();
   });
 
-  it("should not render Splitting Configuration when splittingRequirement is No", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      splittingRequirement: "No",
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    const headers = wrapper.find("h3");
-    const splitHeader = headers.filterWhere(
-      (h) => h.text() === "Splitting Configuration"
-    );
-    expect(splitHeader.length).toBe(0);
+  it("should not render Splitting Configuration when not applicable", () => {
+    setupSelector({ proxyRequirement: "No", splittingRequirement: "No" });
+    render(<ReviewSubmit />);
+    expect(screen.queryByText("Splitting Configuration")).not.toBeInTheDocument();
   });
 
-  it("should render with HTTPS source protocol for API config", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      sourceProtocol: "HTTPS",
-      requestMethod: "POST",
-      requestBodyObj: { name: "body.txt" },
-      requestParameters: "",
-      requestHeaders: "Content-Type: application/json",
-      tokenReq: "No",
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    const headers = wrapper.find("h3");
-    const reqHeader = headers.filterWhere(
-      (h) => h.text() === "Request Details"
-    );
-    expect(reqHeader.length).toBe(1);
-  });
-
-  it("should show Authentication Details when HTTPS and tokenReq Yes", () => {
+  it("should render Request and Authentication details for HTTPS API config", () => {
     setupSelector({
       proxyRequirement: "No",
       sourceProtocol: "HTTPS",
@@ -145,33 +80,12 @@ describe("ReviewSubmit", () => {
       requestBodyObj: { name: "body.txt" },
       requestHeaders: "headers",
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    const headers = wrapper.find("h3");
-    const authHeader = headers.filterWhere(
-      (h) => h.text() === "Authentication Details"
-    );
-    expect(authHeader.length).toBe(1);
+    render(<ReviewSubmit />);
+    expect(screen.getByText("Request Details")).toBeInTheDocument();
+    expect(screen.getByText("Authentication Details")).toBeInTheDocument();
   });
 
-  it("should render with vendorRequestConfig Y", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      vendorRequestConfig: "Y",
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find(Form).length).toBe(1);
-  });
-
-  it("should render with vendorRequestConfig N", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      vendorRequestConfig: "N",
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find(Form).length).toBe(1);
-  });
-
-  it("should render with histLoad Yes for historic load section", () => {
+  it("should render the Historic Load section when histLoad is Yes", () => {
     setupSelector({
       proxyRequirement: "No",
       histLoad: "Yes",
@@ -179,94 +93,102 @@ describe("ReviewSubmit", () => {
       historicLoadStartDate: "2025-01-01",
       listOfFiles: "file1.csv,file2.csv",
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    const headers = wrapper.find("h3");
-    const histHeader = headers.filterWhere(
-      (h) => h.text() === "Historic Load"
-    );
-    expect(histHeader.length).toBe(1);
+    render(<ReviewSubmit />);
+    expect(screen.getByText("Historic Load")).toBeInTheDocument();
   });
 
-  it("should render data format text for JSON type", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      splittingRequirement: "Yes",
-      dataFeedType:
-        "com.scb.edms.edmsdataflowsvc.routes.JSONSplitValidateRoute",
-      exitingSchema: "No",
-      schemaDataObj: {},
-      schemaMetaDataObj: {},
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should render data format text for xpath type", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      splittingRequirement: "Yes",
-      dataFeedType:
-        "com.scb.edms.edmsdataflowsvc.routes.XpathSplitValidateRoute",
-      exitingSchema: "Yes",
-      schemaId: "schema1",
-      schemaDataObj: {},
-      schemaMetaDataObj: {},
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should render data format text for csv type", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      splittingRequirement: "Yes",
-      dataFeedType:
-        "com.scb.edms.edmsdataflowsvc.routes.CSVInitialRoute",
-      exitingSchema: "No",
-      schemaDataObj: {},
-      schemaMetaDataObj: {},
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should render with routeType as ScheduledRoute class", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      routeType: "com.scb.edms.edmsdataflowsvc.routes.ScheduledRoute",
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should render with routeType as One-time", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      routeType: "One-time",
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should display boolean values as True/False text", () => {
-    setupSelector({
-      proxyRequirement: "No",
-      isChecksum: true,
-      asynchronousRoute: "False",
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should render review-submit wrapper div", () => {
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find(".review-submit").length).toBe(1);
-  });
-
-  it("should render with Data Operations role showing warning", () => {
+  it("should render with Data Operations role", () => {
     localStorage.setItem("currentUserRole", "Data Operations");
     setupSelector({});
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.exists()).toBe(true);
+    const { container } = render(<ReviewSubmit />);
+    expect(container.querySelector(".review-submit")).toBeInTheDocument();
+  });
+
+  it("should render requestBodyFileName as a chip when HTTPS and fileName is set", () => {
+    setupSelector({
+      proxyRequirement: "No",
+      sourceProtocol: "HTTPS",
+      tokenReq: "No",
+      requestBodyFileName: "payload.json",
+    });
+    render(<ReviewSubmit />);
+    expect(screen.getByText("payload.json")).toBeInTheDocument();
+  });
+
+  it("should render inline requestBody in a pre block when no fileName is set", () => {
+    setupSelector({
+      proxyRequirement: "No",
+      sourceProtocol: "HTTPS",
+      tokenReq: "No",
+      requestBody: '{"key":"value"}',
+    });
+    render(<ReviewSubmit />);
+    expect(screen.getByText('{"key":"value"}')).toBeInTheDocument();
+  });
+
+  it("should display Yes for vendorRequestConfig Y", () => {
+    setupSelector({
+      proxyRequirement: "No",
+      vendorRequestConfig: "Y",
+    });
+    render(<ReviewSubmit />);
+    const yesItems = screen.getAllByText("Yes");
+    expect(yesItems.length).toBeGreaterThan(0);
+  });
+
+  it("should display json data feed type text", () => {
+    setupSelector({
+      proxyRequirement: "No",
+      splittingRequirement: "Yes",
+      exitingSchema: "Yes",
+      schemaId: "schema-1",
+      dataFeedType: "json",
+      schemaDataObj: { name: "data.json" },
+      schemaMetaDataObj: { name: "meta.json" },
+    });
+    render(<ReviewSubmit />);
+    expect(screen.getByText("json")).toBeInTheDocument();
+  });
+
+  it("should display xpath data feed type text", () => {
+    setupSelector({
+      proxyRequirement: "No",
+      splittingRequirement: "Yes",
+      exitingSchema: "Yes",
+      schemaId: "schema-2",
+      dataFeedType: "xpath",
+      schemaDataObj: { name: "data.xml" },
+      schemaMetaDataObj: { name: "meta.xml" },
+    });
+    render(<ReviewSubmit />);
+    expect(screen.getByText("xpath")).toBeInTheDocument();
+  });
+
+  it("should display csv data feed type text for unknown type", () => {
+    setupSelector({
+      proxyRequirement: "No",
+      splittingRequirement: "Yes",
+      exitingSchema: "Yes",
+      schemaId: "schema-3",
+      dataFeedType: "csv",
+      schemaDataObj: { name: "data.csv" },
+      schemaMetaDataObj: { name: "meta.csv" },
+    });
+    render(<ReviewSubmit />);
+    expect(screen.getByText("csv")).toBeInTheDocument();
+  });
+
+  it("should show empty schemaId when exitingSchema is No", () => {
+    setupSelector({
+      proxyRequirement: "No",
+      splittingRequirement: "Yes",
+      exitingSchema: "No",
+      schemaId: "should-not-appear",
+      dataFeedType: "xml",
+      schemaDataObj: { name: "data.json" },
+      schemaMetaDataObj: { name: "meta.json" },
+    });
+    render(<ReviewSubmit />);
+    expect(screen.queryByText("should-not-appear")).not.toBeInTheDocument();
   });
 });

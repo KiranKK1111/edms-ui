@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkedms_ui=globalThis.webpackChunkedms_ui||[]).push([[613,631],{91247(e,s,t){t.r(s),t.d(s,{default:()=>i});t(9950);var u=t(16673),a=t(63357),d=t(44414);const i=()=>{const e=(0,u.useParams)();return(0,d.jsx)(a.default,{resource:"entity",mode:e.id?"edit":"create",id:e.id})}}}]);

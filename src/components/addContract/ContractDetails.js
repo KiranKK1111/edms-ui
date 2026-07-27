@@ -1,23 +1,15 @@
-import { QuestionCircleOutlined } from "@ant-design/icons";
-import {
-  Button,
-  Col,
-  DatePicker,
-  Form,
-  Input,
-  Row,
-  Select,
-  Tooltip,
-  Checkbox,
-} from "antd";
-import { createRef, memo, useEffect, useState } from "react";
-import { useParams, useLocation, useHistory } from "react-router-dom";
+import { memo, useEffect, useState } from "react";
+import { useParams, useHistory } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { contractDetails } from "../../store/actions/contractAction";
-import { bindData } from "./bindData";
-import "./VendorContacts.css";
-import moment from "moment";
+import { useForm } from "react-hook-form";
+import { Box, Checkbox, FormControlLabel, Grid, InputAdornment } from "@mui/material";
 
+import { FormField } from "../../design-system";
+import { contractDetails } from "../../store/actions/contractAction";
+import dayjs from "../../design-system/dayjs";
+import "./VendorContacts.css";
+
+// Preserved for external consumers (VendorData.js, tests) that import this.
 export const CamelText = (input) => {
   let result = input[0].toString();
   for (let i = 1; i < input.length; i = i + 1) {
@@ -29,508 +21,345 @@ export const CamelText = (input) => {
   return result;
 };
 
-const layout = {
-  labelCol: {
-    span: 6,
-  },
-  wrapperCol: {
-    span: 18,
-  },
-};
-const { Option } = Select;
+const AGREEMENT_TYPES = [
+  { value: "Vendor contract", label: "Vendor Contract" },
+  { value: "External Partner Agreement", label: "External Partner Agreement" },
+  { value: "Internal SCB Agreement", label: "Internal SCB Agreement" },
+  { value: "No Agreement", label: "No Agreement" },
+];
+
 const ContractDetails = (props) => {
   const dispatch = useDispatch();
+  const history = useHistory();
+  const params = useParams();
   const reduxData = useSelector((state) => state.contract);
   const info = useSelector((state) => state.vendor);
-  const button = createRef();
-  const formRef = createRef();
   const { formData } = props;
-  const [vendorId, setDataVendor] = useState(null);
-  const [contractStatus, setContractStatus] = useState(null);
-  const [nameFound, setNameFound] = useState(false);
-  const [contractName, setContractName] = useState("");
-  const [vendorsList, setVendorsList] = useState([]);
-  const [entityShortNames, setEntitySortNames] = useState([]);
+
+  const esName = params.vendorId || params.id || "";
+  const isAddAgreement = history.location.pathname.includes("addAgreement");
+
   const [optionSelected, setOptionSelected] = useState(false);
   const [noExpiry, setNoExpiry] = useState(false);
   const [nameValidation, setNameValidation] = useState(false);
-  const history = useHistory();
 
-  const params = useParams();
-  const location = useLocation();
-  const [agName, setAgName] = useState({
-    esName: params.vendorId ? params.vendorId : params.id,
-    signedOnDate: "",
-    refText: "",
+  const {
+    control,
+    watch,
+    setValue,
+    getValues,
+    reset,
+    trigger,
+    setError,
+    clearErrors,
+  } = useForm({
+    defaultValues: {
+      agreementId: "",
+      agreementName: "",
+      referenceId: "",
+      referenceText: "",
+      agreementType: "",
+      dataSource: "",
+      agreementValue: "",
+      signedOn: null,
+      startDate: null,
+      expirationDate: null,
+      ScbAgreementManagerBankId: "",
+      status: "Pending",
+    },
+    mode: "onChange",
   });
 
-  useEffect(() => {
-    if (optionSelected) {
-      const url = history.location.pathname;
-      formRef.current.setFieldsValue({
-        dataSource: url.includes("addAgreement") ? params.id : params.vendorId,
-      });
-    }
-  }, [optionSelected]);
+  const entityShortNames =
+    info.list && info.list.length
+      ? [...new Set(info.list.map((v) => v.shortName))]
+      : [];
 
+  // Bind existing data in edit / navigate-back scenarios.
   useEffect(() => {
-    const name = `${agName.esName}_${agName.signedOnDate}_${agName.refText}`;
-    formRef.current.setFieldsValue({
-      agreementName: `${agName.esName}_${agName.signedOnDate}_${agName.refText}`,
-    });
-    if (reduxData.selectedContract.length && agName == name) {
-      const val = reduxData.data[0].some((v) => v.agreementName === name);
-      setNameValidation(val);
-    }
-  }, [agName]);
-
-  useEffect(() => {
-    if (noExpiry) {
-      formRef.current.setFieldsValue({
-        expirationDate: null,
-      });
-    }
-  }, [noExpiry]);
-
-  useEffect(() => {
-    formRef.current.setFieldsValue({
-      status: "Pending",
-    });
+    setValue("status", "Pending");
 
     let selectedData = [];
-    if (reduxData.selectedContract.length) {
-      const {
-        agreementExpiryDate,
-        agreementPartyId,
-        agreementReferenceText,
-        agreementScbAgreementMgrBankId,
-        agreementSignedOn,
-        agreementStartDate,
-        agreementStatus,
-        agreementReferenceId,
-      } = reduxData.selectedContract[0];
+    if (reduxData.selectedContract && reduxData.selectedContract.length) {
+      const c = reduxData.selectedContract[0];
       selectedData = [
         {
-          ...reduxData.selectedContract[0],
-          expirationDate: agreementExpiryDate,
-          dataSource: agreementPartyId,
-          referenceText: agreementReferenceText,
-          ScbAgreementManagerBankId: agreementScbAgreementMgrBankId,
-          signedOn: agreementSignedOn,
-          startDate: agreementStartDate,
-          status: agreementStatus,
-          referenceId: agreementReferenceId,
+          ...c,
+          expirationDate: c.agreementExpiryDate,
+          dataSource: c.agreementPartyId,
+          referenceText: c.agreementReferenceText,
+          ScbAgreementManagerBankId: c.agreementScbAgreementMgrBankId,
+          signedOn: c.agreementSignedOn,
+          startDate: c.agreementStartDate,
+          status: c.agreementStatus,
+          referenceId: c.agreementReferenceId,
         },
       ];
     }
-    const data = reduxData.contractDetails.length
-      ? reduxData.contractDetails
-      : selectedData;
 
-    if (data) {
-      bindData(data, formRef.current);
-      if (data && data.length) {
-        setAgName({
-          esName: params.vendorId,
-          signedOnDate: moment(data[0].signedOn).format("DDMMYYYY"),
-          refText: data[0].referenceText,
-        });
-      }
-      if (reduxData.selectedContract && reduxData.selectedContract.length) {
-        const selectedVendor = info.list.filter((item) => {
-          return item.vendorId === reduxData.selectedContract[0].vendorId;
-        });
-        setDataVendor(reduxData.selectedContract[0].vendorId);
+    const source =
+      reduxData.contractDetails && reduxData.contractDetails.length
+        ? reduxData.contractDetails
+        : selectedData;
 
-        if (selectedVendor) {
-          formRef.current.setFieldsValue({});
-        }
-      }
+    if (source && source.length) {
+      const d = source[0];
+      reset({
+        agreementId: d.agreementId || "",
+        agreementName: d.agreementName || "",
+        referenceId: d.referenceId || "",
+        referenceText: d.referenceText || "",
+        agreementType: d.agreementType || "",
+        dataSource: d.dataSource || "",
+        agreementValue: d.agreementValue || "",
+        signedOn: d.signedOn ? dayjs(new Date(d.signedOn)) : null,
+        startDate: d.startDate ? dayjs(new Date(d.startDate)) : null,
+        expirationDate: d.expirationDate
+          ? dayjs(new Date(d.expirationDate))
+          : null,
+        ScbAgreementManagerBankId: d.ScbAgreementManagerBankId || "",
+        status: d.status || "Pending",
+      });
       if (
-        data &&
-        data[0] &&
-        data[0].dataSource &&
-        data[0].dataSource === params.vendorId
+        d.dataSource &&
+        (d.dataSource === params.vendorId || d.dataSource === params.id)
       ) {
         setOptionSelected(true);
       }
-      if (data && data[0] && !data[0].expirationDate) {
-        setNoExpiry(true);
-      }
+      if (!d.expirationDate) setNoExpiry(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-compose the agreement name and run the duplicate check whenever the
+  // contributing fields change. Name = <entity>_<signedOn DDMMYYYY>_<refText>.
+  const referenceText = watch("referenceText");
+  const signedOn = watch("signedOn");
   useEffect(() => {
-    if (info.list && info.list.length) {
-      const approvedVendors = info.list.filter((vendor) => {
-        return vendor.taskStatus === "APPROVED";
+    const signedOnDate = signedOn ? dayjs(signedOn).format("DDMMYYYY") : "";
+    const name = `${esName}_${signedOnDate}_${referenceText || ""}`;
+    setValue("agreementName", name);
+
+    const all = (reduxData.data && reduxData.data[0]) || [];
+    const currentId = getValues("agreementId");
+    const candidates = currentId
+      ? all.filter((a) => String(a.agreementId) !== String(currentId))
+      : all;
+    const duplicate = candidates.some((a) => a.agreementName === name);
+    setNameValidation(duplicate);
+    if (duplicate) {
+      setError("agreementName", {
+        type: "manual",
+        message: "Agreement name already exists under this entity",
       });
-      setVendorsList(approvedVendors);
-      const shortNames = info.list.map((v) => v.shortName);
-      setEntitySortNames(shortNames);
-    }
-  }, [info]);
-
-  const disabledDate = (current) => {
-    // Can not select days before today and today
-    return current && current < moment().endOf("day");
-  };
-
-  const handleNameCheck = (e) => {
-    let inputValue = "";
-    if (e && e.target) {
-      setContractName(e.target.value);
-      inputValue = e.target.value;
     } else {
-      inputValue = contractName;
+      clearErrors("agreementName");
     }
-    if (reduxData && reduxData.data && reduxData.data[0].length) {
-      let contractList = [];
-      contractList = reduxData.data[0].filter((item) => {
-        const id = typeof e === "string" ? e : vendorId;
-        return item.vendorId === id;
-      });
-      if (contractList && contractList.length) {
-        contractList.find((ele) => {
-          if (ele.contractName.toLowerCase() === inputValue.toLowerCase()) {
-            setNameFound(true);
-            return true;
-          } else {
-            setNameFound(false);
-            return false;
-          }
-        });
-      } else {
-        setNameFound(false);
-      }
-    } else {
-      setNameFound(false);
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referenceText, signedOn, esName]);
 
-  let formFinalData = [];
-
-  const onFinish = (values) => {
-    if (!nameValidation) {
-      formFinalData.push(values);
-      if (formFinalData.length === 1) {
-        dispatch(contractDetails(formFinalData));
-        props.next(true);
-      }
-    }
-  };
-  const handledropChange = (e) => {
-    setDataVendor(e);
-    if (contractName) {
-      handleNameCheck(e);
-    }
-  };
-
+  // The parent (RequestFormSteps) flips `formData` to true when Next is
+  // clicked. Validate, and on success persist + advance to the next step.
   useEffect(() => {
     if (formData) {
-      button.current.click();
+      trigger().then((ok) => {
+        if (ok && !nameValidation) {
+          dispatch(contractDetails([getValues()]));
+          props.next(true);
+        }
+      });
       props.next(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
 
-  const handleStatusChange = (e) => {
-    setContractStatus(e);
-  };
-
-  const prefixSelector = (
-    <Select defaultValue="USD">
-      <Option value="USD">USD</Option>
-    </Select>
-  );
-
-  /*const checkValidation = (rule, value) => {
-    const RGX = /^(?:[A-Za-z]+)(?:[A-Za-z0-9 ]*)$/;
-
-    if (RGX.test(value)) {
-      return Promise.resolve("");
-    } else {
-      const msg = "Invalid characters";
-      return Promise.reject(msg);
-    }
-  };*/
-  const onChange = () => {
-    setOptionSelected((state) => !state);
-  };
-  const expiryCheckHandler = () => {
-    setNoExpiry((state) => !state);
-  };
-  const changeOption = (val) => {
-    if (val === params.vendorId) setOptionSelected(true);
-  };
-  const handelDulicateAgreementName = () => {
-    let allAgreements = reduxData.data[0];
-    let selectedAgreement = document.getElementById("agreementID").value;
-
-    //Filter out selected agreement in case of edit agreement
-
-    if (selectedAgreement) {
-      allAgreements = allAgreements.filter((eachAgreement) => {
-        return eachAgreement.agreementId != selectedAgreement;
+  const handleSameAsParty = (e) => {
+    const checked = e.target.checked;
+    setOptionSelected(checked);
+    if (checked) {
+      setValue("dataSource", isAddAgreement ? params.id : params.vendorId, {
+        shouldValidate: true,
       });
     }
-
-    let agreementName =
-      agName.esName + "_" + agName.signedOnDate + "_" + agName.refText;
-    const result = allAgreements.some(
-      (eachAgreement) => eachAgreement.agreementName === agreementName
-    );
-    if (result) setNameValidation(true);
-    else setNameValidation(false);
   };
 
+  const handleNoExpiry = (e) => {
+    const checked = e.target.checked;
+    setNoExpiry(checked);
+    if (checked) {
+      setValue("expirationDate", null);
+      clearErrors("expirationDate");
+    }
+  };
+
+  const disablePastDate = (date) => date && date < dayjs().endOf("day");
+
   return (
-    <Form {...layout} name="br-one" ref={formRef} onFinish={onFinish}>
-      <Row gutter={[78, 0]}>
-        <Col span={12}>
-          <Form.Item
-            label={<Tooltip title="Agreement ID">Agreement ID</Tooltip>}
+    <Box>
+      <Grid container spacing={3}>
+        {/* Row 1 */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
             name="agreementId"
-          >
-            <Input
-              placeholder="Agreement ID will be generated after submission"
-              name="agreementId"
-              type="text"
-              disabled
-              id="agreementID"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="agreementName"
-            label="Agreement Name"
-            rules={[{ required: true, message: "Short name is mandatory !" }]}
-            {...(nameValidation && {
-              validateStatus: "error",
-              help: "Agreement name already exists under this entity",
-            })}
-          >
-            <Input
-              placeholder="Auto-generated by system"
-              name="agreementName"
-              type="text"
-              disabled
-            />
-          </Form.Item>
-          <Form.Item name="referenceId" label="Reference ID">
-            <Input placeholder="Reference ID" name="referenceId" type="text" />
-          </Form.Item>
-          <Form.Item
-            name="referenceText"
-            label="Reference Text"
-            rules={[
-              { required: true, message: "Reference Text is mandatory !" },
-            ]}
-            tooltip={{
-              title: "Reference Text",
-              icon: <QuestionCircleOutlined style={{ color: "#1890ff" }} />,
-            }}
-          >
-            <Input
-              placeholder="Reference Text"
-              name="referenceText"
-              type="text"
-              id="refTxt"
-              onChange={(e) =>
-                setAgName({
-                  ...agName,
-                  refText: e.target.value,
-                })
-              }
-              onBlur={handelDulicateAgreementName}
-            />
-          </Form.Item>
-          <Form.Item
-            name="agreementType"
-            label="Agreement Type"
-            rules={[
-              { required: true, message: "Agreement Type is mandatory !" },
-            ]}
-          >
-            <Select defaultValue="Select">
-              <Option value="Vendor contract">Vendor Contract</Option>
-              <Option value="External Partner Agreement">
-                External Partner Agreement
-              </Option>
-              <Option value="Internal SCB Agreement">
-                Internal SCB Agreement
-              </Option>
-              <Option value="No Agreement">No Agreement</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            tooltip={{
-              title: "Data Source",
-              icon: <QuestionCircleOutlined style={{ color: "#1890ff" }} />,
-            }}
-            label={<span className="asterisk-custom">Data Source</span>}
-            style={{ padding: 0, margin: 0 }}
-          >
-            <Row>
-              <Col span={14}>
-                <Form.Item
-                  name="dataSource"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please select a data source",
-                    },
-                  ]}
-                >
-                  <Select
-                    style={{ width: "100%" }}
-                    defaultValue="Select"
-                    name="dataSource"
-                    disabled={optionSelected}
-                    onChange={changeOption}
-                  >
-                    {entityShortNames.length > 0 &&
-                      entityShortNames.map((v, i) => (
-                        <Option value={`${v}`} key={i}>
-                          {v}
-                        </Option>
-                      ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col span={10} style={{ textAlign: "right" }}>
-                <Form.Item>
-                  <Checkbox
-                    style={{ marginRight: "5px" }}
-                    onChange={onChange}
-                    checked={optionSelected}
-                  />
-                  Same as Agreement Party{" "}
-                </Form.Item>
-              </Col>
-            </Row>
-          </Form.Item>
-        </Col>
-
-        <Col span={12}>
-          <Form.Item
-            label="Agreement Value"
+            label="Agreement ID"
+            control={control}
+            placeholder="Agreement ID will be generated after submission"
+            disabled
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
             name="agreementValue"
-            rules={[
-              { required: true, message: "Agreement value is mandatory !" },
-              {
-                pattern: new RegExp("^[0-9]+$"),
+            label="Agreement Value"
+            control={control}
+            placeholder="Enter Agreement Value"
+            required="Agreement value is mandatory !"
+            rules={{
+              pattern: {
+                value: /^[0-9]+$/,
                 message: "Only numbers and positive numbers are allowed",
               },
-            ]}
-          >
-            <Input
-              addonBefore={prefixSelector}
-              placeholder="Enter Agreement Value"
-              name="agreementValue"
-              onChange={props.handleChange}
-            />
-          </Form.Item>
-          <Form.Item
-            rules={[
-              {
-                required: true,
-                message: "Signed on is required !",
-              },
-            ]}
+            }}
+            startAdornment={
+              <InputAdornment position="start">USD</InputAdornment>
+            }
+          />
+        </Grid>
+
+        {/* Row 2 */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="agreementName"
+            label="Agreement Name"
+            control={control}
+            placeholder="Auto-generated by system"
+            disabled
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
             name="signedOn"
             label="Signed On"
-            onBlur={handelDulicateAgreementName}
-          >
-            <DatePicker
-              name="signedOn"
-              format="DD/MMM/YYYY"
-              onChange={(e) => {
-                setAgName({
-                  ...agName,
-                  signedOnDate: moment(e).format("DDMMYYYY"),
-                });
-              }}
-            />
-          </Form.Item>
-          <Form.Item
-            rules={[
-              {
-                required: true,
-                message: "Start date is required !",
-              },
-            ]}
+            type="date"
+            control={control}
+            required="Signed on is required !"
+          />
+        </Grid>
+
+        {/* Row 3 */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="referenceId"
+            label="Reference ID"
+            control={control}
+            placeholder="Reference ID"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
             name="startDate"
             label="Start Date"
-          >
-            <DatePicker name="startDate" format="DD/MMM/YYYY" />
-          </Form.Item>
-          <Row>
-            <Col span={24} style={{ position: "relative" }}>
-              <Form.Item
-                rules={[
-                  {
-                    required: !noExpiry && true,
-                    message: "Expiration Date is required !",
-                  },
-                ]}
+            type="date"
+            control={control}
+            required="Start date is required !"
+          />
+        </Grid>
+
+        {/* Row 4 */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="referenceText"
+            label="Reference Text"
+            control={control}
+            placeholder="Reference Text"
+            required="Reference Text is mandatory !"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <FormField
                 name="expirationDate"
                 label="Expiration Date"
-              >
-                <DatePicker
-                  name="expirationDate"
-                  format="DD/MMM/YYYY"
-                  style={{ width: "76%" }}
-                  disabled={noExpiry}
-                />
-              </Form.Item>
-              <Form.Item
-                style={{
-                  width: "150px",
-                  position: "absolute",
-                  right: "-60px",
-                  top: 0,
-                  bottom: 0,
-                  margin: "auto",
-                }}
-              >
+                type="date"
+                control={control}
+                disabled={noExpiry}
+                required={!noExpiry ? "Expiration Date is required !" : false}
+              />
+            </Box>
+            <FormControlLabel
+              sx={{ mt: 1, mr: 0, whiteSpace: "nowrap" }}
+              control={
                 <Checkbox
-                  style={{ marginRight: "5px", verticalAlign: "middle" }}
-                  onChange={expiryCheckHandler}
+                  size="small"
                   checked={noExpiry}
+                  onChange={handleNoExpiry}
                 />
-                No Expiry
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item
+              }
+              label="No Expiry"
+            />
+          </Box>
+        </Grid>
+
+        {/* Row 5 */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="agreementType"
+            label="Agreement Type"
+            type="select"
+            control={control}
+            required="Agreement Type is mandatory !"
+            options={AGREEMENT_TYPES}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
             name="ScbAgreementManagerBankId"
             label="SCB Manager Bank ID"
-            rules={[
-              {
-                required: true,
-                message: "SCB Manager Bank ID is required !",
-              },
-            ]}
-          >
-            <Input
-              placeholder="SCB Manager Bank ID"
-              name="ScbAgreementManagerBankId"
+            control={control}
+            placeholder="SCB Manager Bank ID"
+            required="SCB Manager Bank ID is required !"
+          />
+        </Grid>
+
+        {/* Row 6 */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <FormField
+                name="dataSource"
+                label="Data Source"
+                type="autocomplete"
+                control={control}
+                required="Please select a data source"
+                disabled={optionSelected}
+                options={entityShortNames}
+              />
+            </Box>
+            <FormControlLabel
+              sx={{ mt: 1, mr: 0, whiteSpace: "nowrap" }}
+              control={
+                <Checkbox
+                  size="small"
+                  checked={optionSelected}
+                  onChange={handleSameAsParty}
+                />
+              }
+              label="Same as Agreement Party"
             />
-          </Form.Item>
-          <Form.Item
-            label={<Tooltip title="status">Status</Tooltip>}
-            rules={[{ required: true, message: "Status is mandatory !" }]}
+          </Box>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
             name="status"
-          >
-            <Input name="status" placeholder="Status" disabled />
-          </Form.Item>
-          <Form.Item style={{ display: "none" }}>
-            <Button htmlType="submit" ref={button}></Button>
-          </Form.Item>
-        </Col>
-      </Row>
-    </Form>
+            label="Status"
+            control={control}
+            placeholder="Status"
+            disabled
+          />
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 

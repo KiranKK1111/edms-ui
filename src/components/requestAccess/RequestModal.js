@@ -1,47 +1,29 @@
-import { Modal } from "antd";
-import { CloseCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import imperativeConfirm from "../../design-system/imperativeConfirm";
 
-export const confirm = (rejectHandler) => {
-  Modal.confirm({
+export const confirm = async (rejectHandler) => {
+  const ok = await imperativeConfirm({
     title: "Reject Request?",
     content:
       "This will prevent the requestor from using this licence. Are you sure you want to proceed?",
-    icon: <CloseCircleOutlined style={{ color: "red" }} />,
     okText: "Reject",
     cancelText: "Cancel",
-    width: "450px",
-    okButtonProps: {
-      type: "default",
-      danger: true,
-    },
-    cancelButtonProps: {
-      type: "default",
-    },
-    onOk() {
-      rejectHandler();
-    },
-    onCancel() {},
+    okColor: "error",
   });
+  if (ok && typeof rejectHandler === "function") {
+    rejectHandler();
+  }
 };
 
-export const confirm1 = (approveHandler) => {
-  Modal.confirm({
+export const confirm1 = async (approveHandler) => {
+  const ok = await imperativeConfirm({
     title: "Approve Request?",
     content:
-      "This will gran requestor access to the licence and its details. Are you sure you want to proceed?",
-    icon: <CheckCircleOutlined style={{ color: "green" }} />,
+      "This will grant requestor access to the licence and its details. Are you sure you want to proceed?",
     okText: "Approve",
     cancelText: "Cancel",
-    width: "450px",
-    okButtonProps: {
-      type: "primary",
-    },
-    cancelButtonProps: {
-      type: "default",
-    },
-    onOk() {
-      approveHandler();
-    },
-    onCancel() {},
+    okColor: "primary",
   });
+  if (ok && typeof approveHandler === "function") {
+    approveHandler();
+  }
 };

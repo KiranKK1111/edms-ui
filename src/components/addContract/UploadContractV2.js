@@ -1,38 +1,55 @@
-import {
-  InboxOutlined,
-  DeleteOutlined,
-  DownloadOutlined,
-} from "@ant-design/icons";
-import { Form, message, Upload, Button, Input, Select, Row, Col } from "antd";
-import axios from "axios";
-import "antd/dist/antd.css";
-import React, { useState, createRef, useEffect, memo } from "react";
-import "./VendorContacts.css";
-import { vendorContacts } from "../../store/actions/contractAction";
+import React, { useEffect, useMemo, memo } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useForm } from "react-hook-form";
+import {
+  Box,
+  Button,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Link,
+  MenuItem,
+  Select,
+  Stack,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { FormField } from "../../design-system";
+import { toast as message } from "../../design-system/toast";
+import "./VendorContacts.css";
 import { upload } from "../../store/actions/contractAction";
 import { bindData } from "./bindData";
 import { API_ADD_FILE_URL, FILE_BASE_ENDPOINT } from "../../utils/Config";
 
-const { Dragger } = Upload;
-const { Option } = Select;
-
 const UploadContract = (props) => {
   const { formData } = props;
   const dispatch = useDispatch();
-  const { pdfOfContract } = props;
-  const button = createRef();
-  const formRef = createRef();
-  const [fileList, updateFileList] = useState([]);
   const reduxData = useSelector((state) => state.contract);
 
-  const errorMessageKey = "upload-pdf-file-error";
+  const { control, setValue, getValues, reset, trigger } = useForm({
+    defaultValues: {
+      urlToAgreement: "",
+    },
+    mode: "onChange",
+  });
+
+  // Adapter exposing the antd form API expected by the shared bindData helper.
+  const formApi = useMemo(
+    () => ({
+      setFieldsValue: (obj) =>
+        Object.keys(obj).forEach((k) => setValue(k, obj[k])),
+      getFieldValue: (name) => getValues(name),
+      getFieldsValue: () => getValues(),
+      resetFields: () => reset(),
+    }),
+    [setValue, getValues, reset]
+  );
 
   const onFinish = (values) => {
     dispatch(upload(values));
     props.next(true);
-    
   };
+
   let selectedData = [];
 
   if (reduxData.selectedContract.length) {
@@ -48,17 +65,20 @@ const UploadContract = (props) => {
     : selectedData;
 
   useEffect(() => {
-    bindData(data, formRef.current);
-    
+    bindData(data, formApi);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduxData]);
 
   useEffect(() => {
     if (formData) {
-      button.current.click();
+      trigger().then((ok) => {
+        if (ok) onFinish(getValues());
+      });
       props.next(false);
     }
-    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
+
   const deleteHandler = async () => {
     const fileName = reduxData.upload[0].name;
     let raw = JSON.stringify({ fileName: `${fileName}` });
@@ -80,78 +100,110 @@ const UploadContract = (props) => {
       message.error("Error while deleting");
     }
   };
-  let defaultList = {};
-  if (reduxData.upload && reduxData.upload.length) {
-    defaultList = {
-      name: reduxData.upload[0].name,
-      uid: "1",
-      status: "done",
-      url: `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/download/${reduxData.upload[0].name}`,
-    };
-  }
 
-  const propsfile = {
-    defaultFileList:
-      reduxData.upload && reduxData.upload.length ? [defaultList] : null,
-    multiple: false,
-    showUploadList: {
-      showRemoveIcon: true,
-      removeIcon: <DeleteOutlined onClick={deleteHandler} />,
-    },
-    async customRequest({ file, onSuccess }) {
-      const formData = new FormData();
-      formData.append("file", file);
-      
-      const response = await fetch(
-        `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/upload/file`,
-        {
-          method: "post",
-          body: formData,
-        }
-      );
-      if (response.status === 200) {
-        onSuccess(response.url);
-        file.url = `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/download/${file.name}`;
-        dispatch(upload([file]));
-      }
-    },
-    beforeUpload: (file, fileList) => {
-      if (file.type !== "application/pdf") {
-        message.destroy(errorMessageKey);
-        message.error({
-          content: `${file.name} is not a pdf file`,
-          key: errorMessageKey,
-        });
-        return false;
-      } else {
-        return file.type === "application/pdf";
-      }
-    },
+  // Replaces antd Upload beforeUpload — only PDF files are accepted.
+  const beforeUpload = (file) => {
+    if (file.type !== "application/pdf") {
+      message.error(`${file.name} is not a pdf file`);
+      return false;
+    }
+    return file.type === "application/pdf";
   };
+
+  // Replaces antd Upload customRequest — push the file then store it in redux.
+  const handleFileChange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!beforeUpload(file)) {
+      e.target.value = "";
+      return;
+    }
+    const fd = new FormData();
+    fd.append("file", file);
+    const response = await fetch(
+      `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/upload/file`,
+      {
+        method: "post",
+        body: fd,
+      }
+    );
+    if (response.status === 200) {
+      file.url = `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/download/${file.name}`;
+      dispatch(upload([file]));
+    }
+    e.target.value = "";
+  };
+
+  const hasFile = reduxData.upload && reduxData.upload.length;
+  const uploadedName = hasFile ? reduxData.upload[0].name : "";
+  const uploadedUrl = hasFile
+    ? `${API_ADD_FILE_URL}/${FILE_BASE_ENDPOINT}/download/${reduxData.upload[0].name}`
+    : "";
+
   const prefixSelector = (
-    <Select defaultValue="https://">
-      <Option value="https://">https://</Option>
+    <Select
+      value="https://"
+      variant="standard"
+      disableUnderline
+      sx={{ "& .MuiSelect-select": { py: 0 } }}
+    >
+      <MenuItem value="https://">https://</MenuItem>
     </Select>
   );
+
   return (
     <div>
-      <Form ref={formRef} onFinish={onFinish}>
-        
-        <Row gutter={[78, 0]}>
-          <Col span={12}>
-            <Form.Item label="URL to Agreement" name="urlToAgreement">
-              <Input
-                addonBefore={prefixSelector}
-                placeholder="Agreement Link"
-                name="urlToAgreement"
+      <Box component="form" noValidate>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
+              name="urlToAgreement"
+              label="URL to Agreement"
+              control={control}
+              placeholder="Agreement Link"
+              startAdornment={
+                <InputAdornment position="start">
+                  {prefixSelector}
+                </InputAdornment>
+              }
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<CloudUploadIcon />}
+            >
+              Click to Upload
+              <input
+                type="file"
+                hidden
+                accept="application/pdf"
+                onChange={handleFileChange}
               />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Form.Item style={{ display: "none" }}>
-          <Button htmlType="submit" ref={button}></Button>
-        </Form.Item>
-      </Form>
+            </Button>
+            {hasFile ? (
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ mt: 1 }}
+              >
+                <Link href={uploadedUrl} target="_blank" rel="noreferrer">
+                  {uploadedName}
+                </Link>
+                <IconButton
+                  size="small"
+                  aria-label="delete"
+                  onClick={deleteHandler}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Stack>
+            ) : null}
+          </Grid>
+        </Grid>
+      </Box>
     </div>
   );
 };

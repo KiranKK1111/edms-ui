@@ -1,7 +1,7 @@
 .details-header-review {
   height: 24px;
-  
-  color: #0f1217;
+
+  color: var(--color-text);
   font-family: Inter;
   font-size: 16px;
   font-weight: bold;
@@ -13,7 +13,7 @@
   margin-left: "5px";
   height: 16px;
   width: 45px;
-  color: #007aff;
+  color: var(--color-primary);
   font-family: Inter;
   font-size: 12px;
   font-weight: 500;
@@ -24,7 +24,7 @@
 .label-review {
   height: 24px;
   margin-bottom: 0px;
-  color: #0f1217;
+  color: var(--color-text);
   font-family: Inter;
   font-size: 14px;
   font-weight: 500;
@@ -33,8 +33,8 @@
 }
 .name-review {
   height: 22px;
-  
-  color: #344456;
+
+  color: var(--color-text-secondary);
   font-family: Inter;
   font-size: 14px;
   letter-spacing: 0;

@@ -1,13 +1,9 @@
 import React from "react";
-import { configure, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Row, Col, Divider } from "antd";
-import { useSelector, useDispatch } from "react-redux";
+import { render, screen } from "@testing-library/react";
+import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import ReviewSubmit from "../../../components/requestAccess/ReviewSubmit";
 import { saveFinalData } from "../../../store/actions/requestAccessActions";
-
-configure({ adapter: new Adapter() });
 
 jest.spyOn(console, "error").mockImplementation(() => {});
 
@@ -27,7 +23,12 @@ jest.mock("../../../store/actions/requestAccessActions", () => ({
 }));
 
 jest.mock("../../../components/requestAccess/DisplayTC", () => (props) => (
-  <div data-testid="mock-display-tc" data-view={props.view} data-subforflag={String(props.subForFlag)} data-vendorrequest={props.vendorRequest} />
+  <div
+    data-testid="mock-display-tc"
+    data-view={props.view}
+    data-subforflag={String(props.subForFlag)}
+    data-vendorrequest={props.vendorRequest}
+  />
 ));
 
 jest.mock("../../../components/stringConversion", () => ({
@@ -82,101 +83,80 @@ describe("ReviewSubmit (requestAccess)", () => {
       view: "tc",
       subForFlag: false,
     };
-    return mount(<ReviewSubmit {...defaultProps} {...props} />);
+    return render(<ReviewSubmit {...defaultProps} {...props} />);
   };
 
   it("should render without crashing", () => {
-    const wrapper = renderComponent();
-    expect(wrapper.exists()).toBe(true);
+    const { container } = renderComponent();
+    expect(container.querySelector(".review-submit")).toBeInTheDocument();
   });
 
   it("should render Business Requirements heading", () => {
-    const wrapper = renderComponent();
-    expect(wrapper.find("h3").text()).toBe("Business Requirements ");
+    const { container } = renderComponent();
+    expect(container.querySelector("h3").textContent).toContain(
+      "Business Requirements"
+    );
   });
 
   it("should render review-submit container", () => {
-    const wrapper = renderComponent();
-    expect(wrapper.find(".review-submit").length).toBe(1);
+    const { container } = renderComponent();
+    expect(container.querySelectorAll(".review-submit").length).toBe(1);
   });
 
-  it("should render Row components", () => {
-    const wrapper = renderComponent();
-    expect(wrapper.find(Row).length).toBeGreaterThanOrEqual(2);
+  it("should render the business requirement field values", () => {
+    renderComponent();
+    expect(screen.getByText("TestProject")).toBeInTheDocument();
   });
 
-  it("should filter out reasonForSubscription from brData mapped in the first Row", () => {
-    const wrapper = renderComponent();
-    const firstRow = wrapper.find(Row).at(0);
-    const cols = firstRow.find(Col);
-    const labelTexts = cols.map((col) => col.find(".label-review").text());
-    labelTexts.forEach((text) => {
-      expect(text).not.toContain("reasonForSubscription");
-    });
-  });
-
-  it("should display reasonForSubscription in the second Row", () => {
-    const wrapper = renderComponent();
-    const secondRow = wrapper.find(Row).at(1);
-    expect(secondRow.find(".label-review").text()).toContain("Reason for Subscription");
-    expect(secondRow.text()).toContain("Business need");
-  });
-
-  it("should render brData fields (excluding reasonForSubscription and vendorRequest)", () => {
-    const wrapper = renderComponent();
-    const firstRow = wrapper.find(Row).at(0);
-    const cols = firstRow.find(Col);
-    expect(cols.length).toBeGreaterThan(0);
-  });
-
-  it("should render Col with span 8 for each brData field in first Row", () => {
-    const wrapper = renderComponent();
-    const firstRow = wrapper.find(Row).at(0);
-    const cols = firstRow.find(Col);
-    cols.forEach((col) => {
-      expect(col.prop("span")).toBe(8);
-    });
+  it("should display reasonForSubscription value", () => {
+    renderComponent();
+    expect(screen.getByText("Reason for Subscription :")).toBeInTheDocument();
+    expect(screen.getByText("Business need")).toBeInTheDocument();
   });
 
   it("should render vendor request section when vendorRequest prop is Y", () => {
-    const wrapper = renderComponent({ vendorRequest: "Y" });
-    const h4s = wrapper.find("h4");
-    expect(h4s.someWhere((n) => n.text().includes("On-Demand Vendor request"))).toBe(true);
-    expect(h4s.someWhere((n) => n.text().includes("Yes"))).toBe(true);
+    renderComponent({ vendorRequest: "Y" });
+    expect(screen.getByText("On-Demand Vendor request")).toBeInTheDocument();
+    expect(
+      screen.getByText("Enable On-Demand Vendor request : Yes")
+    ).toBeInTheDocument();
   });
 
   it("should show No for vendor request when vendorRequest prop is N", () => {
-    const wrapper = renderComponent({ vendorRequest: "N" });
-    const h4s = wrapper.find("h4");
-    expect(h4s.someWhere((n) => n.text().includes("No"))).toBe(true);
+    renderComponent({ vendorRequest: "N" });
+    expect(
+      screen.getByText("Enable On-Demand Vendor request : No")
+    ).toBeInTheDocument();
   });
 
   it("should not render vendor request section when vendorRequest prop is falsy", () => {
-    const wrapper = renderComponent({ vendorRequest: null });
-    const h4s = wrapper.find("h4");
-    const vendorH4 = h4s.filterWhere((n) => n.text().includes("On-Demand Vendor request"));
-    expect(vendorH4.length).toBe(0);
+    renderComponent({ vendorRequest: null });
+    expect(
+      screen.queryByText(/Enable On-Demand Vendor request/)
+    ).not.toBeInTheDocument();
   });
 
   it("should not render vendor request section when vendorRequest prop is undefined", () => {
-    const wrapper = renderComponent({ vendorRequest: undefined });
-    const h4s = wrapper.find("h4");
-    const vendorH4 = h4s.filterWhere((n) => n.text().includes("On-Demand Vendor request"));
-    expect(vendorH4.length).toBe(0);
+    renderComponent({ vendorRequest: undefined });
+    expect(
+      screen.queryByText(/Enable On-Demand Vendor request/)
+    ).not.toBeInTheDocument();
   });
 
-  it("should render Divider component", () => {
-    const wrapper = renderComponent();
-    expect(wrapper.find(Divider).length).toBeGreaterThanOrEqual(1);
+  it("should render Divider components", () => {
+    const { container } = renderComponent();
+    expect(
+      container.querySelectorAll(".MuiDivider-root").length
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("should render DisplayTC component with correct props", () => {
-    const wrapper = renderComponent({ view: "tc", subForFlag: false, vendorRequest: "Y" });
-    const displayTC = wrapper.find("[data-testid='mock-display-tc']");
-    expect(displayTC.length).toBe(1);
-    expect(displayTC.prop("data-view")).toBe("tc");
-    expect(displayTC.prop("data-subforflag")).toBe("false");
-    expect(displayTC.prop("data-vendorrequest")).toBe("Y");
+    renderComponent({ view: "tc", subForFlag: false, vendorRequest: "Y" });
+    const displayTC = screen.getByTestId("mock-display-tc");
+    expect(displayTC).toBeInTheDocument();
+    expect(displayTC.getAttribute("data-view")).toBe("tc");
+    expect(displayTC.getAttribute("data-subforflag")).toBe("false");
+    expect(displayTC.getAttribute("data-vendorrequest")).toBe("Y");
   });
 
   it("should dispatch saveFinalData on mount", () => {
@@ -235,8 +215,6 @@ describe("ReviewSubmit (requestAccess)", () => {
   });
 
   it("should set subscriptionTermsConditionsVendorRequest to Not Approved because brResult omits vendorRequest", () => {
-    // brResult = lodash.omit(businessResponse, "vendorRequest"), so brResult["vendorRequest"] is undefined
-    // Therefore subscriptionTermsConditionsVendorRequest is always "Not Approved"
     renderComponent();
     const callArg = saveFinalData.mock.calls[0][0];
     expect(callArg.subscriptionTermsConditionsVendorRequest).toBe("Not Approved");
@@ -315,24 +293,18 @@ describe("ReviewSubmit (requestAccess)", () => {
   });
 
   it("should render two Dividers when vendorRequest prop is provided", () => {
-    const wrapper = renderComponent({ vendorRequest: "Y" });
-    expect(wrapper.find(Divider).length).toBe(2);
+    const { container } = renderComponent({ vendorRequest: "Y" });
+    expect(container.querySelectorAll(".MuiDivider-root").length).toBe(2);
   });
 
   it("should render one Divider when vendorRequest prop is null", () => {
-    const wrapper = renderComponent({ vendorRequest: null });
-    expect(wrapper.find(Divider).length).toBe(1);
+    const { container } = renderComponent({ vendorRequest: null });
+    expect(container.querySelectorAll(".MuiDivider-root").length).toBe(1);
   });
 
   it("should render a br tag at the bottom", () => {
-    const wrapper = renderComponent();
-    expect(wrapper.find("br").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("should render first Row with gutter", () => {
-    const wrapper = renderComponent();
-    const firstRow = wrapper.find(Row).at(0);
-    expect(firstRow.prop("gutter")).toEqual([2, 4]);
+    const { container } = renderComponent();
+    expect(container.querySelectorAll("br").length).toBeGreaterThanOrEqual(1);
   });
 
   it("should set subscriptionVendorRequest from businessResponse", () => {
@@ -351,12 +323,5 @@ describe("ReviewSubmit (requestAccess)", () => {
     renderComponent();
     const callArg = saveFinalData.mock.calls[0][0];
     expect(callArg.reason).toBe("Business need");
-  });
-
-  it("should render second Row with Col span 24", () => {
-    const wrapper = renderComponent();
-    const secondRow = wrapper.find(Row).at(1);
-    const col = secondRow.find(Col);
-    expect(col.first().prop("span")).toBe(24);
   });
 });

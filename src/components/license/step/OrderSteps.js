@@ -1,5 +1,17 @@
-import { Button, Steps, Modal, Table } from "antd";
-import "antd/dist/antd.css";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { connect, useDispatch, useSelector } from "react-redux";
 import { startGetContracts } from "../../../store/actions/contractAction";
@@ -11,13 +23,36 @@ import {
 import LicenseDetails from "../licenseDetails/LicenseDetails";
 import ReviewSubmit from "../reviewSubmit/ReviewSubmit";
 
-import { useParams, useHistory } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { upload } from "../../../store/actions/licensedataAction";
 
 import LicenseLimitations from "../licenseLimitations/LicenseLimitations";
 
+/*
+  OrderStep — the licence wizard body. It is a CONTROLLED component: the generic
+  <RecordFormPage> controller (the "component" driver) owns the step index
+  (`current`), the validation trigger flag (`formData`) and the step navigation
+  (`next`), and renders the stepper + pinned Prev/Next footer + Cancel/Submit so
+  the licence screen looks identical to the entity/agreement wizards.
+
+  This component still owns the large shared form state and all the field
+  handlers, and renders only the CURRENT step's content. It reports its step
+  list to the controller via `onStepsReady`, and reports validity / the latest
+  saved snapshot via `isFormValid` / `savedData` (in effects, never during
+  render).
+
+  Props (from controller):
+    current       number  — active step index
+    formData      bool    — when true, the active step validates + advances
+    next          fn      — next(true) advance, next(false) reset the trigger
+    onStepsReady  fn      — receives [{ key, title }] for the chrome stepper
+    isFormValid   fn      — receives true on the last (Review) step
+    savedData     fn      — receives the latest state snapshot for the payload
+*/
 const OrderStep = (props) => {
-  const [current, setCurrent] = React.useState(0);
+  const current = props.current || 0;
+  const formData = props.formData || false;
+  const next = props.next || (() => {});
   const [visible, setVisible] = useState(false);
   const dispatch = useDispatch();
   const info = useSelector((state) => state.contract);
@@ -27,21 +62,12 @@ const OrderStep = (props) => {
     useState(false);
   const [isLicenseNameChanged, setIsLicenseNameChanged] = useState(false);
   const [approvedContractList, setApprovedContractList] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const [btnDisable, setBtnDisable] = useState(false);
-  const [dataSource, setDataSource] = useState([]);
+  const [columns] = useState([]);
+  const [dataSource] = useState([]);
 
   const params = useParams();
-  var currentDate = new Date();
-
-  var month = currentDate.getMonth() + 1;
-
-  var day = currentDate.getDate();
-
-  var year = currentDate.getFullYear();
-
-  let dates = day + "/" + month + "/" + year;
   let selectedLicenseItem;
+  const currentDate = new Date();
 
   const [state, setState] = useState({
     licenseName: "",
@@ -94,8 +120,6 @@ const OrderStep = (props) => {
     dataExpertEmailAddress: "",
     technicalDocument: "",
   });
-
-  const history = useHistory();
 
   const handleTechnicalDocument = (e) => {
     setState((prevState) => ({
@@ -256,19 +280,6 @@ const OrderStep = (props) => {
     }
   }, [dispatch, setSelectedLicense, licenseinfo.licenseList]);
 
-  const { Step } = Steps;
-  const [formData, setFormData] = useState(false);
-  const next = (values) => {
-    if (current === 5) {
-      return setCurrent(current + 1);
-    }
-    if (values === true) return setCurrent(current + 1);
-    setFormData(values === false ? false : true);
-  };
-  const prev = () => {
-    setCurrent(current - 1);
-  };
-
   const steps = [
     {
       title: "Licence Details ",
@@ -309,55 +320,77 @@ const OrderStep = (props) => {
       content: <ReviewSubmit stepsdata={state} />,
     },
   ];
+  const stepTitles = ["Licence Details", "Licence Limitations", "Review & Submit"];
+
+  // Report the step list to the controller once so the generic chrome can
+  // render the stepper + pinned Prev/Next footer.
+  const onStepsReady = props.onStepsReady;
+  useEffect(() => {
+    if (onStepsReady) onStepsReady(stepTitles.map((t) => ({ key: t, title: t })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Report validity (true only on the last/Review step) to the controller in
+  // an effect — never during render (which triggered a React warning).
+  const isFormValid = props.isFormValid;
+  useEffect(() => {
+    if (isFormValid) isFormValid(current === steps.length - 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
+
+  // Report the latest snapshot for the submit payload in an effect.
+  const savedData = props.savedData;
   state.isUpdated = params.id ? true : false;
-  props.isFormValid(current === steps.length - 1 ? true : false);
-  props.savedData(state, !current ? true : false);
+  useEffect(() => {
+    if (savedData) savedData(state, !current);
+  });
+
   useEffect(() => {
     if (props.modalStatus) setVisible(props.modalStatus);
   }, [props.modalStatus]);
+
   return (
     <div id="main">
-      <Modal
-        title="Audit Log"
-        centered
-        visible={visible}
-        onOk={() => setVisible(false)}
-        onCancel={() => setVisible(false)}
-        width={1200}
+      <Dialog
+        open={visible}
+        onClose={() => setVisible(false)}
+        maxWidth="lg"
+        fullWidth
       >
-        <Table
-          dataSource={dataSource}
-          columns={columns}
-          pagination={false}
-          size="middle"
-          scroll={{
-            y: 500,
-            x: 2000,
-          }}
-        />
-      </Modal>
-      <div className="content-wrapper">
-        <Steps size="small" current={current}>
-          {steps.map((item) => (
-            <Step key={item.title} title={item.title} />
-          ))}
-        </Steps>
-        <div className="steps-content">
-          <div className="align-content-form">{steps[current].content}</div>
-          <div className="steps-action">
-            {current > 0 && (
-              <Button style={{ margin: "0 8px" }} onClick={() => prev()}>
-                Previous
-              </Button>
-            )}
-            {current < steps.length - 1 && (
-              <Button type="primary" onClick={next}>
-                Next
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+        <DialogTitle>Audit Log</DialogTitle>
+        <DialogContent>
+          <TableContainer component={Paper}>
+            <Table size="small" sx={{ maxHeight: 500 }}>
+              <TableHead>
+                <TableRow>
+                  {columns.map((col) => (
+                    <TableCell key={col.key || col.dataIndex || col.title}>
+                      {col.title}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {dataSource.map((row, index) => (
+                  <TableRow key={row.key || index}>
+                    {columns.map((col) => (
+                      <TableCell key={col.key || col.dataIndex || col.title}>
+                        {col.render
+                          ? col.render(row[col.dataIndex], row)
+                          : row[col.dataIndex]}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setVisible(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+      <div className="align-content-form">{steps[current].content}</div>
     </div>
   );
 };

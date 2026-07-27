@@ -1,23 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation, withRouter } from "react-router-dom";
 import {
-  Divider,
-  Layout,
-  Menu,
-  Row,
-  Col,
-  Descriptions,
-  Tooltip,
-  Badge,
-  Table,
-  Tag,
+  Box,
   Button,
-} from "antd";
-import { QuestionCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+  Chip,
+  Divider,
+  Grid,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import {
+  HelpOutlined as QuestionCircleIcon,
+  CheckCircleOutlined as CheckCircleOutlinedIcon,
+} from "@mui/icons-material";
 import cronstrue from "cronstrue";
-import moment from "moment";
+import dayjs from "dayjs";
 
+import { DataTable, SideNav } from "../../design-system";
 import isButtonObject from "../../utils/accessButtonCheck";
 import {
   CATELOG_MANAGEMENT_PAGE,
@@ -25,8 +25,67 @@ import {
 } from "../../utils/Constants";
 import { getDatasetMetadataInfo } from "../../store/actions/DatasetPageActions";
 
-const { SubMenu } = Menu;
-const { Content, Sider } = Layout;
+const StatusChip = ({ status, text }) => {
+  if (!status) return <span>NA</span>;
+  const color = status === "success" ? "success" : status === "warning" ? "warning" : "error";
+  return <Chip size="small" color={color} variant="outlined" label={text} />;
+};
+
+const ConfigChip = ({ enabled }) => {
+  const color = enabled ? "success" : "error";
+  return (
+    <Chip
+      size="small"
+      color={color}
+      variant="outlined"
+      label={enabled ? "Active" : "Inactive"}
+    />
+  );
+};
+
+const InfoRow = ({ label, tooltipTxt, children }) => (
+  <Box
+    sx={{
+      display: "flex",
+      gap: 1.5,
+      py: 0.75,
+      borderBottom: "1px dashed var(--color-border-secondary)",
+      "&:last-of-type": { borderBottom: 0 },
+      alignItems: "flex-start",
+    }}
+  >
+    <Box
+      sx={{
+        minWidth: 160,
+        fontSize: 13,
+        fontWeight: 600,
+        color: "text.secondary",
+        display: "flex",
+        alignItems: "center",
+        gap: 0.5,
+      }}
+    >
+      {label}
+      {tooltipTxt && (
+        <Tooltip title={tooltipTxt}>
+          <QuestionCircleIcon sx={{ fontSize: 14, color: "primary.main" }} />
+        </Tooltip>
+      )}
+    </Box>
+    <Box
+      sx={{
+        flex: 1,
+        minWidth: 0,
+        fontSize: 13,
+        color: "text.primary",
+        overflowWrap: "anywhere",
+        wordBreak: "break-word",
+      }}
+    >
+      {children}
+    </Box>
+  </Box>
+);
 
 const Overview = (props) => {
   const [content, setContent] = useState("1");
@@ -35,13 +94,11 @@ const Overview = (props) => {
   const metadataInfo = useSelector((state) => state.datafeedInfo.metadata.data);
   const datasetInfo = useSelector((state) => state.dataFamily.datasetById);
   const licenseInfo = useSelector((state) => state.license.licenseById);
-  let catalogueList = useSelector((state) => state.catalogueList.catalogueList);
+  const catalogueList = useSelector((state) => state.catalogueList.catalogueList);
   const dispatch = useDispatch();
-
   const location = useLocation();
-  const datafeedIdFromState = location.state.data.datafeedById;
-  //Adding this object because initially we are getting datafeed as empty object
-  let emptyDataFeedObj = {
+
+  const emptyDataFeedObj = {
     feedId: "",
     longName: "",
     shortName: "",
@@ -57,11 +114,8 @@ const Overview = (props) => {
     feedId: datafeedId,
     longName: datafeedLongName,
     shortName: datafeedShortName,
-    protocol: datafeedProtocol,
     feedDescription: datafeedDescription,
     dataConfidentiality: datafeeddataConfidentiality,
-    documentationLink: datafeedtechnicalDocumentationLink,
-    documentationFile,
     personalData: datafeedPersonalData,
     feedStatus: datafeedStatus,
   } = Object.keys(datafeedInfo).length === 0
@@ -83,13 +137,12 @@ const Overview = (props) => {
     shortName: datasetShortName,
     datasetDescription,
     datasetStatus,
-    licenseId: datasetLicenseId,
   } = datasetInfo;
   useEffect(() => {
     if (datasetId && catalogueList) {
-      const relatedDatafeedList = catalogueList.filter((u) => {
-        return u.datasetId === datasetId && u.dataFeedId !== datafeedId;
-      });
+      const relatedDatafeedList = catalogueList.filter(
+        (u) => u.datasetId === datasetId && u.dataFeedId !== datafeedId
+      );
       setRelatedFeedsList(relatedDatafeedList);
     } else {
       setRelatedFeedsList([]);
@@ -97,9 +150,26 @@ const Overview = (props) => {
   }, [datasetId]);
 
   const { licenseShortName } = licenseInfo ? licenseInfo : {};
-  const getValues = ({ item, key, keyPath, domEvent }) => {
+
+  const getValues = useCallback(({ key }) => {
     setContent(key);
-  };
+  }, []);
+
+  const overviewMenuItems = useMemo(
+    () => [
+      { key: "1", label: "Data Feed details" },
+      {
+        key: "2",
+        label: "Dataset details",
+        children: [
+          { key: "21", label: "Dataset details" },
+          { key: "22", label: "Related Data Feeds" },
+        ],
+      },
+    ],
+    []
+  );
+
   const getcronExpression = (cronExp) => {
     if (
       cronExp &&
@@ -108,11 +178,7 @@ const Overview = (props) => {
       cronExp.toLowerCase() !== "notused" &&
       cronExp.toLowerCase() !== "not used"
     ) {
-      const dateTime = cronstrue.toString(cronExp, {
-        use24HourTimeFormat: true,
-      });
-
-      let cornjobDate = "NA";
+      const dateTime = cronstrue.toString(cronExp, { use24HourTimeFormat: true });
       const dateTimeSplit = dateTime.split(",");
       if (
         cronExp.includes("* * *") ||
@@ -123,28 +189,25 @@ const Overview = (props) => {
       ) {
         return dateTime;
       }
-      return cornjobDate;
-    } else {
       return "NA";
     }
+    return "NA";
   };
 
   const getScheduledTime = (cronExp) => {
-    let intermediateString = getcronExpression(cronExp);
+    const intermediateString = getcronExpression(cronExp);
     let result =
       intermediateString !== "NA"
         ? intermediateString.substr(0, intermediateString.indexOf(","))
         : "NA";
-    if (!intermediateString.includes(",")) {
-      result = intermediateString;
-    }
+    if (!intermediateString.includes(",")) result = intermediateString;
     return result;
   };
-  const getFrequency = (cronExp) => {
-    let intermediateString = getcronExpression(cronExp);
-    let result = "NA";
 
-    if (intermediateString.toLocaleLowerCase().includes("every")) {
+  const getFrequency = (cronExp) => {
+    const intermediateString = getcronExpression(cronExp);
+    let result = "NA";
+    if (intermediateString.toLowerCase().includes("every")) {
       result = intermediateString;
     } else if (intermediateString.includes(",")) {
       result =
@@ -152,408 +215,251 @@ const Overview = (props) => {
           ? intermediateString.substr(intermediateString.indexOf(",") + 1)
           : "NA";
     }
-
     return result;
   };
+
   const getStatus = (status) => {
-    let statusResult;
-    if (status) {
-      if (status.toString().toLowerCase() === "active") {
-        statusResult = "success";
-      }
-      if (status.toString().toLowerCase() === "pending") {
-        statusResult = "warning";
-      }
-      if (status.toString().toLowerCase() === "expired") {
-        statusResult = "error";
-      }
-    }
-    return statusResult;
+    if (!status) return undefined;
+    const s = status.toString().toLowerCase();
+    if (s === "active") return "success";
+    if (s === "pending") return "warning";
+    if (s === "expired") return "error";
+    return undefined;
   };
 
-  const getConfigStatus = (status) => {
-    let statusResult = "error";
-    if (status) {
-      statusResult = "success";
-    }
-    return statusResult;
-  };
-
-  let feedstatus = getStatus(datafeedStatus);
-  let setstatus = getStatus(datasetStatus);
+  const setstatus = getStatus(datasetStatus);
 
   const handler1 = (text) => {
-    const feed = relatedFeedsList.filter(
-      (item) => item.dataFeedLongName === text
-    );
-
+    const feed = relatedFeedsList.filter((item) => item.dataFeedLongName === text);
     props.history.push({
       pathname: "/catalog/details",
-      state: {
-        data: feed[0],
-      },
+      state: { data: feed[0] },
     });
   };
 
-  let contentLayout = "Loading...";
-
-  const redirect = (path) => {
+  const redirect = () => {
     props.history.push({
       pathname: "/catalog/subscription",
-      state: {
-        data: location.state.data,
-      },
+      state: { data: location.state.data },
     });
   };
 
   const getFileFormat = (val) => {
-    if (val.includes("FundamentalsRoute") || val.includes("XpathSplitValidateRoute")) {
-      return "xml";
-    }
-    if (val.includes("JSONSplitValidateRoute") || val.includes("JSONLValidateRoute")) {
-      return "json";
-    }
-    if (val.includes("CSVInitialRoute")) {
-      return "csv";
-    }
+    if (val.includes("FundamentalsRoute") || val.includes("XpathSplitValidateRoute")) return "xml";
+    if (val.includes("JSONSplitValidateRoute") || val.includes("JSONLValidateRoute")) return "json";
+    if (val.includes("CSVInitialRoute")) return "csv";
     return "NA";
   };
 
-  const columns = [
-    {
-      title: "Name",
-      dataIndex: "dataFeedLongName",
-      ellipsis: true,
-      width: 250,
-      render: (text) => {
-        return (
-          <Button type="link" onClick={() => handler1(text)}>
-            {text}
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: "dataFeedLongName",
+        header: "Name",
+        size: 250,
+        Cell: ({ cell }) => (
+          <Button variant="text" size="small" onClick={() => handler1(cell.getValue())}>
+            {cell.getValue()}
           </Button>
-        );
+        ),
       },
-    },
-    {
-      title: "Data Source",
-      dataIndex: "entityShortName",
-      width: 150,
-    },
-    {
-      title: "Dataset",
-      dataIndex: "datasetShortName",
-      width: 200,
-      ellipsis: true,
-    },
-    {
-      title: "Description",
-      dataIndex: "dataFeedDescription",
-      ellipsis: true,
-    },
-    {
-      title: "Subscription",
-      dataIndex: "subscription",
-      fixed: "right",
-      width: 150,
-      render: (text) => {
-        const guestRole = localStorage.getItem("guestRole");
-        if (
-          text &&
-          text.subscriptionStatus.toString().toLowerCase() !== "inactive"
-        ) {
-          const text1 = getStatus(text.subscriptionStatus);
-          return (
-            <Tag color={text1} icon={<CheckCircleOutlined />}>
-              {text.subscriptionStatus.toLowerCase() === "active"
-                ? "Subscribed"
-                : text.subscriptionStatus}
-            </Tag>
-          );
-        } else {
+      { accessorKey: "entityShortName", header: "Data Source", size: 150 },
+      { accessorKey: "datasetShortName", header: "Dataset", size: 200 },
+      { accessorKey: "dataFeedDescription", header: "Description" },
+      {
+        accessorKey: "subscription",
+        header: "Subscription",
+        size: 160,
+        enableSorting: false,
+        Cell: ({ cell }) => {
+          const text = cell.getValue();
+          const guestRole = localStorage.getItem("guestRole");
+          if (text && text.subscriptionStatus.toLowerCase() !== "inactive") {
+            const status = getStatus(text.subscriptionStatus);
+            return (
+              <Chip
+                size="small"
+                color={status || "default"}
+                variant="outlined"
+                icon={<CheckCircleOutlinedIcon fontSize="small" />}
+                label={
+                  text.subscriptionStatus.toLowerCase() === "active"
+                    ? "Subscribed"
+                    : text.subscriptionStatus
+                }
+              />
+            );
+          }
           return (
             <Button
+              variant="text"
+              size="small"
               disabled={
-                guestRole ||
+                !!guestRole ||
                 isButtonObject(
                   CATELOG_MANAGEMENT_PAGE,
                   CATELOG_MANAGEMENT_REQUESTACCESS_UNSUB_MODIFY_EDIT_BTN
                 )
-                  ? true
-                  : false
               }
               onClick={redirect}
-              type="link"
             >
               Request Access
             </Button>
           );
-        }
+        },
       },
-    },
-  ];
+    ],
+    [relatedFeedsList]
+  );
 
   const getSourceProtocol = () => {
     if (!metadataInfo || !metadataInfo.sourceProcessor) return "NA";
     return metadataInfo.sourceProcessor === "sftpProcessor" ? "SFTP" : "HTTPS";
   };
-
   const getDataFormat = () => {
     if (!metadataInfo || !metadataInfo.splittingCanonicalClass) return "NA";
     return getFileFormat(metadataInfo.splittingCanonicalClass);
   };
-
   const getStartDate = () => {
     if (!metadataInfo || !metadataInfo.start) return "NA";
-    return moment(metadataInfo.start).format("DD MMM YYYY");
+    return dayjs(metadataInfo.start).format("DD MMM YYYY");
   };
-
   const getCronDisplay = (displayFn) => {
     if (!metadataInfo || !metadataInfo.cronExpression) return "NA";
     if (metadataInfo.cronExpression === "livestreaming") return "livestreaming";
     return displayFn(metadataInfo.cronExpression);
   };
-
   const getConfigStatusDisplay = () => {
-    if (!metadataInfo || Object.keys(metadataInfo).length === 0 || metadataInfo.isEnabled == undefined) {
+    if (
+      !metadataInfo ||
+      Object.keys(metadataInfo).length === 0 ||
+      metadataInfo.isEnabled === undefined
+    ) {
       return "NA";
     }
-    return <Badge status={getConfigStatus(metadataInfo.isEnabled)} text={metadataInfo.isEnabled ? "Active" : "Inactive"} />;
+    return <ConfigChip enabled={metadataInfo.isEnabled} />;
   };
 
-  const labelTooltip = (lable, tooltipTxt) => {
-    return (
-      <div className="label-bold">
-        {lable}
-        <Tooltip title={tooltipTxt}>
-          <span style={{ color: "#007AFF" }}>
-            {" "}
-            <QuestionCircleOutlined />{" "}
-          </span>
-        </Tooltip>
-      </div>
-    );
-  };
+  let contentLayout = "Loading...";
 
   if (content === "1") {
     contentLayout = (
-      <Content className="overview-content">
-        <h3 className="content-header" style={{ paddingBottom: "16px" }}>
+      <Box className="overview-content" sx={{ flex: 1, p: 3 }}>
+        <Typography component="h3" className="content-header" sx={{ pb: 2, fontWeight: 600, fontSize: 16 }}>
           Data Feed details
-        </h3>
-        <Row gutter={[16, 16]}>
-          <Col span={8}>
-            <Descriptions layout="horizontal" column={1} size="middle">
-              <Descriptions.Item
-                label="Data Feed ID"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {datafeedId ? datafeedId : "NA"}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={labelTooltip(
-                  "Dataset",
-                  "The dataset that this data feed is under."
-                )}
-              >
-                {datasetShortName ? datasetShortName : "NA"}
-              </Descriptions.Item>
-
-              <Descriptions.Item
-                label="Short name"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {datafeedShortName ? datafeedShortName : "NA"}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label="Long name"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {datafeedLongName ? datafeedLongName : "NA"}
-              </Descriptions.Item>
-            </Descriptions>
-          </Col>
-          <Col span={8}>
-            <Descriptions layout="horizontal" column={1} size="middle">
-              <Descriptions.Item
-                label="Data confidentiality"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {datafeeddataConfidentiality
-                  ? datafeeddataConfidentiality
-                  : "NA"}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={labelTooltip(
-                  "Personal data type",
-                  "The type of personal data this feed contains."
-                )}
-              >
-                {datafeedPersonalData ? datafeedPersonalData : "NA"}
-              </Descriptions.Item>
-            </Descriptions>
-          </Col>
-          <Col span={8}>
-            <Descriptions layout="horizontal" column={1} size="middle">
-              <Descriptions.Item
-                label="Configuration status"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {getConfigStatusDisplay()}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label="Source protocol"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {getSourceProtocol()}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label="Data format"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {getDataFormat()}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label="Start date"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {getStartDate()}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label="Scheduled data update GMT"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {getCronDisplay(getScheduledTime)}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label="Frequency"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {getCronDisplay(getFrequency)}
-              </Descriptions.Item>
-            </Descriptions>
-          </Col>
-        </Row>
-        <Row>
-          <Col span={24}>
-            <Descriptions layout="horizontal" column={1} size="middle">
-              <Descriptions.Item
-                label="Description"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {datafeedDescription ? datafeedDescription : "NA"}
-              </Descriptions.Item>
-            </Descriptions>
-          </Col>
-        </Row>
-      </Content>
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <InfoRow label="Data Feed ID">{datafeedId || "NA"}</InfoRow>
+            <InfoRow label="Dataset" tooltipTxt="The dataset that this data feed is under.">
+              {datasetShortName || "NA"}
+            </InfoRow>
+            <InfoRow label="Short name">{datafeedShortName || "NA"}</InfoRow>
+            <InfoRow label="Long name">{datafeedLongName || "NA"}</InfoRow>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <InfoRow label="Data confidentiality">{datafeeddataConfidentiality || "NA"}</InfoRow>
+            <InfoRow label="Personal data type" tooltipTxt="The type of personal data this feed contains.">
+              {datafeedPersonalData || "NA"}
+            </InfoRow>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <InfoRow label="Configuration status">{getConfigStatusDisplay()}</InfoRow>
+            <InfoRow label="Source protocol">{getSourceProtocol()}</InfoRow>
+            <InfoRow label="Data format">{getDataFormat()}</InfoRow>
+            <InfoRow label="Start date">{getStartDate()}</InfoRow>
+            <InfoRow label="Scheduled data update GMT">{getCronDisplay(getScheduledTime)}</InfoRow>
+            <InfoRow label="Frequency">{getCronDisplay(getFrequency)}</InfoRow>
+          </Grid>
+        </Grid>
+        <Box sx={{ mt: 3 }}>
+          <InfoRow label="Description">{datafeedDescription || "NA"}</InfoRow>
+        </Box>
+      </Box>
     );
   }
+
   if (content === "21" || content === "22") {
     contentLayout = (
-      <Content className="overview-content">
-        <h3 className="content-header" style={{ paddingBottom: "16px" }}>
+      <Box className="overview-content" sx={{ flex: 1, p: 3 }}>
+        <Typography component="h3" className="content-header" sx={{ pb: 2, fontWeight: 600, fontSize: 16 }}>
           Dataset details
-        </h3>
-        <Row gutter={[16, 16]}>
-          <Col span={6}>
-            <Descriptions layout="horizontal" column={1} size="middle">
-              <Descriptions.Item
-                label="Dataset ID"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {datasetId ? datasetId : "NA"}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label="Long Name"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {datasetLongName ? datasetLongName : "NA"}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label="Short Name"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {datasetShortName ? datasetShortName : "NA"}
-              </Descriptions.Item>
-            </Descriptions>
-          </Col>
-          <Col span={10}>
-            <Descriptions layout="horizontal" column={1} size="middle">
-              <Descriptions.Item
-                label="Description"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {datasetDescription ? datasetDescription : "NA"}
-              </Descriptions.Item>
-            </Descriptions>
-          </Col>
-          <Col span={8}>
-            <Descriptions layout="horizontal" column={1} size="middle">
-              <Descriptions.Item
-                label="Status"
-                labelStyle={{ fontFamily: "Inter-Medium" }}
-              >
-                {setstatus ? (
-                  <Badge status={setstatus} text={datasetStatus} />
-                ) : (
-                  "NA"
-                )}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={labelTooltip(
-                  "Licence Short Name",
-                  "The licence that this dataset is under"
-                )}
-              >
-                {licenseShortName ? licenseShortName : "NA"}
-              </Descriptions.Item>
-            </Descriptions>
-          </Col>
-        </Row>
-
-        {content === "22" ? (
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <InfoRow label="Dataset ID">{datasetId || "NA"}</InfoRow>
+            <InfoRow label="Long Name">{datasetLongName || "NA"}</InfoRow>
+            <InfoRow label="Short Name">{datasetShortName || "NA"}</InfoRow>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <InfoRow label="Description">{datasetDescription || "NA"}</InfoRow>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <InfoRow label="Status">
+              {setstatus ? <StatusChip status={setstatus} text={datasetStatus} /> : "NA"}
+            </InfoRow>
+            <InfoRow label="Licence Short Name" tooltipTxt="The licence that this dataset is under">
+              {licenseShortName || "NA"}
+            </InfoRow>
+          </Grid>
+        </Grid>
+        {content === "22" && (
           <>
-            <Divider />
-            <div className="overview-content">
-              <h3 className="content-header" style={{ paddingBottom: "16px" }}>
+            <Divider sx={{ my: 3 }} />
+            <Box className="overview-content">
+              <Typography component="h3" className="content-header" sx={{ pb: 2, fontWeight: 600, fontSize: 16 }}>
                 Related Data Feeds
-              </h3>
-              <Table
-                dataSource={relatedFeedsList}
+              </Typography>
+              <DataTable
                 columns={columns}
-                scroll={{ x: 1100 }}
-                size="small"
+                data={relatedFeedsList}
+                rowKey={(record) => record.dataFeedId || record.id}
+                pagination={false}
+                layoutMode="semantic"
+                enableColumnResizing={false}
+                muiTableProps={{ sx: { tableLayout: "auto", width: "100%" } }}
+                muiTablePaperProps={{ sx: { width: "100%" } }}
               />
-            </div>
+            </Box>
           </>
-        ) : null}
-      </Content>
+        )}
+      </Box>
     );
   }
 
   return (
-    <div className="content-wrapper" id="main">
-      <h3 className="content-header" style={{ fontWeight: "bold" }}>
+    <Box className="content-wrapper" id="main">
+      <Typography component="h3" className="content-header" sx={{ fontWeight: 700, fontSize: 18 }}>
         Overview
-      </h3>
-      <Divider />
-      <Layout className="site-layout-background">
-        <Sider className="site-layout-background" width={230}>
-          <Menu
-            mode="inline"
-            defaultSelectedKeys={["1"]}
-            style={{ height: "100%" }}
-            onClick={getValues}
-          >
-            <Menu.Item key="1">Data Feed details</Menu.Item>
-            <SubMenu key="2" title="Dataset details">
-              <Menu.Item key="21">Dataset details</Menu.Item>
-              <Menu.Item key="22">Related Data Feeds</Menu.Item>
-            </SubMenu>
-          </Menu>
-        </Sider>
-        {contentLayout}
-      </Layout>
-    </div>
+      </Typography>
+      <Divider sx={{ my: 2 }} />
+      <Box
+        className="site-layout-background overview-layout"
+        sx={{
+          display: "flex",
+          gap: 2,
+          alignItems: "stretch",
+          flexWrap: { xs: "wrap", md: "nowrap" },
+        }}
+      >
+        <Box
+          className="overview-sidenav"
+          sx={{
+            width: { xs: "100%", md: 230 },
+            flex: { xs: "1 1 100%", md: "0 0 230px" },
+          }}
+        >
+          <SideNav
+            defaultSelectedKey="1"
+            items={overviewMenuItems}
+            onSelect={getValues}
+          />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+          {contentLayout}
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

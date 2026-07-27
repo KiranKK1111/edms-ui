@@ -1,18 +1,30 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
+import React from "react";
+import { render } from "@testing-library/react";
 import DisplayTC from "../../../components/requestAccess/DisplayTC";
 
-configure({ adapter: new Adapter() });
-
 const mockDispatch = jest.fn();
+let mockState = {
+  requestAccess: { businessRequirements: [] },
+  datafeedInfo: { congigUi: { vendorRequestConfig: "N" } },
+};
+
 jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
+  useSelector: (cb) => cb(mockState),
   useDispatch: () => mockDispatch,
 }));
 
-const wrapper = shallow(<DisplayTC />);
+describe("DisplayTC", () => {
+  it("should render the display-terms-and-conditions container", () => {
+    const { container } = render(<DisplayTC view="tc" />);
+    expect(
+      container.querySelector(".display-terms-and-conditions")
+    ).toBeInTheDocument();
+  });
 
-it("wrapper", () => {
-  const element = wrapper.find(".display-terms-and-conditions");
-  expect(element.length).toBe(1);
+  it("should render the general subscription terms heading", () => {
+    const { getByText } = render(<DisplayTC view="tc" />);
+    expect(
+      getByText("Terms & Conditions general Subscription")
+    ).toBeInTheDocument();
+  });
 });

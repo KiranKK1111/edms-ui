@@ -1,9 +1,21 @@
 import { memo, useEffect, useState } from "react";
 import { useLocation, withRouter } from "react-router-dom";
-import { List, Button, message, Modal, Table, PageHeader } from "antd";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableContainer,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Paper,
+} from "@mui/material";
+import { toast as message } from "../../design-system/toast";
 import Breadcrumb from "../breadcrumb/Breadcrumb";
-import { confirm, confirm1 } from "./RequestModal";
 import { useDispatch, useSelector } from "react-redux";
 import {
   sendData,
@@ -11,13 +23,13 @@ import {
   saveAsDraftRequest,
   deleteSubscription,
 } from "../../store/actions/requestAccessActions";
-import moment from "moment";
+import dayjs from "dayjs";
 import { useHistory } from "react-router-dom";
 import logoRecord from "../../images/source_icon.svg";
 
 import "./panel.css";
-import { auditlogSubscriptionLevel } from "../../store/services/ContractService";
 import HeaderPanel from "../headerPanel/HeaderPanel";
+import { PageHeader } from "../../design-system";
 const Panel = (props) => {
   const [visible, setVisible] = useState(false);
   const [dataSource, setDataSource] = useState([]);
@@ -138,7 +150,7 @@ const Panel = (props) => {
 
       if (usage && usage.length) {
         usageData = { ...usage[0] };
-        usageData.expirationDate = moment(usageData.expirationDate);
+        usageData.expirationDate = dayjs(usageData.expirationDate);
         usageData.estRechargeCostPerAnnum = Number.parseInt(
           usageData.estRechargeCostPerAnnum,
           10
@@ -222,36 +234,59 @@ const Panel = (props) => {
 
   return (
     <div className="panel">
-      <Modal
-        title="Audit Log"
-        centered
-        visible={visible}
-        onOk={() => setVisible(false)}
-        onCancel={() => setVisible(false)}
-        width={1200}
+      <Dialog
+        open={visible}
+        onClose={() => setVisible(false)}
+        maxWidth={false}
+        PaperProps={{ sx: { width: "min(1200px, 92vw)" } }}
       >
-        <Table
-          dataSource={dataSource}
-          columns={columns}
-          pagination={false}
-          size="middle"
-          scroll={{
-            y: 500,
-            x: 2000,
-          }}
-        />
-      </Modal>
+        <DialogTitle>Audit Log</DialogTitle>
+        <DialogContent>
+          <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  {columns.map((col) => (
+                    <TableCell key={col.dataIndex || col.title}>
+                      {col.title}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {dataSource.map((row, idx) => (
+                  <TableRow key={row.key || idx}>
+                    {columns.map((col) => (
+                      <TableCell key={col.dataIndex || col.title}>
+                        {col.render
+                          ? col.render(row[col.dataIndex], row)
+                          : row[col.dataIndex]}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setVisible(false)}>Cancel</Button>
+          <Button variant="contained" onClick={() => setVisible(false)}>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
       <div className="breadcrumb-area">
         <Breadcrumb breadcrumb={breadcrumb} />
         <div className="btn-parent">
           {props.subId === "" ? (
             <>
-              <Button type="default" onClick={cancelHandler}>
+              <Button variant="outlined" onClick={cancelHandler}>
                 Cancel
               </Button>
               
               <Button
-                type="primary"
+                variant="contained"
                 onClick={submitHandler}
                 loading={response.loading}
                 disabled={isSubmitted || props.allowSubmit === false}

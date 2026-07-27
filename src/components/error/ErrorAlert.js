@@ -1,9 +1,15 @@
-import { Alert } from "antd";
+import React, { memo } from "react";
+import { Alert } from "@mui/material";
 
-const ErrorAlert = (props) => {
-  const { message } = props;
+const ErrorAlert = ({ message, className, ...rest }) => (
+  <Alert
+    severity="error"
+    className={className}
+    sx={{ borderRadius: "var(--radius-md)" }}
+    {...rest}
+  >
+    {message}
+  </Alert>
+);
 
-  return <Alert message={message} type="error" showIcon />;
-};
-
-export default ErrorAlert;
+export default memo(ErrorAlert);

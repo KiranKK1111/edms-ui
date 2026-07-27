@@ -1,57 +1,73 @@
-import { Button, Modal } from "antd";
-import { CloseCircleOutlined, CheckCircleOutlined , ExclamationCircleOutlined} from "@ant-design/icons";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
+import {
+  CheckCircleOutlined as CheckCircleOutlinedIcon,
+  ErrorOutlineOutlined as ExclamationIcon,
+  HighlightOff as CloseCircleIcon,
+} from "@mui/icons-material";
 
 const RequestModal = (props) => {
   const { isModalVisible, handleOk, handleCancel, title } = props;
 
-  const title1 = (
-    <h3
-      style={{
-        padding: 0,
-        margin: 0,
-        fontSize: "16px",
-        color: "#0F1217",
-        fontWeight: "600",
+  const isApprove = title === "Approve Task";
+  const isDelete = title && title.indexOf("Delete") !== -1;
+
+  const titleNode = (
+    <Box
+      component="h3"
+      sx={{
+        m: 0,
+        p: 0,
+        fontSize: 16,
+        fontWeight: 600,
+        color: "text.primary",
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
       }}
-    > 
-      {title === "Approve Task" ? (
-        <CheckCircleOutlined
-        style={{ fontSize: "18px", color: "green", marginRight: "10px" }}
-      />
-       
-      ) : title.indexOf('Delete') !== -1  ? 
-      (<ExclamationCircleOutlined style={{ fontSize: "18px", color: "#faad14", marginRight: "10px"}} />)
-       : (
-        <CloseCircleOutlined
-        style={{ fontSize: "18px", color: "red", marginRight: "10px" }}
-      />
-        )}
+    >
+      {isApprove ? (
+        <CheckCircleOutlinedIcon sx={{ fontSize: 18, color: "success.main" }} />
+      ) : isDelete ? (
+        <ExclamationIcon sx={{ fontSize: 18, color: "warning.main" }} />
+      ) : (
+        <CloseCircleIcon sx={{ fontSize: 18, color: "error.main" }} />
+      )}
       {title}
-    </h3>
+    </Box>
   );
 
+  const okLabel = isApprove ? "Approve" : isDelete ? "Delete" : "Reject";
+
   return (
-    <Modal
-      visible={isModalVisible}
-      title={title1}
-      onOk={handleOk}
-      onCancel={handleCancel}
-      footer={[
-        <Button key="back" onClick={handleCancel}>
-          Cancel
-        </Button>,
-        <Button
-          key="submit"
-          danger={title !== "Approve Task"}
-          type={title !== "Approve Task" ? "default" : "primary"}
-          onClick={handleOk}
-        >
-          {title === "Approve Task" ? "Approve" : title.indexOf('Delete') !== -1 ? "Delete" : "Reject"}
-        </Button>,
-      ]}
+    <Dialog
+      open={!!isModalVisible}
+      onClose={handleCancel}
+      maxWidth="xs"
+      fullWidth
+      slotProps={{ paper: { sx: { width: "min(520px, 92vw)" } } }}
     >
-      {props.children}
-    </Modal>
+      <DialogTitle sx={{ pb: 1 }}>{titleNode}</DialogTitle>
+      <DialogContent>{props.children}</DialogContent>
+      <DialogActions>
+        <Button onClick={handleCancel} variant="outlined" color="inherit">
+          Cancel
+        </Button>
+        <Button
+          onClick={handleOk}
+          variant="contained"
+          color={isApprove ? "primary" : "error"}
+        >
+          {okLabel}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 

@@ -1,113 +1,147 @@
 import {
-  Layout,
-  Divider,
   Avatar,
-  Switch,
-  Breadcrumb,
-  List,
-  Modal,
+  Box,
   Button,
-} from "antd";
-import { UserOutlined, HomeOutlined } from "@ant-design/icons";
+  Chip,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  Switch,
+  Typography,
+} from "@mui/material";
+import {
+  Person as PersonIcon,
+  Edit as EditIcon,
+} from "@mui/icons-material";
 
-import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import moment from "moment";
+import dayjs from "../../design-system/dayjs";
 
-import Headers from "../header/Header";
+import { PageHero, Section, useConfirm } from "../../design-system";
 import "./UserProfile.css";
 
-const { Header, Sider, Content } = Layout;
-
 const UserProfile = (props) => {
+  const confirmer = useConfirm();
   const psid = localStorage.getItem("psid");
-  const lastLoginFormatted = moment(
-    props.userProfile ? props.userProfile.lastLogin : undefined
-  ).format("Do MMM, YYYY [at] h:mm a");
+  const entitlementType = localStorage.getItem("entitlementType");
+  const lastLoginRaw = props.userProfile ? props.userProfile.lastLogin : undefined;
+  const lastLoginFormatted = dayjs(lastLoginRaw).format("Do MMM, YYYY [at] h:mm a");
+  const hasLastLogin =
+    lastLoginFormatted && lastLoginFormatted !== "Invalid Date";
 
   const handleEntitlementChange = () => {
-    Modal.info({
+    confirmer.info({
+      title: "Entitlements",
       content: "Kindly apply in HUSA for any changes in Entitlements.",
     });
   };
 
   return (
-    <div className="profile-container">
-      <Layout className="profile-page">
-        <Headers />
+    <div className="profile-page" id="main">
+      <div className="profile-shell">
+        <PageHero
+          breadcrumb={[{ name: "User Profile" }]}
+          title="User Profile"
+          subtitle="Review your account details, entitlements, and message notification preferences."
+          backTo="/catalog"
+        />
 
-        <Content className="profile-content">
-          <Layout className="profile-layout">
-            <Header className="profile-header">
-              <Breadcrumb>
-                <Breadcrumb.Item>
-                  <Link to="/catalog">
-                    {" "}
-                    <HomeOutlined />{" "}
-                  </Link>{" "}
-                </Breadcrumb.Item>
-                <Breadcrumb.Item> User Profile </Breadcrumb.Item>
-              </Breadcrumb>
-              <span className="profile-page-h3">User Profile</span>
-            </Header>
+        <div className="profile-grid">
+          <Section
+            className="profile-identity"
+            bordered={false}
+            elevation="low"
+            padding="md"
+          >
+            <Box className="profile-identity-top">
+              <Avatar
+                sx={{
+                  width: 96,
+                  height: 96,
+                  bgcolor: "primary.main",
+                }}
+              >
+                <PersonIcon sx={{ fontSize: 48 }} />
+              </Avatar>
+              <Typography component="div" className="profile-psid">
+                PSID : {psid}
+              </Typography>
+              {hasLastLogin && (
+                <Typography component="div" className="profile-last-login">
+                  Last login: {lastLoginFormatted}
+                </Typography>
+              )}
+            </Box>
 
-            <Layout className="profile-sub-layout">
-              <Sider className="profile-sub-sider" width={420}>
-                <div className="profile-icon">
-                  <Avatar
-                    size={84}
-                    style={{ backgroundColor: "#007AFF" }}
-                    icon={<UserOutlined />}
-                  />
-                  <h3 className="profile-psid"> PSID : {psid}</h3>
-                </div>
-                <Divider />
-                <div className="profile-entitlement">
-                  <p>
-                    {" "}
-                    <b>Entitlements: </b>
-                    {
-                      
-                      <span> {localStorage.getItem("entitlementType")} </span>
-                    }
-                    <Button type="link" onClick={handleEntitlementChange}>
-                      Edit
-                    </Button>
-                  </p>
-                  <br />
-                  
-                </div>
-              </Sider>
+            <Box className="profile-entitlement">
+              <Typography component="div" className="profile-entitlement-label">
+                Entitlements
+              </Typography>
+              <Box className="profile-entitlement-row">
+                <Chip
+                  className="profile-entitlement-tag"
+                  label={entitlementType}
+                  size="small"
+                />
+                <Button
+                  size="small"
+                  variant="text"
+                  startIcon={<EditIcon fontSize="small" />}
+                  onClick={handleEntitlementChange}
+                  className="profile-entitlement-edit"
+                >
+                  Edit
+                </Button>
+              </Box>
+              <Typography component="div" className="profile-entitlement-hint">
+                Entitlement changes are managed via HUSA.
+              </Typography>
+            </Box>
+          </Section>
 
-              <Content className="profile-sub-content">
-                <h3> Message Notifications </h3>
-                <br />
-                <List size="large" itemLayout="horizontal">
-                  <List.Item className="profile-list-item">
-                    <List.Item.Meta
-                      title="New Subscriptions"
-                      description="Notify me when users subscribe to my licences"
-                    />
-                    <Switch defaultChecked disabled />
-                  </List.Item>
+          <Section
+            className="profile-notifications"
+            title="Message Notifications"
+            bordered={false}
+            elevation="low"
+            padding="md"
+          >
+            <List disablePadding>
+              <ListItem
+                className="profile-list-item"
+                secondaryAction={<Switch defaultChecked disabled />}
+                disableGutters
+                divider
+              >
+                <ListItemText
+                  primary="New Subscriptions"
+                  secondary="Notify me when users subscribe to my licences"
+                  slotProps={{
+                    primary: { sx: { fontWeight: 600, fontSize: 14 } },
+                    secondary: { sx: { fontSize: 13, color: "text.secondary" } },
+                  }}
+                />
+              </ListItem>
 
-                  <List.Item className="profile-list-item">
-                    <List.Item.Meta
-                      title="System Messages"
-                      description="Notify me of all system updates and changes, e.g maintenance, new feature release, etc."
-                    />
-                    <Switch
-                      className="profile-list-switch"
-                      defaultChecked
-                      disabled
-                    />
-                  </List.Item>
-                </List>
-              </Content>
-            </Layout>
-          </Layout>
-        </Content>
-      </Layout>
+              <ListItem
+                className="profile-list-item"
+                secondaryAction={<Switch defaultChecked disabled />}
+                disableGutters
+              >
+                <ListItemText
+                  primary="System Messages"
+                  secondary="Notify me of all system updates and changes, e.g maintenance, new feature release, etc."
+                  slotProps={{
+                    primary: { sx: { fontWeight: 600, fontSize: 14 } },
+                    secondary: { sx: { fontSize: 13, color: "text.secondary" } },
+                  }}
+                />
+              </ListItem>
+            </List>
+          </Section>
+        </div>
+      </div>
     </div>
   );
 };

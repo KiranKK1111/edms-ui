@@ -1,51 +1,69 @@
 import React from "react";
-import * as redux from "react-redux";
-import { configure, shallow, sleep, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-
+import { render, screen } from "@testing-library/react";
+import { AppProviders } from "../../../design-system";
 import ReviewSubmit from "../../../components/datasetForm/ReviewSubmit";
 
-configure({ adapter: new Adapter() });
-
+let mockState = {};
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
+  useSelector: (cb) => cb(mockState),
   useDispatch: () => mockDispatch,
   connect: () => (Component) => Component,
 }));
 
 jest.mock("react-router-dom", () => ({
   __esModule: true,
-  useLocation: jest.fn().mockReturnValue({
+  useLocation: () => ({
     pathname: "/another-route",
-    search: "",
-    hash: "",
-    state: null,
-    key: "5nvxpbdafa",
+    state: { isUpdate: true, eid: "E1", licence: { licenseId: "L1" } },
   }),
-  useParams: jest.fn().mockReturnValue({ vendorId: "123", id: "" }),
-  useHistory: jest.fn(),
+  useParams: () => ({ vendorId: "123", id: "" }),
+  useHistory: () => ({ push: jest.fn() }),
 }));
-const dataset = {
-  formData: {
-    description: "",
-    datasetId: "",
-    status: "",
-    longName: "",
-    shortName: "",
-    roleName: "",
+
+jest.mock("../../../store/actions/datasetFormActions", () => ({
+  datasetInfo: jest.fn(),
+}));
+
+const buildState = () => ({
+  dataset: {
+    formData: {
+      description: "Some description",
+      datasetId: "DS1",
+      status: "Active",
+      longName: "Long",
+      shortName: "Short",
+      roleName: "Admin",
+    },
   },
-};
-const state = { dataset };
+});
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
+const renderReview = () =>
+  render(
+    <AppProviders>
+      <ReviewSubmit />
+    </AppProviders>
+  );
 
-const wrapper = shallow(<ReviewSubmit />);
-describe("Parent", () => {
-  it("wrapper", () => {
-    const element = wrapper.find(".review-submit");
-    expect(element.length).toBe(1);
+describe("ReviewSubmit", () => {
+  beforeEach(() => {
+    mockState = buildState();
+  });
+
+  it("should render the review-submit container", () => {
+    const { container } = renderReview();
+    expect(container.querySelector(".review-submit")).toBeInTheDocument();
+  });
+
+  it("should render the Dataset Details heading", () => {
+    renderReview();
+    expect(screen.getByText("Dataset Details")).toBeInTheDocument();
+  });
+
+  it("should render the dataset field values", () => {
+    renderReview();
+    expect(screen.getByText("Long")).toBeInTheDocument();
+    expect(screen.getByText("Short")).toBeInTheDocument();
+    expect(screen.getByText("DS1")).toBeInTheDocument();
   });
 });

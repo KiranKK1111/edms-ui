@@ -1,55 +1,45 @@
-import { Table, Tag } from "antd";
-import moment from "moment";
+import { Box, Chip } from "@mui/material";
+import dayjs from "dayjs";
+
+import { DataTable } from "../../design-system";
+
+const StatusChip = ({ value }) => (
+  <Chip
+    size="small"
+    color={value ? "success" : value === false ? "warning" : "default"}
+    variant="outlined"
+    label={value ? "Active" : value === false ? "Inactive" : "NA"}
+  />
+);
 
 const LSTable = ({ tblData }) => {
   const columns = [
+    { accessorKey: "shortName", header: "Data Feed" },
+    { accessorKey: "dataSetShortName", header: "Dataset" },
     {
-      title: "Data Feed",
-      dataIndex: "shortName",
-      key: "shortName",
+      accessorKey: "isEnabled",
+      header: "Status",
+      Cell: ({ cell }) => <StatusChip value={cell.getValue()} />,
     },
     {
-      title: "Dataset",
-      dataIndex: "dataSetShortName",
-      key: "dataSetShortName",
-    },
-    {
-      title: <b>Status</b>,
-      dataIndex: "isEnabled",
-      key: "isEnabled",
-      render: (isEnabled) => (
-        <Tag
-          color={
-            isEnabled ? "green" : isEnabled === false ? "orange" : "default"
-          }
-        >
-          {isEnabled ? "Active" : isEnabled === false ? "Inactive" : "NA"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Start date",
-      dataIndex: "start",
-      key: "start",
-      render: (start) => start && moment(start).format("DD MMM YYYY"),
+      accessorKey: "start",
+      header: "Start date",
+      Cell: ({ cell }) => {
+        const v = cell.getValue();
+        return v ? dayjs(v).format("DD MMM YYYY") : "";
+      },
     },
   ];
+
   return (
-    <Table
+    <DataTable
       columns={columns}
-      rowKey={(record) => record.feedId}
-      expandable={{
-        expandedRowRender: (record) => (
-          <p
-            style={{
-              margin: 0,
-            }}
-          >
-            {record.feedDescription}
-          </p>
-        ),
-      }}
-      dataSource={tblData}
+      data={tblData || []}
+      rowKey="feedId"
+      enableExpanding
+      renderDetailPanel={({ row }) => (
+        <Box sx={{ m: 0 }}>{row.original.feedDescription}</Box>
+      )}
     />
   );
 };

@@ -1,56 +1,79 @@
-import BusinessRequirements, { ruleForSubscriptionFor } from "../../../components/requestAccess/BusinessRequirements";
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-
-configure({ adapter: new Adapter() });
+import React from "react";
+import { render } from "@testing-library/react";
+import BusinessRequirements, {
+  ruleForSubscriptionFor,
+} from "../../../components/requestAccess/BusinessRequirements";
 
 const mockDispatch = jest.fn();
-const mockNext = jest.fn();
-const mockSetSubscriptionFor = jest.fn();
-const mockSetVendorRequest = jest.fn();
-const mockFormData = { clarityId: "12345", reason: "Test reason" };
+let mockState = {
+  datafeedInfo: { congigUi: { vendorRequestConfig: "N" } },
+  requestAccess: { businessRequirements: [] },
+};
 
 jest.mock("react-redux", () => ({
-    useSelector: jest.fn(),
-    useDispatch: () => mockDispatch,
+  useSelector: (cb) => cb(mockState),
+  useDispatch: () => mockDispatch,
 }));
 
 jest.mock("react-router-dom", () => ({
-    withRouter: (component) => component,
+  withRouter: (component) => component,
 }));
 
-const wrapper = shallow(<BusinessRequirements
-    next={mockNext}
-    formData={mockFormData}
-    view={"br"}
-    setSubscriptionFor={mockSetSubscriptionFor}
-    setVendorRequest={mockSetVendorRequest}
-/>);
+const mockNext = jest.fn();
+const mockSetSubscriptionFor = jest.fn();
+const mockSetVendorRequest = jest.fn();
 
-describe('ruleForSubscriptionFor', () => {
-    test("wrapper", () => {
-        const element = wrapper.find(".business");
-        expect(element.length).toBe(1);
-    });
+describe("BusinessRequirements", () => {
+  it("should render the business container", () => {
+    const { container } = render(
+      <BusinessRequirements
+        next={mockNext}
+        formData={false}
+        view={"br"}
+        setSubscriptionFor={mockSetSubscriptionFor}
+        setVendorRequest={mockSetVendorRequest}
+      />
+    );
+    expect(container.querySelector(".business")).toBeInTheDocument();
+  });
 
-    test('should reject when subFor is false and value is empty', async () => {
-        await expect(ruleForSubscriptionFor(false, '')).rejects.toThrow(
-            'Please enter a service account ID'
-        );
-    });
+  it("should render the Subscription type field", () => {
+    const { getByText } = render(
+      <BusinessRequirements
+        next={mockNext}
+        formData={false}
+        view={"br"}
+        setSubscriptionFor={mockSetSubscriptionFor}
+        setVendorRequest={mockSetVendorRequest}
+      />
+    );
+    expect(getByText("On-Demand Vendor request")).toBeInTheDocument();
+  });
+});
 
-    test('should reject when subFor is false and value contains spaces', async () => {
-        await expect(ruleForSubscriptionFor(false, 'invalid value')).rejects.toThrow(
-            'Application service account ID cannot contain spaces'
-        );
-    });
+describe("ruleForSubscriptionFor", () => {
+  test("should reject when subFor is false and value is empty", async () => {
+    await expect(ruleForSubscriptionFor(false, "")).rejects.toThrow(
+      "Please enter a service account ID"
+    );
+  });
 
-    test('should resolve when subFor is false and value is valid', async () => {
-        await expect(ruleForSubscriptionFor(false, 'validValue')).resolves.toBeUndefined();
-    });
+  test("should reject when subFor is false and value contains spaces", async () => {
+    await expect(ruleForSubscriptionFor(false, "invalid value")).rejects.toThrow(
+      "Application service account ID cannot contain spaces"
+    );
+  });
 
-    test('should resolve when subFor is true regardless of value', async () => {
-        await expect(ruleForSubscriptionFor(true, '')).resolves.toBeUndefined();
-        await expect(ruleForSubscriptionFor(true, 'anyValue')).resolves.toBeUndefined();
-    });
+  test("should resolve when subFor is false and value is valid", async () => {
+    await expect(
+      ruleForSubscriptionFor(false, "validValue")
+    ).resolves.toBeUndefined();
+  });
+
+  test("should resolve when subFor is true regardless of value", async () => {
+    await expect(ruleForSubscriptionFor(true, "")).resolves.toBeUndefined();
+    await expect(
+      ruleForSubscriptionFor(true, "anyValue")
+    ).resolves.toBeUndefined();
+  });
 });

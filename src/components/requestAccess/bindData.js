@@ -1,5 +1,3 @@
-import moment from 'moment';
-
 export const bindData = (data, form) => {
   if (data.length > 0) {
     return data.map((item) => {

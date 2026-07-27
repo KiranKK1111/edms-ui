@@ -1,20 +1,28 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { withRouter, useLocation, useHistory } from "react-router-dom";
-import { Button, Col, Layout, Row, Modal, Spin } from "antd";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  Backdrop,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+} from "@mui/material";
+import { CheckCircleOutlined as CheckCircleOutlinedIcon } from "@mui/icons-material";
 
-import Headers from "../../pages/header/Header";
-import DatasetBreadcrumb from "./DatasetBreadcrumb";
-import DatasetPageHeader from "./DatasetPageHeader";
 import DatasetTabs from "./DatasetTabs";
 import { confirm } from "./UnsubscribeModal";
 import {
-  clearStore,
+  PageLayout,
+  useConfirm,
+} from "../../design-system";
+import {
   unsubscribe,
   getDataById,
 } from "../../store/actions/requestAccessActions";
 import { catalogueDetailsData } from "../../store/actions/DatasetPageActions";
 import { startGetDatafeeds } from "../../store/actions/datafeedAction";
+import logoRecord from "../../images/source_icon.svg";
 
 import "../../common.css";
 import "./dataset.css";
@@ -26,62 +34,46 @@ import {
 } from "../../utils/Constants";
 import getPermissionObject from "../../utils/accessObject";
 import { warning } from "../../utils/warningUtils";
-let loggedUser = localStorage.getItem("entitlementType");
 
 const DatasetPage = (props) => {
   const dispatch = useDispatch();
   const history = useHistory();
   const location = useLocation();
+  const confirmer = useConfirm();
 
   const [spining, setSpining] = useState(false);
   const [disableUnsubscribe, setDisableUnsubscribe] = useState(false);
 
-  let catalogueObj = location.state.data;
-  const {
-    entityId,
-    datasetId,
-    dataFeedId,
-    subscription,
-    entityShortName,
-    dataFeedStatus,
-  } = catalogueObj;
+  const catalogueObj = location.state.data;
+  const { datasetId, dataFeedId, subscription, dataFeedStatus } = catalogueObj;
 
   useEffect(() => {
     dispatch(startGetDatafeeds());
-  }, []);
+  }, [dispatch]);
   useEffect(() => {
     dispatch(catalogueDetailsData(dataFeedId, datasetId));
-  }, [dispatch, catalogueObj]);
+  }, [dispatch, dataFeedId, datasetId]);
   useEffect(() => {
     if (subscription) dispatch(getDataById(subscription.subscriptionId));
-  }, [subscription]);
+  }, [subscription, dispatch]);
 
   const { datafeedById: datafeedInfo, loading: feedLoading } = useSelector(
     (state) => state.datafeedInfo
   );
-  const { datasetById: datasetInfo, loading: setLoading } = useSelector(
-    (state) => state.dataFamily
-  );
+  const { loading: setLoading } = useSelector((state) => state.dataFamily);
 
   const { dataById: subscriptionInfo } = useSelector(
     (state) => state.requestAccess.dataByIdResponse
   );
-  let dummyObj = { longName: "", feedStatus: "" };
-  const { longName: datafeedLongName, feedStatus: datafeedStatus } =
+  const dummyObj = { longName: "", feedStatus: "" };
+  const { longName: datafeedLongName } =
     Object.keys(datafeedInfo).length === 0 ? dummyObj : datafeedInfo.datafeed;
 
-  const { licenseById: licenseInfo, loading: licenseLoading } = useSelector(
-    (state) => state.license
-  );
-  const { agreementById: agreementInfo, loading: agreementLoading } =
-    useSelector((state) => state.contract);
+  const { loading: licenseLoading } = useSelector((state) => state.license);
+  const { loading: agreementLoading } = useSelector((state) => state.contract);
 
   useEffect(() => {
-    if (feedLoading || setLoading || licenseLoading || agreementLoading) {
-      setSpining(true);
-    } else {
-      setSpining(false);
-    }
+    setSpining(!!(feedLoading || setLoading || licenseLoading || agreementLoading));
   }, [feedLoading, setLoading, licenseLoading, agreementLoading]);
 
   useEffect(() => {
@@ -90,11 +82,7 @@ const DatasetPage = (props) => {
       catalogueObj.subscription.subscriptionUpdateFlag
     ) {
       const val =
-        catalogueObj.subscription.subscriptionUpdateFlag
-          .toString()
-          .toLowerCase() === "y"
-          ? true
-          : false;
+        catalogueObj.subscription.subscriptionUpdateFlag.toLowerCase() === "y";
       setDisableUnsubscribe(val);
     }
   }, [catalogueObj]);
@@ -125,11 +113,14 @@ const DatasetPage = (props) => {
   );
 
   const isBtnDisplay = disableUnsubscribe || isUnsubscribeBtnCheck;
+
   const unsubscribeHandler = async () => {
-    let updateInfo = { ...subscriptionInfo };
-    updateInfo.subscriptionStatus = "Inactive";
-    updateInfo.subscriptionUpdateFlag = "Y";
-    updateInfo.lastUpdatedBy = localStorage.getItem("psid");
+    const updateInfo = {
+      ...subscriptionInfo,
+      subscriptionStatus: "Inactive",
+      subscriptionUpdateFlag: "Y",
+      lastUpdatedBy: localStorage.getItem("psid"),
+    };
     const res = await unsubscribe(updateInfo);
     if (res && res.data) {
       history.replace({
@@ -150,71 +141,59 @@ const DatasetPage = (props) => {
   const redirect = () => {
     history.push({
       pathname: "/catalog/subscription",
-      state: {
-        data: catalogueObj,
-      },
+      state: { data: catalogueObj },
     });
   };
-  const config = {
-    title: <div className="modal-head">Login Required</div>,
-    content: (
-      <>
-        <div>
-          You need to login to perform this action. Click OK to proceed.
-        </div>
-        <div className="para-break">
-          For Account creation please contact <br />
-          <a
-            href="mailto:CCIBDATA-T&I-EDP@exchange.standardchartered.com"
-            target="_blank"
-          >
-            External Data Platform team
-          </a>
-        </div>
-      </>
-    ),
-    onOk: () => {
-      props.history.push("/");
-    },
+
+  const showLoginRequired = async () => {
+    const ok = await confirmer.confirm({
+      title: "Login Required",
+      content: (
+        <>
+          <Box>
+            You need to login to perform this action. Click OK to proceed.
+          </Box>
+          <Box className="para-break" sx={{ mt: 1 }}>
+            For Account creation please contact <br />
+            <a
+              href="mailto:CCIBDATA-T&I-EDP@exchange.standardchartered.com"
+              target="_blank"
+              rel="noreferrer"
+            >
+              External Data Platform team
+            </a>
+          </Box>
+        </>
+      ),
+      okText: "OK",
+    });
+    if (ok) props.history.push("/");
   };
+
   const requestBtnAccess = getPermissionObject(
     CATELOG_MANAGEMENT_PAGE,
     CATELOG_REQUEST_ACCESS_BUTTON
   );
-  let subscriptionButtons;
-  if (
-    requestBtnAccess
-    // loggedUser === "Subscriber" ||
-    // isButtonObject(
-    //   CATELOG_MANAGEMENT_PAGE,
-    //   CATELOG_MANAGEMENT_REQUESTACCESS_UNSUB_MODIFY_EDIT_BTN
-    // )
-  ) {
-    subscriptionButtons = (
-      <Button
-        type="primary"
-        onClick={redirect}
-        className="ft-rt mr-24"
-        disabled={isDisableRequestAccess}
-      >
+
+  let actionButtons = null;
+  if (requestBtnAccess) {
+    actionButtons = (
+      <Button variant="contained" onClick={redirect} disabled={isDisableRequestAccess}>
         Request Access
       </Button>
     );
   }
   if (guestRole === "Guest") {
-    subscriptionButtons = (
+    actionButtons = (
       <Button
-        type="primary"
-        className="ft-rt mr-24"
+        variant="contained"
         disabled={
           !isBtnDisplay ||
           (subscriptionInfo &&
             subscriptionInfo.subscriptionUpdateFlag &&
             subscriptionInfo.subscriptionUpdateFlag.toLowerCase() === "y")
         }
-        onClick={() => {
-          Modal.confirm(config);
-        }}
+        onClick={showLoginRequired}
       >
         Request Access
       </Button>
@@ -229,20 +208,19 @@ const DatasetPage = (props) => {
       subscription &&
       subscription.subscriptionStatus.toLowerCase() === "expired")
   ) {
-    subscriptionButtons = (
+    const updateFlagY =
+      subscriptionInfo &&
+      subscriptionInfo.subscriptionUpdateFlag &&
+      subscriptionInfo.subscriptionUpdateFlag.toLowerCase() === "y";
+    actionButtons = (
       <>
-        {subscriptionInfo &&
-        subscriptionInfo.subscriptionUpdateFlag &&
-        subscriptionInfo.subscriptionUpdateFlag.toLowerCase() === "y" ? (
+        {updateFlagY ? (
           <Button
-            type="primary"
-            className="ft-rt mr-24"
+            variant="contained"
             disabled={
               !isBtnDisplay ||
               requestBtnAccess.permission !== "RW" ||
-              (subscriptionInfo &&
-                subscriptionInfo.subscriptionUpdateFlag &&
-                subscriptionInfo.subscriptionUpdateFlag.toLowerCase() === "y")
+              updateFlagY
             }
             onClick={warning}
           >
@@ -250,77 +228,80 @@ const DatasetPage = (props) => {
           </Button>
         ) : (
           <Button
-            type="primary"
-            className="ft-rt mr-24"
+            variant="contained"
             onClick={redirect}
             disabled={
-              //!isBtnDisplay}
               !isBtnDisplay ||
               requestBtnAccess.permission !== "RW" ||
-              (subscriptionInfo &&
-                subscriptionInfo.subscriptionUpdateFlag &&
-                subscriptionInfo.subscriptionUpdateFlag.toLowerCase() === "y")
+              updateFlagY
             }
           >
             Modify Access
           </Button>
         )}
         <Button
-          type="default"
-          danger
+          variant="outlined"
+          color="error"
           onClick={() => confirm(unsubscribeHandler)}
-          className="ft-rt mr-24"
-          disabled={
-            // !isBtnDisplay ||
-            subscriptionInfo &&
-            subscriptionInfo.subscriptionUpdateFlag &&
-            subscriptionInfo.subscriptionUpdateFlag.toLowerCase() === "y"
-          }
+          disabled={updateFlagY}
         >
           Unsubscribe
         </Button>
       </>
     );
   }
+
+  const isSubscribed =
+    subscription && subscription.subscriptionStatus.toLowerCase() === "active";
+
+  const heroTitle = (
+    <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+      <img
+        src={logoRecord}
+        alt="Source Icon"
+        style={{ width: 28, height: 28 }}
+      />
+      <span>{datafeedLongName || "-"}</span>
+      {isSubscribed && (
+        <Chip
+          size="small"
+          color="success"
+          variant="outlined"
+          icon={<CheckCircleOutlinedIcon fontSize="small" />}
+          label="Subscribed"
+        />
+      )}
+    </Box>
+  );
+
   return (
-    <div className="dataset-details" id="main">
-      <Headers />
-      <Spin spinning={spining} tip="Loading...">
-        <Layout>
-          <Row className="bg-white">
-            <Col span={16}>
-              <DatasetBreadcrumb title={datafeedLongName} />
-            </Col>
-            <Col span={8} className="mt-16">
-              {subscriptionButtons}
-            </Col>
-          </Row>
+    <Box className="dataset-details" id="main">
+      <Backdrop sx={{ color: "var(--color-bg)", zIndex: 1300 }} open={spining}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
 
-          <Row className="bg-white">
-            <Col span={24}>
-              <DatasetPageHeader
-                datafeedLongName={datafeedLongName}
-                subscription={subscription}
-              />
-            </Col>
-          </Row>
-
-          <Row>
-            <Col span={24}>
-              <DatasetTabs
-                dataFamily="Dummy"
-                license="Dummy"
-                contract="Dummy"
-                vendor="Dummy"
-                sourceConfig="Dummy"
-                dataFeedStatus={dataFeedStatus}
-                catalogueObj={catalogueObj}
-              />
-            </Col>
-          </Row>
-        </Layout>
-      </Spin>
-    </div>
+      <PageLayout
+        breadcrumb={[
+          { name: "Catalogue", url: "/catalog" },
+          { name: datafeedLongName || "-" },
+        ]}
+        title={heroTitle}
+        backTo="/catalog"
+        actions={actionButtons}
+      >
+        <Box className="page-layout-card">
+          <DatasetTabs
+            dataFamily="Dummy"
+            license="Dummy"
+            contract="Dummy"
+            vendor="Dummy"
+            sourceConfig="Dummy"
+            dataFeedStatus={dataFeedStatus}
+            catalogueObj={catalogueObj}
+          />
+        </Box>
+      </PageLayout>
+    </Box>
   );
 };
 

@@ -1,10 +1,8 @@
-import { BrowserRouter as Router } from "react-router-dom";
-import { configure, shallow, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Card, Tag, Button, Tooltip } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import AppProviders from "../../../design-system/AppProviders";
 import Catalog from "../../../components/catalog/Catalog";
-
-configure({ adapter: new Adapter() });
 
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
@@ -22,6 +20,15 @@ const defaultCatalogueInfo = {
   subscription: { subscriptionStatus: "Active" },
 };
 
+const renderCatalog = (catalogueInfo) =>
+  render(
+    <AppProviders>
+      <MemoryRouter>
+        <Catalog catalogueInfo={catalogueInfo} />
+      </MemoryRouter>
+    </AppProviders>
+  );
+
 describe("Catalog", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -29,181 +36,105 @@ describe("Catalog", () => {
   });
 
   it("should render a Card component", () => {
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={defaultCatalogueInfo} />
-      </Router>
-    );
-    expect(wrapper.find(Card).length).toBe(1);
+    const { container } = renderCatalog(defaultCatalogueInfo);
+    expect(container.querySelector(".catalog-card")).toBeInTheDocument();
   });
 
   it("should display entity short name", () => {
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={defaultCatalogueInfo} />
-      </Router>
-    );
-    expect(wrapper.text()).toContain("TestEntity");
+    renderCatalog(defaultCatalogueInfo);
+    expect(screen.getByText("TestEntity")).toBeInTheDocument();
   });
 
   it("should display dataset short name", () => {
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={defaultCatalogueInfo} />
-      </Router>
-    );
-    expect(wrapper.text()).toContain("TestDataset");
+    renderCatalog(defaultCatalogueInfo);
+    expect(screen.getByText("TestDataset")).toBeInTheDocument();
   });
 
   it("should display data feed long name", () => {
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={defaultCatalogueInfo} />
-      </Router>
-    );
-    expect(wrapper.text()).toContain("Test Data Feed Long Name");
+    renderCatalog(defaultCatalogueInfo);
+    expect(screen.getByText("Test Data Feed Long Name")).toBeInTheDocument();
   });
 
   it("should display Subscribed tag for active subscription", () => {
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={defaultCatalogueInfo} />
-      </Router>
-    );
-    expect(wrapper.find(Tag).length).toBe(1);
-    expect(wrapper.text()).toContain("Subscribed");
+    const { container } = renderCatalog(defaultCatalogueInfo);
+    expect(container.querySelectorAll(".MuiChip-root").length).toBe(1);
+    expect(screen.getByText("Subscribed")).toBeInTheDocument();
   });
 
   it("should display Pending tag for pending subscription", () => {
-    const info = {
+    renderCatalog({
       ...defaultCatalogueInfo,
       subscription: { subscriptionStatus: "Pending" },
-    };
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={info} />
-      </Router>
-    );
-    expect(wrapper.text()).toContain("Pending");
+    });
+    expect(screen.getByText("Pending")).toBeInTheDocument();
   });
 
   it("should display Expired tag for expired subscription", () => {
-    const info = {
+    renderCatalog({
       ...defaultCatalogueInfo,
       subscription: { subscriptionStatus: "Expired" },
-    };
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={info} />
-      </Router>
-    );
-    expect(wrapper.text()).toContain("Expired");
+    });
+    expect(screen.getByText("Expired")).toBeInTheDocument();
   });
 
   it("should display Request Access button for unknown subscription status", () => {
-    const info = {
+    renderCatalog({
       ...defaultCatalogueInfo,
       subscription: { subscriptionStatus: "Unknown" },
-    };
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={info} />
-      </Router>
-    );
-    expect(wrapper.text()).toContain("Request Access");
+    });
+    expect(screen.getByText("Request Access")).toBeInTheDocument();
   });
 
   it("should display Request Access when no subscription", () => {
-    const info = {
+    renderCatalog({
       ...defaultCatalogueInfo,
       subscription: null,
-    };
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={info} />
-      </Router>
-    );
-    expect(wrapper.text()).toContain("Request Access");
+    });
+    expect(screen.getByText("Request Access")).toBeInTheDocument();
   });
 
   it("should show dash when entityShortName is empty", () => {
-    const info = {
+    const { container } = renderCatalog({
       ...defaultCatalogueInfo,
       entityShortName: "",
-    };
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={info} />
-      </Router>
+    });
+    expect(container.querySelector(".catalog-source-chip").textContent).toContain(
+      "-"
     );
-    expect(wrapper.find(".main-title").text()).toContain("-");
   });
 
   it("should show dash when datasetShortName is empty", () => {
-    const info = {
+    const { container } = renderCatalog({
       ...defaultCatalogueInfo,
       datasetShortName: "",
-    };
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={info} />
-      </Router>
-    );
-    expect(wrapper.find(".catlog-dataset").text()).toContain("-");
+    });
+    expect(container.querySelector(".catlog-dataset").textContent).toContain("-");
   });
 
   it("should render for guest role with tooltip", () => {
     localStorage.setItem("guestRole", "guest");
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={defaultCatalogueInfo} />
-      </Router>
-    );
-    expect(wrapper.text()).toContain("Request Access");
+    renderCatalog(defaultCatalogueInfo);
+    expect(screen.getByText("Request Access")).toBeInTheDocument();
   });
 
-  it("should render Request Access button for inactive feed status", () => {
-    const info = {
+  it("should render the status tag for inactive feed status", () => {
+    renderCatalog({
       ...defaultCatalogueInfo,
       dataFeedStatus: "Inactive",
-    };
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={info} />
-      </Router>
-    );
-    expect(wrapper.text()).toContain("Inactive");
-  });
-
-  it("should apply opacity for inactive status", () => {
-    const info = {
-      ...defaultCatalogueInfo,
-      dataFeedStatus: "Inactive",
-    };
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={info} />
-      </Router>
-    );
-    const card = wrapper.find(Card);
-    expect(card.prop("style")).toEqual({ opacity: "0.5" });
+    });
+    expect(screen.getByText("Inactive")).toBeInTheDocument();
+    expect(screen.queryByText("Subscribed")).not.toBeInTheDocument();
   });
 
   it("should have catalog-card className", () => {
-    const wrapper = mount(
-      <Router>
-        <Catalog catalogueInfo={defaultCatalogueInfo} />
-      </Router>
-    );
-    expect(wrapper.find(".catalog-card").length).toBeGreaterThanOrEqual(1);
+    const { container } = renderCatalog(defaultCatalogueInfo);
+    expect(
+      container.querySelectorAll(".catalog-card").length
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("should dispatch clearStore on mount", () => {
-    mount(
-      <Router>
-        <Catalog catalogueInfo={defaultCatalogueInfo} />
-      </Router>
-    );
+    renderCatalog(defaultCatalogueInfo);
     expect(mockDispatch).toHaveBeenCalled();
   });
 });

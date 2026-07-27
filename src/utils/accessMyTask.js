@@ -9,6 +9,20 @@ import {
 
 const isPageAcces = isButtonObject(MY_TASK_PAGE, MAIN_PAGE);
 
+// The Dataset Delegate role must never be able to approve/reject tasks, on
+// either the My Tasks list or the detail screens.
+export const isDatasetDelegateRole = () => {
+  const role = (
+    localStorage.getItem("entitlementType") ||
+    localStorage.getItem("currentUserRole") ||
+    localStorage.getItem("guestRole") ||
+    ""
+  )
+    .toString()
+    .toLowerCase();
+  return role.includes("delegate");
+};
+
 const isAcessDisabled = (record) => {
   const isApproveReject = isButtonObject(MY_TASK_PAGE, APPROVE_REJECT_BTN);
   const isSubcriptionBtn = isButtonObject(

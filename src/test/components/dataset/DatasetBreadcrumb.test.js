@@ -1,47 +1,42 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Breadcrumb } from "antd";
+import React from "react";
+import { screen } from "@testing-library/react";
+import { renderWithProviders } from "../../utils/renderWithProviders";
 import DatasetBreadcrumb from "../../../components/dataset/DatasetBreadcrumb";
 
-configure({ adapter: new Adapter() });
-
 describe("DatasetBreadcrumb", () => {
-  it("should render Breadcrumb component", () => {
-    const wrapper = shallow(<DatasetBreadcrumb />);
-    expect(wrapper.find(Breadcrumb).length).toBe(1);
+  it("should render a breadcrumb navigation", () => {
+    renderWithProviders(<DatasetBreadcrumb />);
+    expect(screen.getByLabelText("breadcrumb")).toBeInTheDocument();
   });
 
-  it("should render 3 Breadcrumb.Items", () => {
-    const wrapper = shallow(<DatasetBreadcrumb title="Test Feed" />);
-    expect(wrapper.find(Breadcrumb.Item).length).toBe(3);
+  it("should render the Catalogue link", () => {
+    renderWithProviders(<DatasetBreadcrumb title="Test Feed" />);
+    expect(screen.getByText("Catalogue")).toBeInTheDocument();
+  });
+
+  it("should link the home icon and Catalogue to /catalog", () => {
+    const { container } = renderWithProviders(<DatasetBreadcrumb title="Test" />);
+    const links = container.querySelectorAll("a[href='/catalog']");
+    expect(links.length).toBeGreaterThanOrEqual(1);
   });
 
   it("should display title when provided", () => {
-    const wrapper = shallow(<DatasetBreadcrumb title="My Data Feed" />);
-    expect(wrapper.find(Breadcrumb.Item).at(2).prop("children")).toBe("My Data Feed");
+    renderWithProviders(<DatasetBreadcrumb title="My Data Feed" />);
+    expect(screen.getByText("My Data Feed")).toBeInTheDocument();
   });
 
   it("should display dash when title is not provided", () => {
-    const wrapper = shallow(<DatasetBreadcrumb />);
-    expect(wrapper.find(Breadcrumb.Item).at(2).prop("children")).toBe("-");
+    renderWithProviders(<DatasetBreadcrumb />);
+    expect(screen.getByText("-")).toBeInTheDocument();
   });
 
   it("should display dash when title is empty string", () => {
-    const wrapper = shallow(<DatasetBreadcrumb title="" />);
-    expect(wrapper.find(Breadcrumb.Item).at(2).prop("children")).toBe("-");
+    renderWithProviders(<DatasetBreadcrumb title="" />);
+    expect(screen.getByText("-")).toBeInTheDocument();
   });
 
-  it("should render Catalogue link text", () => {
-    const wrapper = shallow(<DatasetBreadcrumb title="Test" />);
-    const secondItem = wrapper.find(Breadcrumb.Item).at(1);
-    const link = secondItem.find("Link");
-    expect(link.children().text()).toBe("Catalogue");
-  });
-
-  it("should have correct className", () => {
-    const wrapper = shallow(<DatasetBreadcrumb />);
-    expect(wrapper.find(Breadcrumb).prop("className")).toBe(
-      "mt-16 ml-24 mr-24"
-    );
+  it("should apply the legacy spacing className", () => {
+    const { container } = renderWithProviders(<DatasetBreadcrumb />);
+    expect(container.querySelector(".mt-16.ml-24.mr-24")).toBeInTheDocument();
   });
 });

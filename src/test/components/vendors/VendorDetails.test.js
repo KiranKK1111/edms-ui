@@ -1,63 +1,17 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Button, PageHeader, Form } from "antd";
-import VendorDetails from "../../../components/vendors/VendorDetails/VendorDetails";
-import { RequestModal } from "../../../components/myTasks";
-import Breadcrumb from "../../../components/breadcrumb/Breadcrumb";
+import React from "react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { ThemeProvider } from "@mui/material/styles";
 
-configure({ adapter: new Adapter() });
+import { buildMuiTheme } from "../../../design-system/muiTheme";
+import VendorDetails from "../../../components/vendors/VendorDetails/VendorDetails";
 
 jest.spyOn(console, "error").mockImplementation(() => {});
 jest.spyOn(console, "warn").mockImplementation(() => {});
-jest.spyOn(console, "log").mockImplementation(() => {});
 
+// ---- redux (resetMocks safe: plain functions + module-level state) ----
 let mockDispatch = jest.fn();
-let mockState = {};
-jest.mock("react-redux", () => ({
-  useSelector: (cb) => cb(mockState),
-  useDispatch: () => mockDispatch,
-  connect: () => (Component) => Component,
-}));
-
-const mockHistoryPush = jest.fn();
-const mockUseParams = jest.fn().mockReturnValue({ id: "V1", taskId: "T1" });
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useParams: () => mockUseParams(),
-  useHistory: () => ({ push: mockHistoryPush }),
-}));
-
-jest.mock("../../../store/actions/VendorActions", () => ({
-  getDetailsByChangeRequestId: jest.fn((x) => "getDetailsByChangeRequestId_" + x),
-  getVendorDetailsById: jest.fn((x) => "getVendorDetailsById_" + x),
-}));
-
-jest.mock("../../../store/actions/MyTasksActions", () => ({
-  updateTaskAction: jest.fn((x) => "updateTaskAction"),
-}));
-
-jest.mock("../../../utils/accessMyTask", () => {
-  const fn = jest.fn().mockReturnValue(false);
-  return fn;
-});
-
-const mockFormCurrent = {
-  setFieldsValue: jest.fn(),
-  getFieldsValue: jest.fn().mockReturnValue({ reason: "test reason" }),
-};
-const mockFormRef = { current: mockFormCurrent };
-Object.defineProperty(mockFormRef, "current", {
-  get: () => mockFormCurrent,
-  set: () => {},
-  configurable: true,
-});
-jest.spyOn(require("react"), "createRef").mockReturnValue(mockFormRef);
-
-const { getVendorDetailsById, getDetailsByChangeRequestId } = require("../../../store/actions/VendorActions");
-const { updateTaskAction } = require("../../../store/actions/MyTasksActions");
-const isAcessDisabled = require("../../../utils/accessMyTask");
-
-mockState = {
+let mockState = {
   vendor: {
     data: {
       entityId: "V1",
@@ -70,6 +24,54 @@ mockState = {
     },
   },
 };
+jest.mock("react-redux", () => ({
+  useSelector: (cb) => cb(mockState),
+  useDispatch: () => mockDispatch,
+  connect: () => (Component) => Component,
+}));
+
+// ---- router: stable useParams reference, real Link/MemoryRouter ----
+const mockHistoryPush = jest.fn();
+const mockUseParams = jest.fn();
+jest.mock("react-router-dom", () => {
+  const actual = jest.requireActual("react-router-dom");
+  return {
+    ...actual,
+    useParams: () => mockUseParams(),
+    useHistory: () => ({ push: mockHistoryPush }),
+  };
+});
+
+// ---- design-system: keep real exports, stub useSnackbar ----
+jest.mock("../../../design-system", () => {
+  const actual = jest.requireActual("../../../design-system");
+  return {
+    ...actual,
+    useSnackbar: () => ({
+      success: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      warning: jest.fn(),
+      open: jest.fn(),
+      close: jest.fn(),
+    }),
+  };
+});
+
+// ---- store actions ----
+jest.mock("../../../store/actions/VendorActions", () => ({
+  getDetailsByChangeRequestId: jest.fn((x) => "getDetailsByChangeRequestId_" + x),
+  getVendorDetailsById: jest.fn((x) => "getVendorDetailsById_" + x),
+}));
+jest.mock("../../../store/actions/MyTasksActions", () => ({
+  updateTaskAction: jest.fn(() => "updateTaskAction"),
+}));
+jest.mock("../../../utils/accessMyTask", () => jest.fn(() => false));
+
+const { updateTaskAction } = require("../../../store/actions/MyTasksActions");
+const isAcessDisabled = require("../../../utils/accessMyTask");
+
+const theme = buildMuiTheme("light");
 
 const baseMockProps = {
   location: {
@@ -86,84 +88,70 @@ const baseMockProps = {
   history: { push: jest.fn() },
 };
 
-describe("VendorDetails", () => {
-  let wrapper;
+const renderVendor = (props = baseMockProps) =>
+  render(
+    <MemoryRouter>
+      <ThemeProvider theme={theme}>
+        <VendorDetails {...props} />
+      </ThemeProvider>
+    </MemoryRouter>
+  );
 
+describe("VendorDetails", () => {
   beforeEach(() => {
-    mockDispatch.mockClear();
-    mockHistoryPush.mockClear();
-    mockFormCurrent.setFieldsValue.mockClear();
-    mockFormCurrent.getFieldsValue.mockReset();
-    mockFormCurrent.getFieldsValue.mockReturnValue({ reason: "test reason" });
-    getVendorDetailsById.mockClear();
-    getDetailsByChangeRequestId.mockClear();
+    mockDispatch.mockReset();
+    mockHistoryPush.mockReset();
     updateTaskAction.mockClear();
     isAcessDisabled.mockReturnValue(false);
     mockUseParams.mockReturnValue({ id: "V1", taskId: "T1" });
-    mockDispatch.mockReturnValue(Promise.resolve({ data: { statusMessage: { message: "Success" } } }));
+    mockDispatch.mockReturnValue(
+      Promise.resolve({ data: { statusMessage: { message: "Success" } } })
+    );
     localStorage.clear();
     localStorage.setItem("psid", "current_user");
     localStorage.setItem("entitlementType", "Admin");
-    baseMockProps.history.push.mockClear();
-    wrapper = shallow(<VendorDetails {...baseMockProps} />);
   });
 
   it("should render without crashing", () => {
-    expect(wrapper.exists()).toBe(true);
+    renderVendor();
+    expect(screen.getByText("Entity Details")).toBeInTheDocument();
   });
 
-  it("should render entity-main container", () => {
-    expect(wrapper.find(".entity-main").length).toBe(1);
+  it("should render the shared layout title/breadcrumb (short name)", () => {
+    renderVendor();
+    // short name appears in the hero title and the breadcrumb
+    expect(screen.getAllByText("V1Short").length).toBeGreaterThanOrEqual(2);
   });
 
-  it("should render Approve and Reject buttons", () => {
-    const buttons = wrapper.find(Button);
-    expect(buttons.length).toBeGreaterThanOrEqual(2);
+  it("should render the Entity Details heading", () => {
+    renderVendor();
+    expect(screen.getByText("Entity Details")).toBeInTheDocument();
   });
 
-  it("should render Entity Details heading", () => {
-    expect(wrapper.find("h3").text()).toContain("Entity Details");
+  it("should render the Approve and Reject action buttons", () => {
+    renderVendor();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
   });
 
-  it("should render Form component", () => {
-    expect(wrapper.find(Form).length).toBeGreaterThanOrEqual(1);
+  it("should not disable actions when Pending and access allowed", () => {
+    renderVendor();
+    expect(screen.getByRole("button", { name: "Approve" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reject" })).not.toBeDisabled();
   });
 
-  it("should render breadcrumb area", () => {
-    expect(wrapper.find(".breadcrumb-area").length).toBe(1);
-  });
-
-  // ---- btnDisable: Pending => buttons not disabled (only checking isBtnDisplay other conditions) ----
-  it("should not disable buttons when taskListTaskStatus is Pending and access allowed", () => {
-    const rejectBtn = wrapper.find(".btn-parent").find(Button).at(0);
-    const approveBtn = wrapper.find(".btn-parent").find(Button).at(1);
-    expect(rejectBtn.prop("disabled")).toBe(false);
-    expect(approveBtn.prop("disabled")).toBe(false);
-  });
-
-  // ---- isBtnDisplay when isAcessDisabled returns true ----
-  it("should disable buttons when isAcessDisabled returns true", () => {
+  it("should disable actions when isAcessDisabled returns true", () => {
     isAcessDisabled.mockReturnValue(true);
-    const w = shallow(<VendorDetails {...baseMockProps} />);
-    const rejectBtn = w.find(".btn-parent").find(Button).at(0);
-    expect(rejectBtn.prop("disabled")).toBe(true);
+    renderVendor();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
   });
 
-  // ---- isBtnDisplay when createdBy === psid ----
-  it("should disable buttons when taskListCreatedBy equals psid", () => {
+  it("should disable actions when taskListCreatedBy equals psid", () => {
     localStorage.setItem("psid", "other_user");
-    const w = shallow(<VendorDetails {...baseMockProps} />);
-    const rejectBtn = w.find(".btn-parent").find(Button).at(0);
-    expect(rejectBtn.prop("disabled")).toBe(true);
+    renderVendor();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
   });
 
-  // ---- useEffect: component renders correctly with Create action ----
-  it("should render with Create action props", () => {
-    const w = shallow(<VendorDetails {...baseMockProps} />);
-    expect(w.exists()).toBe(true);
-  });
-
-  // ---- useEffect: component renders correctly with Update action ----
   it("should render with Update action props", () => {
     const updateProps = {
       ...baseMockProps,
@@ -176,8 +164,8 @@ describe("VendorDetails", () => {
         },
       },
     };
-    const w = shallow(<VendorDetails {...updateProps} />);
-    expect(w.exists()).toBe(true);
+    renderVendor(updateProps);
+    expect(screen.getByText("Entity Details")).toBeInTheDocument();
   });
 
   it("should render with Deactivate action props", () => {
@@ -192,185 +180,93 @@ describe("VendorDetails", () => {
         },
       },
     };
-    const w = shallow(<VendorDetails {...deactivateProps} />);
-    expect(w.exists()).toBe(true);
+    renderVendor(deactivateProps);
+    expect(screen.getByText("Entity Details")).toBeInTheDocument();
   });
 
-  // ---- showApproveModal handler ----
-  it("should open approve modal when Approve button is clicked", () => {
-    const approveBtn = wrapper.find(".btn-parent").find(Button).at(1);
-    approveBtn.prop("onClick")();
-    wrapper.update();
-    expect(wrapper.find(RequestModal).at(0).prop("isModalVisible")).toBe(true);
+  it("should open the approve modal when Approve is clicked", async () => {
+    renderVendor();
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    expect(await screen.findByText("Approve Task")).toBeInTheDocument();
   });
 
-  // ---- showRejectModal handler ----
-  it("should open reject modal when Reject button is clicked", () => {
-    const rejectBtn = wrapper.find(".btn-parent").find(Button).at(0);
-    rejectBtn.prop("onClick")();
-    wrapper.update();
-    expect(wrapper.find(RequestModal).at(1).prop("isModalVisible")).toBe(true);
+  it("should open the reject modal when Reject is clicked", async () => {
+    renderVendor();
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    expect(await screen.findByText("Reject Task")).toBeInTheDocument();
   });
 
-  // ---- handleApprove dispatches and navigates ----
-  it("should call handleApprove, dispatch updateTaskAction, and navigate on success", async () => {
+  it("should dispatch updateTaskAction and navigate on approve confirm", async () => {
     mockDispatch.mockReturnValue(
       Promise.resolve({ data: { statusMessage: { message: "Approved!" } } })
     );
-    // Open approve modal first
-    wrapper.find(".btn-parent").find(Button).at(1).prop("onClick")();
-    wrapper.update();
-    // Trigger handleApprove
-    await wrapper.find(RequestModal).at(0).prop("handleOk")();
-    expect(updateTaskAction).toHaveBeenCalled();
-    expect(mockHistoryPush).toHaveBeenCalledWith("/myTasks");
+    renderVendor();
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Approve" }));
+    await waitFor(() => expect(updateTaskAction).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(mockHistoryPush).toHaveBeenCalledWith("/myTasks")
+    );
   });
 
-  // ---- handleApprove with no statusMessage ----
-  it("should handle approve when response has no statusMessage", async () => {
+  it("should not navigate when approve response has no statusMessage", async () => {
     mockDispatch.mockReturnValue(Promise.resolve({ data: {} }));
-    wrapper.find(".btn-parent").find(Button).at(1).prop("onClick")();
-    wrapper.update();
-    await wrapper.find(RequestModal).at(0).prop("handleOk")();
-    expect(updateTaskAction).toHaveBeenCalled();
-    // Should not push since no statusMessage
+    renderVendor();
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Approve" }));
+    await waitFor(() => expect(updateTaskAction).toHaveBeenCalled());
     expect(mockHistoryPush).not.toHaveBeenCalledWith("/myTasks");
   });
 
-  // ---- handleApprove with null response ----
-  it("should handle approve when response is null", async () => {
+  it("should not navigate when approve response is null", async () => {
     mockDispatch.mockReturnValue(Promise.resolve(null));
-    wrapper.find(".btn-parent").find(Button).at(1).prop("onClick")();
-    wrapper.update();
-    await wrapper.find(RequestModal).at(0).prop("handleOk")();
-    expect(updateTaskAction).toHaveBeenCalled();
+    renderVendor();
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Approve" }));
+    await waitFor(() => expect(updateTaskAction).toHaveBeenCalled());
     expect(mockHistoryPush).not.toHaveBeenCalledWith("/myTasks");
   });
 
-  // ---- handleApproveCancel ----
-  it("should handle approve cancel and close modal", () => {
-    // Open modal first
-    wrapper.find(".btn-parent").find(Button).at(1).prop("onClick")();
-    wrapper.update();
-    expect(wrapper.find(RequestModal).at(0).prop("isModalVisible")).toBe(true);
-    // Cancel
-    wrapper.find(RequestModal).at(0).prop("handleCancel")();
-    wrapper.update();
-    expect(wrapper.find(RequestModal).at(0).prop("isModalVisible")).toBe(false);
+  it("should close the approve modal via Cancel", async () => {
+    renderVendor();
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(screen.queryByText("Approve Task")).not.toBeInTheDocument()
+    );
   });
 
-  // ---- submitReason / reject modal structure ----
-  it("should have handleOk prop on reject modal for submitReason", () => {
-    const rejectModal = wrapper.find(RequestModal).at(1);
-    expect(typeof rejectModal.prop("handleOk")).toBe("function");
+  it("should close the reject modal via Cancel", async () => {
+    renderVendor();
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(screen.queryByText("Reject Task")).not.toBeInTheDocument()
+    );
   });
 
-  it("should render reject modal with reason form", () => {
-    const rejectModal = wrapper.find(RequestModal).at(1);
-    expect(rejectModal.find(Form).length).toBe(1);
-    expect(rejectModal.find(Form.Item).length).toBe(1);
+  it("should render the reject reason field inside the reject modal", async () => {
+    renderVendor();
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    await screen.findByText("Reject Task");
+    expect(screen.getAllByText("Reason").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render reason form field with required rule", () => {
-    const rejectModal = wrapper.find(RequestModal).at(1);
-    const reasonField = rejectModal.find(Form.Item);
-    expect(reasonField.prop("name")).toBe("reason");
-    expect(reasonField.prop("rules")).toEqual([{ required: true, message: "reason is mandatory !" }]);
+  it("should render the entity field labels and values", () => {
+    renderVendor();
+    expect(screen.getByText("Entity ID")).toBeInTheDocument();
+    expect(screen.getByText("Long Name")).toBeInTheDocument();
+    expect(screen.getByText("Vendor One")).toBeInTheDocument();
+    expect(screen.getByText("Test vendor description")).toBeInTheDocument();
   });
 
-  it("should render reject modal with children content", () => {
-    const rejectModal = wrapper.find(RequestModal).at(1);
-    expect(rejectModal.children().length).toBeGreaterThan(0);
-  });
-
-  // ---- handleRejectCancel ----
-  it("should handle reject cancel and close modal", () => {
-    wrapper.find(".btn-parent").find(Button).at(0).prop("onClick")();
-    wrapper.update();
-    expect(wrapper.find(RequestModal).at(1).prop("isModalVisible")).toBe(true);
-    wrapper.find(RequestModal).at(1).prop("handleCancel")();
-    wrapper.update();
-    expect(wrapper.find(RequestModal).at(1).prop("isModalVisible")).toBe(false);
-  });
-
-  // ---- Renders entity field labels ----
-  it("should render Entity ID label", () => {
-    const formItems = wrapper.find(Form.Item);
-    const entityIdItem = formItems.filterWhere(n => n.prop("name") === "entityId");
-    expect(entityIdItem.length).toBe(1);
-  });
-
-  it("should render Long Name label", () => {
-    const formItems = wrapper.find(Form.Item);
-    const longNameItem = formItems.filterWhere(n => n.prop("name") === "longName");
-    expect(longNameItem.length).toBe(1);
-  });
-
-  it("should render Short Name label", () => {
-    const formItems = wrapper.find(Form.Item);
-    const shortNameItem = formItems.filterWhere(n => n.prop("name") === "shortName");
-    expect(shortNameItem.length).toBe(1);
-  });
-
-  it("should render Entity Type label", () => {
-    const formItems = wrapper.find(Form.Item);
-    const entityTypeItem = formItems.filterWhere(n => n.prop("name") === "entityType");
-    expect(entityTypeItem.length).toBe(1);
-  });
-
-  it("should render Website label", () => {
-    const formItems = wrapper.find(Form.Item);
-    const websiteItems = formItems.filterWhere(n => n.prop("name") === "website");
-    expect(websiteItems.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("should render vendorDescription label", () => {
-    const formItems = wrapper.find(Form.Item);
-    const descItem = formItems.filterWhere(n => n.prop("name") === "vendorDescription");
-    expect(descItem.length).toBe(1);
-  });
-
-  // ---- PageHeader onBack ----
-  it("should call history.push on PageHeader back", () => {
-    wrapper.find(PageHeader).prop("onBack")();
-    expect(baseMockProps.history.push).toHaveBeenCalledWith("/myTasks");
-  });
-
-  // ---- Breadcrumb data ----
-  it("should pass correct breadcrumb data", () => {
-    const bc = wrapper.find(Breadcrumb);
-    expect(bc.prop("breadcrumb")).toEqual([
-      { name: "My Tasks", url: "/myTasks" },
-      { name: "V1Short" },
-    ]);
-  });
-
-  // ---- Two RequestModals rendered ----
-  it("should render two RequestModal components", () => {
-    expect(wrapper.find(RequestModal).length).toBe(2);
-  });
-
-  // ---- Initial modal state ----
-  it("should have approve modal not visible initially", () => {
-    expect(wrapper.find(RequestModal).at(0).prop("isModalVisible")).toBe(false);
-  });
-
-  it("should have reject modal not visible initially", () => {
-    expect(wrapper.find(RequestModal).at(1).prop("isModalVisible")).toBe(false);
-  });
-
-  // ---- Approve modal title ----
-  it("should have correct title on approve modal", () => {
-    expect(wrapper.find(RequestModal).at(0).prop("title")).toBe("Approve Task");
-  });
-
-  // ---- Reject modal title ----
-  it("should have correct title on reject modal", () => {
-    expect(wrapper.find(RequestModal).at(1).prop("title")).toBe("Reject Task");
-  });
-
-  // ---- Divider rendered ----
-  it("should render a Divider", () => {
-    expect(wrapper.find("Divider").length).toBe(1);
+  it("should pass the entity-main className to the layout root", () => {
+    const { container } = renderVendor();
+    expect(container.querySelector(".entity-main")).toBeInTheDocument();
   });
 });

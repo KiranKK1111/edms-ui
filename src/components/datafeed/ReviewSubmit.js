@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Row, Col, Divider, Tooltip, Descriptions } from "antd";
+import { Grid, Tooltip } from "@mui/material";
 import { normalText } from "../stringConversion";
 import { formDataFn } from "../../store/actions/DatafeedActions";
-import { QuestionCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { HelpOutlineOutlined as QuestionCircleOutlined } from "@mui/icons-material";
 
 const ReviewSubmit = (props) => {
   const [storeData, setStoreData] = useState();
@@ -71,7 +71,7 @@ const ReviewSubmit = (props) => {
     if (val === "personalDataType") {
       return (
         <Tooltip title="The type of personal data this feed contains.">
-          <span style={{ color: "#007AFF" }}>
+          <span style={{ color: "var(--color-primary)" }}>
             {" "}
             <QuestionCircleOutlined />{" "}
           </span>
@@ -81,7 +81,7 @@ const ReviewSubmit = (props) => {
     if (val === "datasetShortName") {
       return (
         <Tooltip title="The dataset that this feed is under.">
-          <span style={{ color: "#007AFF" }}>
+          <span style={{ color: "var(--color-primary)" }}>
             <QuestionCircleOutlined />{" "}
           </span>
         </Tooltip>
@@ -93,42 +93,32 @@ const ReviewSubmit = (props) => {
   return (
     <div className="review-submit" id="main">
       <h3 style={{ marginLeft: "1rem" }}>General Details</h3>
-      <Row gutter={[2, 4]}>
+      <Grid container spacing={1}>
         {keys &&
           keys.map((item, i) => (
-            <>
+            <React.Fragment key={i}>
               {item !== "url" ? (
-                <Col span={item !== "description" ? 8 : 23} key={i}>
+                <Grid size={item !== "description" ? 4 : 12}>
                   {item !== "personalDataType" ? (
                     item !== "dataFeedConfiguration" ? (
-                      <Descriptions
-                        layout="horizontal"
-                        column={1}
-                        size="middle"
-                        style={{ marginLeft: "1rem", marginTop: "0.5rem" }}
-                      >
-                        {
-                          <Descriptions.Item
-                            label={
-                              item === "datafeedId"
-                                ? "Data Feed ID"
-                                : normalText(item).replace("Id", "ID")
-                            }
-                            labelStyle={{
-                              fontFamily: "inherit",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            <h4 style={{ textAlign: "justify" }}>
-                              {item !== "dataFeedConfiguration"
-                                ? newData[item]
-                                : null}
-                            </h4>
-                          </Descriptions.Item>
-                        }
-                      </Descriptions>
+                      <div style={{ marginLeft: "1rem", marginTop: "0.5rem" }}>
+                        <span
+                          style={{
+                            fontFamily: "inherit",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {item === "datafeedId"
+                            ? "Data Feed ID"
+                            : normalText(item).replace("Id", "ID")}
+                          :{" "}
+                        </span>
+                        <h4 style={{ textAlign: "justify" }}>
+                          {newData[item]}
+                        </h4>
+                      </div>
                     ) : (
-                      <span role="link" style={{ marginLeft: "1rem", fontSize: 16, cursor: "pointer", color: "#1890ff" }}>
+                      <span role="link" style={{ marginLeft: "1rem", fontSize: 16, cursor: "pointer", color: "var(--color-primary)" }}>
                         {normalText(item)}
                       </span>
                     )
@@ -140,11 +130,11 @@ const ReviewSubmit = (props) => {
                       {newData[item]}
                     </>
                   )}
-                </Col>
+                </Grid>
               ) : null}
-            </>
+            </React.Fragment>
           ))}
-      </Row>
+      </Grid>
     </div>
   );
 };

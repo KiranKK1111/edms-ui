@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Row, Col, Divider } from "antd";
-import Headers from "../../../pages/header/Header";
+import { Grid, Divider } from "@mui/material";
 import { schedulerDatabase } from "../../../store/actions/SourceConfigActions";
 import { normalText } from "../../stringConversion";
-import moment from "moment";
+import dayjs from "../../../design-system/dayjs";
 const SchedulerDetails = (props) => {
   const [schData, setSchData] = useState([]);
   const params = useParams();
@@ -26,34 +25,33 @@ const SchedulerDetails = (props) => {
   if (schData.length > 0) {
     schedulerKeys = Object.keys(schData[0]);
     schedulerFieldInfo = schData[0];
-    schedulerFieldInfo["startDate"] = moment(
+    schedulerFieldInfo["startDate"] = dayjs(
       schedulerFieldInfo["startDate"]
     ).format("DD-MM-YYYY");
-    schedulerFieldInfo["endDate"] = moment(
+    schedulerFieldInfo["endDate"] = dayjs(
       schedulerFieldInfo["endDate"]
     ).format("DD-MM-YYYY");
-    schedulerFieldInfo["batchKickOffTime"] = moment(
+    schedulerFieldInfo["batchKickOffTime"] = dayjs(
       schedulerFieldInfo["batchKickOffTime"]
     ).format("HH:mm:ss");
   }
 
   return (
     <div>
-      <Headers />
       <div className="content-area">
         <div className="content-wrapper">
           <div className="review-submit">
             <h3 style={{ paddingBottom: 0 }}>Scheduler Details</h3>
-            <Divider />
-            <Row>
+            <Divider sx={{ my: 1 }} />
+            <Grid container spacing={2}>
               {schData.length > 0 &&
                 schedulerKeys.map((item, i) => (
-                  <Col span={12} key={i} style={{ paddingBottom: "12px" }}>
+                  <Grid size={6} key={i} sx={{ pb: 1.5 }}>
                     <span className="label-review">{normalText(item)}:</span>
                     {schedulerFieldInfo[item]}
-                  </Col>
+                  </Grid>
                 ))}
-            </Row>
+            </Grid>
           </div>
         </div>
       </div>

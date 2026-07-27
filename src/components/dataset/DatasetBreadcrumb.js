@@ -1,24 +1,23 @@
 import { Link } from "react-router-dom";
-import { Breadcrumb } from "antd";
-import { HomeOutlined } from "@ant-design/icons";
+import { Box, Breadcrumbs, Typography } from "@mui/material";
+import { Home as HomeIcon } from "@mui/icons-material";
 
 const DatasetBreadcrumb = (props) => {
   const { title } = props;
-
   const titleDisplay = title ? title : "-";
 
   return (
-    <Breadcrumb className="mt-16 ml-24 mr-24">
-      <Breadcrumb.Item>
-        <Link to="/catalog">
-          <HomeOutlined />
+    <Box className="mt-16 ml-24 mr-24" sx={{ mt: 2, mx: 3 }}>
+      <Breadcrumbs separator="/" aria-label="breadcrumb" sx={{ fontSize: 13 }}>
+        <Link to="/catalog" style={{ display: "inline-flex", alignItems: "center", color: "inherit" }}>
+          <HomeIcon fontSize="small" />
         </Link>
-      </Breadcrumb.Item>
-      <Breadcrumb.Item>
         <Link to="/catalog">Catalogue</Link>
-      </Breadcrumb.Item>
-      <Breadcrumb.Item>{titleDisplay}</Breadcrumb.Item>
-    </Breadcrumb>
+        <Typography component="span" sx={{ color: "text.primary", fontSize: 13 }}>
+          {titleDisplay}
+        </Typography>
+      </Breadcrumbs>
+    </Box>
   );
 };
 

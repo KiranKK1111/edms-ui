@@ -1,18 +1,18 @@
 import { memo, useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useHistory } from "react-router-dom";
-import { Row, Col, Divider, Button, PageHeader } from "antd";
+import { useHistory, useParams } from "react-router-dom";
+import { Grid, Divider } from "@mui/material";
+
 import { getCustomLabels, getObjFromSubscription } from "../stringConversion";
 import {
   getDataById,
   getDataByCrId,
 } from "../../store/actions/requestAccessActions";
-import { useParams } from "react-router-dom";
-import Headers from "../../pages/header/Header";
-import Breadcrumb from "../breadcrumb/Breadcrumb";
 import HeaderPanel from "../headerPanel/HeaderPanel";
 import { catalogueDetailsData } from "../../store/actions/DatasetPageActions";
-import logoRecord from "../../images/source_icon.svg";
+import { TaskDetailLayout } from "../myTasks";
+import { NoDataAlert } from "../../design-system";
+import { isDatasetDelegateRole } from "../../utils/accessMyTask";
 import ApproveRejectModal from "../Modals/ApproveRejectModal";
 import getPermissionObject from "../../utils/accessObject";
 import {
@@ -34,7 +34,7 @@ const RequestDetails = (props) => {
   const history = useHistory();
   const myTaskData =
     props.location && props.location.state && props.location.state.myTaskData;
-  const [disabledSubmitBtn, setDisabledSubmitBtn] = useState(false);
+  const [, setDisabledSubmitBtn] = useState(false);
   const subscription = useSelector((state) => state.requestAccess);
 
   useEffect(() => {
@@ -43,11 +43,12 @@ const RequestDetails = (props) => {
     else dispatch(getDataByCrId(params.id));
   }, [dispatch]);
 
-  let brResult = useSelector(
+  const brResult = useSelector(
     (state) => state.requestAccess.dataByIdResponse.dataById
   );
-
-  let catalogueList = useSelector((state) => state.catalogueList.catalogueList);
+  const catalogueList = useSelector(
+    (state) => state.catalogueList.catalogueList
+  );
 
   useEffect(() => {
     if (catalogueList && brResult) {
@@ -71,7 +72,7 @@ const RequestDetails = (props) => {
     }
   }, [revisedList]);
 
-  let brResultRevised = {
+  const brResultRevised = {
     subscriptionId: brResult["subscriptionId"],
     department: brResult["department"],
     clarityId: brResult["clarityId"],
@@ -81,18 +82,16 @@ const RequestDetails = (props) => {
     reasonForSubscription: brResult["reason"],
     subscriptionFor: brResult["subscriber"],
     subscriptionType: brResult["subscriptionType"],
-    onDemandVendorRequest: brResult["subscriptionVendorRequest"] === "Y" ? "Yes" : "No"
+    onDemandVendorRequest:
+      brResult["subscriptionVendorRequest"] === "Y" ? "Yes" : "No",
   };
-  let brData = Object.keys(brResultRevised);
-  brData = brData.filter((item) => item !== "reasonForSubscription");
+  const brData = Object.keys(brResultRevised).filter(
+    (item) => item !== "reasonForSubscription"
+  );
   const shortname =
     props.location.state && props.location.state.myTaskData
       ? props.location.state.myTaskData.taskListDescription
       : "-";
-  const breadcrumb = [
-    { name: "My Tasks", url: "/myTasks" },
-    { name: shortname },
-  ];
 
   const showApproveModal = (event) => {
     if (event) {
@@ -122,16 +121,12 @@ const RequestDetails = (props) => {
       setApproveModal(false);
     }
   };
+
   const getStatus = (status) => {
     status.data.taskList ? setBtnDisplay(true) : setBtnDisplay(false);
   };
+
   useEffect(() => {
-    // if (
-    //   loginedRold &&
-    //   loginedRold.toString().toLocaleLowerCase() === "read only"
-    // ) {
-    //   setBtnDisplay(true);
-    // } else
     if (
       myTaskData.taskListTaskStatus.toString().toLowerCase() === "approved" ||
       myTaskData.taskListTaskStatus.toString().toLowerCase() === "rejected"
@@ -139,6 +134,7 @@ const RequestDetails = (props) => {
       setBtnDisplay(true);
     }
   }, []);
+
   const refreshPage = () => {
     history.push("/myTasks");
   };
@@ -172,59 +168,72 @@ const RequestDetails = (props) => {
   };
 
   const isApproveRejectDisabled = buttonAccessReject();
+  // Disable Approve/Reject when the subscription details could not be loaded
+  // (nothing to act on), and always for the Dataset Delegate role.
+  const hasBrData = brResult && Object.keys(brResult).length > 0;
+  const actionsDisabled =
+    btnDisplay ||
+    isApproveRejectDisabled ||
+    props.allowSubmit === false ||
+    !hasBrData ||
+    isDatasetDelegateRole();
 
-  console.log();
+  const subForFlag =
+    getObjFromSubscription(subscription, "subscriptionType") &&
+    getObjFromSubscription(subscription, "subscriptionType").toLowerCase() ===
+      "individual subscription";
 
   return (
-    <div className="request-details">
-      <Headers />
-      <div className="panel">
-        <div className="breadcrumb-area">
-          <Breadcrumb breadcrumb={breadcrumb} />
-          <div className="btn-parent">
-            <Button
-              type="default"
-              disabled={
-                btnDisplay ||
-                isApproveRejectDisabled ||
-                props.allowSubmit === false
-              }
-              onClick={() => showRejectModal(myTaskData)}
-              danger
-            >
-              Reject
-            </Button>
-            <Button
-              type="primary"
-              onClick={() => showApproveModal(myTaskData)}
-              disabled={
-                btnDisplay ||
-                isApproveRejectDisabled ||
-                props.allowSubmit === false
-              }
-            >
-              Approve
-            </Button>
-          </div>
-        </div>
-        <PageHeader
-          title={
-            <div>
-              <img
-                src={logoRecord}
-                alt="Source Icon"
-                className="page-header-img pr-8"
-              />
-              {shortname}
-            </div>
-          }
-          ghost={false}
-          onBack={() => props.history.push("/myTasks")}
-          className="pt-0 pb-0"
-        >
-          <HeaderPanel />
-        </PageHeader>
-      </div>
+    <TaskDetailLayout
+      title={shortname}
+      breadcrumbName={shortname}
+      actionsDisabled={actionsDisabled}
+      onApproveClick={() => showApproveModal(myTaskData)}
+      onRejectClick={() => showRejectModal(myTaskData)}
+      approveOpen={false}
+      rejectOpen={false}
+      onApprove={() => {}}
+      onReject={() => {}}
+      onApproveCancel={() => {}}
+      onRejectCancel={() => {}}
+      className="request-details"
+    >
+      <HeaderPanel />
+      <Divider sx={{ my: 0.5 }} />
+      {hasBrData ? (
+        <>
+          <h3 className="content-header">Business Requirements</h3>
+          <Grid container spacing={2}>
+            {brData.map((item, i) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
+                <span className="label-review">{getCustomLabels(item)} :</span>{" "}
+                {brResultRevised[item]}
+              </Grid>
+            ))}
+          </Grid>
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <span className="label-review">Reason for Subscription :</span>{" "}
+              {brResultRevised["reasonForSubscription"]}
+            </Grid>
+          </Grid>
+          <Divider sx={{ my: 1 }} />
+          <DisplayTC
+            view="rd"
+            subForFlag={subForFlag ? true : false}
+            vendorRequest={getObjFromSubscription(
+              subscription,
+              "subscriptionVendorRequest"
+            )}
+          />
+        </>
+      ) : (
+        <NoDataAlert
+          title="Subscription details not available"
+          message="The business requirement details for this request could not be found or have not been provided yet."
+        />
+      )}
+
       <ApproveRejectModal
         approveModal={approveModal}
         currentActionData={currentActionData}
@@ -233,35 +242,7 @@ const RequestDetails = (props) => {
         setDisabledSubmitBtn={setDisabledSubmitBtn}
         refreshPage={refreshPage}
       />
-      <div className="content-area">
-        <div className="content-wrapper">
-          <div className="review-submit">
-            <h3>Business Requirements</h3>
-            <Row gutter={[2, 4]}>
-              {brData.map((item, i) => (
-                <Col span={8} key={i}>
-                  <span className="label-review">
-                    {getCustomLabels(item)} :
-                  </span>
-                  {brResultRevised[item]}
-                </Col>
-              ))}
-            </Row>
-            <Row>
-              <Col span={24}>
-                <span className="label-review">Reason for Subscription :</span>
-                {brResultRevised["reasonForSubscription"]}
-              </Col>
-            </Row>
-            <Divider />
-            <DisplayTC
-              view="rd"
-              subForFlag={getObjFromSubscription(subscription, "subscriptionType") && getObjFromSubscription(subscription, "subscriptionType").toLowerCase() === "individual subscription" ? true : false}
-              vendorRequest={getObjFromSubscription(subscription, "subscriptionVendorRequest")}/>
-          </div>
-        </div>
-      </div>
-    </div>
+    </TaskDetailLayout>
   );
 };
 

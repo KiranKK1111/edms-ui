@@ -1,53 +1,50 @@
-import { configure, shallow, sleep } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import MyTasksDashboardNew from "../../pages/myTasks/MyTasksDashboardNew";
+import React from "react";
+import * as redux from "react-redux";
+import { render } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
-configure({ adapter: new Adapter() });
+import MyTasksDashboardNew from "../../pages/myTasks/MyTasksDashboardNew";
 
 jest.spyOn(console, "error").mockImplementation(() => {});
 jest.spyOn(console, "warn").mockImplementation(() => {});
+
 const mockDispatch = jest.fn();
-jest.mock("react-redux", () => {
-  return {
-    useSelector: jest.fn(),
-    useDispatch: () => mockDispatch,
-    connect: (mapStateToProps, mapDispatchToProps) => (Component) => ({
-      mapStateToProps,
-      mapDispatchToProps,
-      Component,
-    }),
-    Provider: ({ children }) => children,
-  };
-});
 
-describe("Parent", () => {
-  const wrapped = shallow(<MyTasksDashboardNew />);
-  it("Header panel", () => {
-    const element = wrapped.find("#header-panel");
-    expect(element.length).toBe(1);
-  });
-  it("Radio buttion simulation", () => {
-    setTimeout(() => {
-      const setState = jest.fn();
-      const useStateSpy = jest.spyOn(React, "useState");
-      useStateSpy.mockImplementation((init) => [init, setState]);
-      const button = wrapped.find("#btn-pending");
-      button.simulate("click");
-      expect(setState).toHaveBeenCalledWith(1);
-    }, 500);
-  });
-  it("Simulate popup", () => {
-    setTimeout(() => {
-      const spy = jest.fn();
-      wrapped.find(".link-button").at(0).simulate("click");
-      expect(spy).toHaveBeenCalled();
-    }, 500);
+jest.mock("react-redux", () => ({
+  useSelector: jest.fn(),
+  useDispatch: () => mockDispatch,
+  connect: () => (Component) => Component,
+}));
+
+jest.mock("../../components/Modals/ApproveRejectModal", () => () => (
+  <div data-testid="mock-approve-reject-modal" />
+));
+
+const state = {
+  myTasks: { list: [], data: {}, pendingList: [], completedList: [] },
+};
+
+const renderPage = () =>
+  render(
+    <MemoryRouter>
+      <MyTasksDashboardNew />
+    </MemoryRouter>
+  );
+
+describe("MyTasksDashboardNew", () => {
+  beforeEach(() => {
+    jest
+      .spyOn(redux, "useSelector")
+      .mockImplementation((selector) => selector(state));
   });
 
-  it("main", () => {
-    setTimeout(() => {
-      const element = wrapped.find("#main");
-      expect(element.length).toBe(1);
-    }, 500);
+  it("should render the loading spinner initially", () => {
+    const { container } = renderPage();
+    expect(container.querySelector("#spinner")).toBeInTheDocument();
+  });
+
+  it("should render the ApproveRejectModal", () => {
+    const { getByTestId } = renderPage();
+    expect(getByTestId("mock-approve-reject-modal")).toBeInTheDocument();
   });
 });

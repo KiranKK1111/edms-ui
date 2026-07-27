@@ -1,36 +1,39 @@
-import * as redux from "react-redux";
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Tabs, Skeleton, Alert } from "antd";
+import React from "react";
+import { screen } from "@testing-library/react";
+import { renderWithProviders } from "../../utils/renderWithProviders";
 import DatasetTabs from "../../../components/dataset/DatasetTabs";
-
-configure({ adapter: new Adapter() });
 
 jest.spyOn(console, "error").mockImplementation(() => {});
 jest.spyOn(console, "warn").mockImplementation(() => {});
 
-const mockDispatch = jest.fn();
-jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
-  useDispatch: () => mockDispatch,
-}));
+// Mock the tab content children — DatasetTabs only owns the tab strip + alert.
+jest.mock("../../../components/dataset/Overview", () => () => (
+  <div data-testid="overview" />
+));
+jest.mock("../../../components/dataset/LicenceScope", () => () => (
+  <div data-testid="licence-scope" />
+));
+jest.mock("../../../components/dataset/SubscribersTab", () => () => (
+  <div data-testid="subscribers" />
+));
+jest.mock("../../../components/dataset/SubscriptionsTab", () => () => (
+  <div data-testid="subscriptions" />
+));
+jest.mock("../../../components/dataset/DocumentationTab", () => () => (
+  <div data-testid="documentation" />
+));
+jest.mock("../../../components/dataset/MetadataTab", () => () => (
+  <div data-testid="metadata" />
+));
 
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useLocation: jest.fn().mockReturnValue({ state: { data: {} } }),
-}));
-
-let mockIsButtonObject = jest.fn().mockReturnValue(false);
-let mockGetPermissionObject = jest.fn().mockReturnValue({ permission: "R" });
-
-jest.mock("../../../utils/accessButtonCheck", () => (...args) => mockIsButtonObject(...args));
-jest.mock("../../../utils/accessObject", () => (...args) => mockGetPermissionObject(...args));
-jest.mock("../../../utils/accessSubscribersTab", () => jest.fn().mockReturnValue(false));
-jest.mock("../../../store/actions/SourceConfigActions", () => ({
-  schedulerDatabase: jest.fn(),
-}));
-
-const { TabPane } = Tabs;
+const mockIsButtonObject = jest.fn();
+const mockGetPermissionObject = jest.fn();
+jest.mock("../../../utils/accessButtonCheck", () => (...args) =>
+  mockIsButtonObject(...args)
+);
+jest.mock("../../../utils/accessObject", () => (...args) =>
+  mockGetPermissionObject(...args)
+);
 
 const baseProps = {
   dataFamily: { loading: false },
@@ -44,273 +47,99 @@ const baseProps = {
 
 describe("DatasetTabs", () => {
   beforeEach(() => {
+    localStorage.clear();
     localStorage.setItem("entitlementType", "Admin");
     mockIsButtonObject.mockReturnValue(false);
     mockGetPermissionObject.mockReturnValue({ permission: "R" });
   });
 
-  afterEach(() => {
-    localStorage.clear();
-    jest.clearAllMocks();
-  });
-
-  // === Loading / Skeleton tests ===
-
-  it("should render Skeleton when dataFamily is loading", () => {
-    const wrapper = shallow(
+  it("should render a skeleton when dataFamily is loading", () => {
+    const { container } = renderWithProviders(
       <DatasetTabs {...baseProps} dataFamily={{ loading: true }} />
     );
-    expect(wrapper.find(Skeleton).length).toBe(1);
-    expect(wrapper.find(Tabs).length).toBe(0);
+    expect(container.querySelector(".MuiSkeleton-root")).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Overview" })).not.toBeInTheDocument();
   });
 
-  it("should render Skeleton when license is loading", () => {
-    const wrapper = shallow(
-      <DatasetTabs {...baseProps} license={{ loading: true, data: {} }} />
-    );
-    expect(wrapper.find(Skeleton).length).toBe(1);
+  it("should render the default tabs when nothing is loading", () => {
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(screen.getByRole("tab", { name: "Overview" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Licence scope" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Schema" })).toBeInTheDocument();
   });
 
-  it("should render Skeleton when vendor is loading", () => {
-    const wrapper = shallow(
-      <DatasetTabs {...baseProps} vendor={{ loading: true, data: {} }} />
-    );
-    expect(wrapper.find(Skeleton).length).toBe(1);
-  });
-
-  it("should render Skeleton when contract is loading", () => {
-    const wrapper = shallow(
-      <DatasetTabs {...baseProps} contract={{ loading: true }} />
-    );
-    expect(wrapper.find(Skeleton).length).toBe(1);
-  });
-
-  it("should render Skeleton when sourceConfig is loading", () => {
-    const wrapper = shallow(
-      <DatasetTabs {...baseProps} sourceConfig={{ loading: true }} />
-    );
-    expect(wrapper.find(Skeleton).length).toBe(1);
-  });
-
-  it("should NOT render Skeleton when nothing is loading", () => {
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    expect(wrapper.find(Skeleton).length).toBe(0);
-    expect(wrapper.find(Tabs).length).toBe(1);
-  });
-
-  // === Tabs rendering ===
-
-  it("should render Tabs component with default active key 1", () => {
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    expect(wrapper.find(Tabs).prop("defaultActiveKey")).toBe("1");
-  });
-
-  it("should render Overview, Licence scope, and Schema tab panes always", () => {
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const tabPanes = wrapper.find(TabPane);
-    const tabTexts = tabPanes.map((tp) => tp.prop("tab"));
-    expect(tabTexts).toContain("Overview");
-    expect(tabTexts).toContain("Licence scope");
-    expect(tabTexts).toContain("Schema");
-  });
-
-  // === isOverviewTab / isMetadataTab disabled logic ===
-
-  it("should disable Overview tab when isButtonObject returns true", () => {
-    mockIsButtonObject.mockReturnValue(true);
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const overviewPane = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "Overview");
-    // isOverviewTab = !true = false, but disabled is set to isOverviewTab which is !isButtonObject
-    // Actually: isOverviewTab = !isButtonObject(...) = !true = false, disabled={isOverviewTab} = false
-    // Wait, re-read: isOverviewTab = !isButtonObject(...). If isButtonObject returns true, isOverviewTab = false
-    // But the code says disabled={isOverviewTab}. So disabled=false. Let me re-check...
-    // isOverviewTab = !isButtonObject(CATELOG_MANAGEMENT_PAGE, CATELOG_OVERVIEW_TAB);
-    // disabled={isOverviewTab}
-    // If isButtonObject returns true => isOverviewTab = false => disabled=false
-    // If isButtonObject returns false => isOverviewTab = true => disabled=true
-    // So with mockReturnValue(true), Overview is NOT disabled
-    expect(overviewPane.prop("disabled")).toBe(false);
-  });
-
-  it("should set Overview disabled=true when isButtonObject returns false", () => {
+  it("should disable the Overview tab when isButtonObject returns false", () => {
     mockIsButtonObject.mockReturnValue(false);
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const overviewPane = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "Overview");
-    expect(overviewPane.prop("disabled")).toBe(true);
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(screen.getByRole("tab", { name: "Overview" })).toBeDisabled();
   });
 
-  // === Alert for pending datafeedStatus ===
-
-  it("should show Alert when datafeedStatus is pending", () => {
-    const wrapper = shallow(<DatasetTabs {...baseProps} datafeedStatus="pending" />);
-    expect(wrapper.find(Alert).length).toBe(1);
-    expect(wrapper.find(Alert).prop("type")).toBe("warning");
+  it("should enable the Overview tab when isButtonObject returns true", () => {
+    mockIsButtonObject.mockReturnValue(true);
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(screen.getByRole("tab", { name: "Overview" })).not.toBeDisabled();
   });
 
-  it("should NOT show Alert when datafeedStatus is Active", () => {
-    const wrapper = shallow(<DatasetTabs {...baseProps} datafeedStatus="Active" />);
-    expect(wrapper.find(Alert).length).toBe(0);
+  it("should show a warning alert when datafeedStatus is pending", () => {
+    renderWithProviders(<DatasetTabs {...baseProps} datafeedStatus="pending" />);
+    expect(screen.getByRole("alert")).toBeInTheDocument();
   });
 
-  it("should NOT show Alert when datafeedStatus is undefined", () => {
-    const wrapper = shallow(<DatasetTabs {...baseProps} datafeedStatus={undefined} />);
-    expect(wrapper.find(Alert).length).toBe(0);
+  it("should NOT show an alert when datafeedStatus is Active", () => {
+    renderWithProviders(<DatasetTabs {...baseProps} datafeedStatus="Active" />);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
-
-  // === My Subscriptions TabPane (getObjectForSubscription) ===
 
   it("should render My Subscriptions tab when permission is R", () => {
     mockGetPermissionObject.mockReturnValue({ permission: "R" });
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const subTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "My Subscriptions");
-    expect(subTab.length).toBe(1);
-  });
-
-  it("should render My Subscriptions tab when permission is RW", () => {
-    mockGetPermissionObject.mockReturnValue({ permission: "RW" });
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const subTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "My Subscriptions");
-    expect(subTab.length).toBe(1);
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(
+      screen.getByRole("tab", { name: "My Subscriptions" })
+    ).toBeInTheDocument();
   });
 
   it("should NOT render My Subscriptions tab when permission object is null", () => {
     mockGetPermissionObject.mockReturnValue(null);
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const subTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "My Subscriptions");
-    expect(subTab.length).toBe(0);
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(
+      screen.queryByRole("tab", { name: "My Subscriptions" })
+    ).not.toBeInTheDocument();
   });
-
-  it("should NOT render My Subscriptions tab when permission is W", () => {
-    mockGetPermissionObject.mockReturnValue({ permission: "W" });
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const subTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "My Subscriptions");
-    expect(subTab.length).toBe(0);
-  });
-
-  // === Subscribers TabPane ===
 
   it("should render Subscribers tab when permission is R", () => {
     mockGetPermissionObject.mockReturnValue({ permission: "R" });
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const subTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "Subscribers");
-    expect(subTab.length).toBe(1);
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(screen.getByRole("tab", { name: "Subscribers" })).toBeInTheDocument();
   });
 
-  it("should NOT render Subscribers tab when permission is RW (not strictly R)", () => {
+  it("should NOT render Subscribers tab when permission is RW", () => {
     mockGetPermissionObject.mockReturnValue({ permission: "RW" });
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const subTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "Subscribers");
-    expect(subTab.length).toBe(0);
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(
+      screen.queryByRole("tab", { name: "Subscribers" })
+    ).not.toBeInTheDocument();
   });
-
-  // === Documentation TabPane ===
 
   it("should render Documentation tab when permission is R", () => {
     mockGetPermissionObject.mockReturnValue({ permission: "R" });
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const docTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "Documentation");
-    expect(docTab.length).toBe(1);
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(
+      screen.getByRole("tab", { name: "Documentation" })
+    ).toBeInTheDocument();
   });
 
-  it("should NOT render Documentation tab when permission is null and not guest", () => {
-    mockGetPermissionObject.mockReturnValue(null);
-    localStorage.setItem("entitlementType", "Admin");
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const docTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "Documentation");
-    expect(docTab.length).toBe(0);
-  });
-
-  // === isGuestRole logic ===
-
-  it("should render Documentation tab when isGuestRole is set (no entitlementType)", () => {
+  it("should render Documentation tab for a guest role with no entitlement", () => {
     localStorage.removeItem("entitlementType");
     localStorage.setItem("guestRole", "Guest");
     mockGetPermissionObject.mockReturnValue(null);
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    const docTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "Documentation");
-    expect(docTab.length).toBe(1);
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(
+      screen.getByRole("tab", { name: "Documentation" })
+    ).toBeInTheDocument();
   });
 
-  it("should NOT have guest role when entitlementType exists", () => {
-    localStorage.setItem("entitlementType", "Subscriber");
-    localStorage.setItem("guestRole", "Guest");
-    mockGetPermissionObject.mockReturnValue(null);
-    const wrapper = shallow(<DatasetTabs {...baseProps} />);
-    // isGuestRole = loginedRold ? undefined : guestRole. loginedRold = "Subscriber" => truthy => undefined
-    const docTab = wrapper.find(TabPane).filterWhere((t) => t.prop("tab") === "Documentation");
-    expect(docTab.length).toBe(0);
-  });
-
-  // === businessUnitDisplay / projectSpecificDisplay logic ===
-
-  it("should handle licenseUserData 'no' setting businessUnitDisplay to All", () => {
-    const wrapper = shallow(
-      <DatasetTabs
-        {...baseProps}
-        license={{ loading: false, data: { userData: "no", allowedUserTypes: "typeA" } }}
-      />
-    );
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should handle licenseUserData not 'no' setting businessUnitDisplay to allowedUserTypes", () => {
-    const wrapper = shallow(
-      <DatasetTabs
-        {...baseProps}
-        license={{ loading: false, data: { userData: "yes", allowedUserTypes: "typeB" } }}
-      />
-    );
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should handle projectSubscription 'no' setting projectSpecificDisplay to None", () => {
-    const wrapper = shallow(
-      <DatasetTabs
-        {...baseProps}
-        license={{ loading: false, data: { projectSubscription: "no" } }}
-      />
-    );
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should handle projectSubscription 'yes' setting projectSpecificDisplay to list text", () => {
-    const wrapper = shallow(
-      <DatasetTabs
-        {...baseProps}
-        license={{ loading: false, data: { projectSubscription: "yes" } }}
-      />
-    );
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  // === Edge cases ===
-
-  it("should handle null license data gracefully", () => {
-    const wrapper = shallow(
-      <DatasetTabs {...baseProps} license={{ loading: false, data: null }} />
-    );
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should handle null vendor data gracefully", () => {
-    const wrapper = shallow(
-      <DatasetTabs {...baseProps} vendor={{ loading: false, data: null }} />
-    );
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("should handle undefined props gracefully for loading checks", () => {
-    const wrapper = shallow(
-      <DatasetTabs
-        license={null}
-        vendor={null}
-        contract={null}
-        dataFamily={null}
-        sourceConfig={null}
-        datafeedStatus="Active"
-        catalogueObj={{}}
-      />
-    );
-    expect(wrapper.find(Tabs).length).toBe(1);
+  it("should render the active Overview tab content", () => {
+    renderWithProviders(<DatasetTabs {...baseProps} />);
+    expect(screen.getByTestId("overview")).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 .subHeader {
-    color: rgba(0, 0, 0, 0.85);
+    color: var(--color-text);
     font-weight: 600;
     font-size: 20px;
     line-height: 32px;
@@ -14,7 +14,7 @@
 }
 .label-review{
    margin-bottom: 0px;
-    color: #0F1217;
+    color: var(--color-text);
     font-family: Inter;
     font-size: 14px;
     font-weight: 600;

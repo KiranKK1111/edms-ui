@@ -1,27 +1,39 @@
-import * as redux from "react-redux";
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Button } from "antd";
-
+import React from "react";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { AppProviders } from "../../../design-system";
 import LicenseDetailsApproveReject from "../../../components/license/licenseDetailsApproveReject/licenseDetailsApproveReject";
 
-configure({ adapter: new Adapter() });
-
+let mockState = {};
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
+  useSelector: (cb) => cb(mockState),
   useDispatch: () => mockDispatch,
   connect: () => (Component) => Component,
 }));
 
 const mockPush = jest.fn();
 jest.mock("react-router-dom", () => ({
-  __esModule: true,
-  useParams: jest.fn().mockReturnValue({ id: "123" }),
+  ...jest.requireActual("react-router-dom"),
+  useParams: () => ({ id: "123" }),
   useHistory: () => ({ push: mockPush }),
 }));
 
-const licenseState = {
+jest.mock("../../../store/actions/licenseAction", () => ({
+  getLicenseDetailsById: jest.fn(() => "getLicenseDetailsById"),
+  getLicenseDetailsByCrId: jest.fn(() => "getLicenseDetailsByCrId"),
+}));
+
+jest.mock("../../../store/actions/MyTasksActions", () => ({
+  updateTaskAction: jest.fn(() => "updateTaskAction"),
+}));
+
+jest.mock("../../../utils/accessMyTask", () => jest.fn());
+
+const { updateTaskAction } = require("../../../store/actions/MyTasksActions");
+const isAcessDisabled = require("../../../utils/accessMyTask");
+
+const buildState = () => ({
   license: {
     data: [
       {
@@ -37,19 +49,11 @@ const licenseState = {
         licenseStatus: "Active",
         licenseLimitations: "None",
         usageModel: "api",
-        subscriptionModel: null,
-        subscriptionTypes: null,
-        subscriptionLimits: null,
-        subscriptionLimitsUsed: null,
         technicalDocument: "doc1.pdf,doc2.pdf",
       },
     ],
   },
-};
-
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(licenseState));
+});
 
 const mockProps = {
   location: {
@@ -66,31 +70,52 @@ const mockProps = {
   history: { push: mockPush },
 };
 
-const wrapper = shallow(<LicenseDetailsApproveReject {...mockProps} />);
+const renderComponent = () =>
+  render(
+    <AppProviders>
+      <MemoryRouter>
+        <LicenseDetailsApproveReject {...mockProps} />
+      </MemoryRouter>
+    </AppProviders>
+  );
 
 describe("LicenseDetailsApproveReject", () => {
-  it("should render the component", () => {
-    expect(wrapper.exists()).toBe(true);
+  beforeEach(() => {
+    isAcessDisabled.mockReturnValue(false);
+    mockDispatch.mockReturnValue(Promise.resolve({ data: true }));
+    localStorage.clear();
+    localStorage.setItem("psid", "current_user");
+    mockState = buildState();
   });
 
-  it("should render the main div", () => {
-    expect(wrapper.find("#main").exists()).toBe(true);
+  it("should render the Licence Details section header", () => {
+    renderComponent();
+    expect(screen.getByText("Licence Details")).toBeInTheDocument();
   });
 
-  it("should render Approve button", () => {
-    const buttons = wrapper.find(Button);
-    const approveBtn = buttons.filterWhere(
-      (btn) => btn.children().text() === "Approve"
-    );
-    expect(approveBtn.length).toBe(1);
+  it("should render the Licence Limitations section header", () => {
+    renderComponent();
+    expect(
+      screen.getAllByText("Licence Limitations").length
+    ).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render Reject button", () => {
-    const buttons = wrapper.find(Button);
-    const rejectBtn = buttons.filterWhere(
-      (btn) => btn.children().text() === "Reject"
-    );
-    expect(rejectBtn.length).toBe(1);
+  it("should render the licence short name as the title", () => {
+    renderComponent();
+    expect(screen.getAllByText("TL").length).toBeGreaterThanOrEqual(1);
   });
 
+  it("should render Approve and Reject buttons", () => {
+    renderComponent();
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
+  });
+
+  it("should open the approve modal and dispatch on confirm", async () => {
+    renderComponent();
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Approve" }));
+    await waitFor(() => expect(updateTaskAction).toHaveBeenCalled());
+  });
 });

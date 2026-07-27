@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkedms_ui=globalThis.webpackChunkedms_ui||[]).push([[613,810],{92832(e,s,a){a.r(s),a.d(s,{default:()=>i});var u=a(63357),d=(a(42753),a(44414));const i=()=>(0,d.jsx)(u.default,{resource:"datafeedConfig"})}}]);

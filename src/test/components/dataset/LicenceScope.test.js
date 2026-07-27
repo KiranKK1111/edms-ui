@@ -1,66 +1,55 @@
-import * as redux from "react-redux";
-import { configure, shallow, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Table } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { AppProviders } from "../../../design-system";
 import LicenceScope from "../../../components/dataset/LicenceScope";
-import LSTable from "../../../components/dataset/LSTable";
 
-configure({ adapter: new Adapter() });
-
-const mockUseLocationValue = {
-  pathname: "/testroute",
-  search: "",
-  hash: "",
-  state: {
-    data: {
-      datafeedById: "",
-    },
-  },
-};
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useLocation: jest.fn().mockImplementation(() => {
-    return mockUseLocationValue;
-  }),
+let mockState = {};
+jest.mock("react-redux", () => ({
+  useSelector: (cb) => cb(mockState),
 }));
-const license = {
-  licenseById: {},
-};
-const contract = { agreementById: "" };
-const datafeedInfo = { datafeedsData: [] };
-const state = { license, contract, datafeedInfo };
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
 
-const wrapper = mount(<LicenceScope />);
+const buildState = () => ({
+  license: { licenseById: {} },
+  contract: { agreementById: "" },
+  datafeedInfo: { datafeedsData: [] },
+});
 
-describe("parent", () => {
-  it("wrapper", () => {
-    const element = wrapper.find("#main");
-    expect(element.length).toBe(1);
-  });
-  it("table", () => {
-    const element = wrapper.find(Table);
-    expect(element.length).toBe(1);
-  });
-  it("table props", () => {
-    const element = wrapper.find(Table).prop("rowKey");
-    expect(element).toHaveLength(1);
+const renderScope = () =>
+  render(
+    <AppProviders>
+      <MemoryRouter>
+        <LicenceScope />
+      </MemoryRouter>
+    </AppProviders>
+  );
+
+describe("LicenceScope", () => {
+  beforeEach(() => {
+    mockState = buildState();
   });
 
-  it("should render LSTable component", () => {
-    const element = wrapper.find(LSTable);
-    expect(element.length).toBeGreaterThanOrEqual(0);
+  it("should render the main container", () => {
+    const { container } = renderScope();
+    expect(container.querySelector("#main")).toBeInTheDocument();
   });
 
-  it("table should have dataSource prop", () => {
-    const element = wrapper.find(Table).prop("dataSource");
-    expect(element).toBeDefined();
+  it("should render the Licence scope heading", () => {
+    renderScope();
+    expect(screen.getByText("Licence scope")).toBeInTheDocument();
   });
 
-  it("table should have columns prop", () => {
-    const element = wrapper.find(Table).prop("columns");
-    expect(element).toBeDefined();
+  it("should render the data feeds count label", () => {
+    renderScope();
+    expect(
+      screen.getByText("Data Feeds under the licence (0)")
+    ).toBeInTheDocument();
+  });
+
+  it("should render labelled scope fields", () => {
+    renderScope();
+    expect(screen.getByText("Expiration date")).toBeInTheDocument();
+    expect(screen.getByText("Licence type")).toBeInTheDocument();
+    expect(screen.getByText("SCB Data Owner")).toBeInTheDocument();
   });
 });

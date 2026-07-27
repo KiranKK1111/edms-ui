@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "../../design-system/dayjs";
 
 export const bindData = (data1, form1) => {
   let data =
@@ -8,20 +8,19 @@ export const bindData = (data1, form1) => {
       return element !== undefined;
     });
   if (data && data.length) {
-    
     data.forEach((item) => {
       Object.keys(item).forEach((subItem) => {
         if (subItem === "signedOn") {
           form1.setFieldsValue({
-            signedOn: moment(new Date(item[subItem])),
+            signedOn: dayjs(new Date(item[subItem])),
           });
         } else if (subItem === "startDate") {
           form1.setFieldsValue({
-            startDate: moment(new Date(item[subItem])),
+            startDate: dayjs(new Date(item[subItem])),
           });
         } else if (subItem === "expirationDate") {
           form1.setFieldsValue({
-            expirationDate: moment(new Date(item[subItem])),
+            expirationDate: dayjs(new Date(item[subItem])),
           });
         } else {
           form1.setFieldsValue({

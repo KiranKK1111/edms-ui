@@ -1,12 +1,11 @@
 import { memo, useState, lazy, Suspense, useEffect } from "react";
-import { Steps, Button, message } from "antd";
+import { Stepper, Step, StepLabel, Button } from "@mui/material";
+import { toast as message } from "../../design-system/toast";
 
 const BusinessRequirements = lazy(() => import("./BusinessRequirements"));
 const Usage = lazy(() => import("./Usage"));
 const TermsConditions = lazy(() => import("./TermsConditions"));
 const ReviewSubmit = lazy(() => import("./ReviewSubmit"));
-
-const { Step } = Steps;
 const RequestFormSteps = (props) => {
   const [formData, setFormData] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -62,11 +61,13 @@ const RequestFormSteps = (props) => {
 
   return (
     <>
-      <Steps current={current} size="small">
+      <Stepper activeStep={current} alternativeLabel>
         {steps.map((item) => (
-          <Step key={item.title} title={item.title} />
+          <Step key={item.title}>
+            <StepLabel>{item.title}</StepLabel>
+          </Step>
         ))}
-      </Steps>
+      </Stepper>
       <div className="steps-content">{steps[current].content}</div>
       <div className="steps-action">
         {current > 0 && (
@@ -75,13 +76,13 @@ const RequestFormSteps = (props) => {
           </Button>
         )}
         {current < steps.length - 1 && (
-          <Button type="primary" onClick={next}>
+          <Button variant="contained" onClick={next}>
             Next
           </Button>
         )}
         {current === steps.length - 1 && (
           <Button
-            type="primary"
+            variant="contained"
             onClick={() => message.success("Processing complete!")}
             style={{ display: "none" }}
           >

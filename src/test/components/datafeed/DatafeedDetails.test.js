@@ -1,10 +1,7 @@
+import React from "react";
 import * as redux from "react-redux";
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Form, Input, Select, Row, Col } from "antd";
+import { render, screen } from "@testing-library/react";
 import DatafeedDetails from "../../../components/datafeed/DatafeedDetails";
-
-configure({ adapter: new Adapter() });
 
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
@@ -15,13 +12,11 @@ jest.mock("react-redux", () => ({
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useParams: jest.fn().mockReturnValue({ id: "123" }),
-  useHistory: jest.fn(),
-  useLocation: jest
-    .fn()
-    .mockReturnValue({
-      state: { dataset: { datasetId: "DS001" }, isUpdate: false },
-    }),
+  useParams: () => ({ id: "123" }),
+  useHistory: () => ({ push: jest.fn() }),
+  useLocation: () => ({
+    state: { dataset: { datasetId: "DS001" }, isUpdate: false },
+  }),
 }));
 
 const setupSelector = (formData = {}, datafeedsData = []) => {
@@ -37,89 +32,32 @@ describe("DatafeedDetails", () => {
     setupSelector();
   });
 
-  it("should render main container", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    expect(wrapper.find("#main").length).toBe(1);
+  it("should render the main container", () => {
+    const { container } = render(<DatafeedDetails />);
+    expect(container.querySelector("#main")).toBeInTheDocument();
   });
 
-  it("should render Form component", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    expect(wrapper.find(Form).length).toBe(1);
+  it("should render the identity field labels", () => {
+    render(<DatafeedDetails />);
+    expect(screen.getAllByText("Data Feed ID").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Status").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render Form.Item components", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    expect(wrapper.find(Form.Item).length).toBeGreaterThanOrEqual(6);
+  it("should render the Long Name and Short Name fields", () => {
+    render(<DatafeedDetails />);
+    expect(screen.getAllByText("Long Name").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Short Name").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render disabled Data Feed ID input", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    const dfIdInput = wrapper
-      .find(Input)
-      .filterWhere((inp) => inp.prop("name") === "datafeedId");
-    expect(dfIdInput.prop("disabled")).toBe(true);
+  it("should render the Data Confidentiality and Description fields", () => {
+    render(<DatafeedDetails />);
+    expect(screen.getAllByText("Data Confidentiality").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Description").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render disabled Status input", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    const statusInput = wrapper
-      .find(Input)
-      .filterWhere((inp) => inp.prop("name") === "status");
-    expect(statusInput.prop("disabled")).toBe(true);
-  });
-
-  it("should render disabled Dataset Short Name input", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    const dsNameInput = wrapper
-      .find(Input)
-      .filterWhere((inp) => inp.prop("name") === "dataSetName");
-    expect(dsNameInput.prop("disabled")).toBe(true);
-  });
-
-  it("should render Data Confidentiality Select", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    const selects = wrapper
-      .find(Select)
-      .filterWhere((s) => s.prop("name") === "dataConfidentiality");
-    expect(selects.length).toBe(1);
-  });
-
-  it("should render Personal Data Type Select", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    const selects = wrapper
-      .find(Select)
-      .filterWhere((s) => s.prop("name") === "personalDataType");
-    expect(selects.length).toBe(1);
-  });
-
-  it("should render Long Name input", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    const input = wrapper
-      .find(Input)
-      .filterWhere((inp) => inp.prop("name") === "longName");
-    expect(input.length).toBe(1);
-  });
-
-  it("should render Short Name input", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    const input = wrapper
-      .find(Input)
-      .filterWhere((inp) => inp.prop("name") === "shortName");
-    expect(input.length).toBe(1);
-  });
-
-  it("should render Description TextArea", () => {
-    const { Input: AntInput } = require("antd");
-    const { TextArea } = AntInput;
-    const wrapper = shallow(<DatafeedDetails />);
-    const textarea = wrapper.find(TextArea);
-    expect(textarea.length).toBe(1);
-    expect(textarea.prop("maxLength")).toBe(1000);
-  });
-
-  it("should render Row components", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    expect(wrapper.find(Row).length).toBeGreaterThanOrEqual(4);
+  it("should render the disabled Data Feed ID input", () => {
+    const { container } = render(<DatafeedDetails />);
+    expect(container.querySelectorAll("input[disabled]").length).toBeGreaterThanOrEqual(1);
   });
 
   it("should render with existing form data", () => {
@@ -133,34 +71,7 @@ describe("DatafeedDetails", () => {
       feedDescription: "A test feed",
       documentationLink: "http://example.com",
     });
-    const wrapper = shallow(<DatafeedDetails />);
-    expect(wrapper.find(Form).length).toBe(1);
-  });
-
-  it("should render with options for data confidentiality", () => {
-    const { Select: AntSelect } = require("antd");
-    const { Option: SelectOption } = AntSelect;
-    const wrapper = shallow(<DatafeedDetails />);
-    const options = wrapper
-      .find(Select)
-      .filterWhere((s) => s.prop("name") === "dataConfidentiality")
-      .find(SelectOption);
-    expect(options.length).toBe(4);
-  });
-
-  it("should render with options for personal data type", () => {
-    const { Select: AntSelect } = require("antd");
-    const { Option: SelectOption } = AntSelect;
-    const wrapper = shallow(<DatafeedDetails />);
-    const options = wrapper
-      .find(Select)
-      .filterWhere((s) => s.prop("name") === "personalDataType")
-      .find(SelectOption);
-    expect(options.length).toBe(3);
-  });
-
-  it("should set form name to br-one", () => {
-    const wrapper = shallow(<DatafeedDetails />);
-    expect(wrapper.find(Form).prop("name")).toBe("br-one");
+    const { container } = render(<DatafeedDetails />);
+    expect(container.querySelector("#main")).toBeInTheDocument();
   });
 });

@@ -1,92 +1,344 @@
-/* Formatting the Menu height and highlight */
-.ant-layout-header {
-  height: 56px;
+/* App chrome header - elevated surface that reads clearly as a top bar */
+.app-header {
+  height: 66px;
+  padding: 0 clamp(14px, 2vw, 28px);
+  /* Soft top-down sheen so the bar has a sense of depth and clearly sits
+     above the page surface rather than blending into it. */
+  background-image: linear-gradient(
+    180deg,
+    var(--color-bg-elevated, var(--color-bg)) 0%,
+    var(--color-bg) 100%
+  );
+  background-color: var(--color-bg);
+  backdrop-filter: saturate(1.4) blur(8px);
+  -webkit-backdrop-filter: saturate(1.4) blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--color-border);
+  /* Layered shadow gives the header lift and a crisp hairline edge. */
+  box-shadow: 0 1px 0 var(--color-border-secondary),
+    0 6px 18px -10px rgba(15, 23, 42, 0.28);
 }
-.ant-layout-header .ant-menu {
-  line-height: 56px;
-  background-color: #0f1217;
+
+.app-header.MuiAppBar-root {
+  height: 66px;
+  min-height: 66px;
+  /* Force the theme surface to win over MUI's default AppBar color class. */
+  background-color: var(--color-bg);
+  background-image: linear-gradient(
+    180deg,
+    var(--color-bg-elevated, var(--color-bg)) 0%,
+    var(--color-bg) 100%
+  );
+  color: var(--color-text);
 }
+
+.app-header .MuiToolbar-root {
+  width: 100%;
+  padding: 0;
+  min-height: 66px;
+}
+
 .Main-header {
-  background-color: #0f1217;
-  cursor: none;
-}
-.ant-menu-dark.ant-menu-horizontal > .ant-menu-item:hover {
-  background-color: #0f1217;
-}
-.page-selected {
-  background-color: #1890ff;
-  height: 56px;
-  padding: 20px;
-  margin: 2px;
-  box-sizing: border-box;
+  background-color: var(--color-bg);
 }
 
-/* Logo Styles */
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Vertical divider between the brand and the primary nav — a classic
+   header cue that visually separates identity from navigation. */
+.app-header-nav::before {
+  content: "";
+  align-self: center;
+  width: 1px;
+  height: 26px;
+  margin-right: 12px;
+  background: var(--color-border);
+}
+
+.app-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.app-header-menu-btn {
+  color: var(--color-text) !important;
+  font-size: 20px;
+  padding: 4px 10px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-header-menu-btn:hover,
+.app-header-menu-btn:focus {
+  color: var(--color-text) !important;
+  background: var(--color-bg-hover) !important;
+}
+
+/* Logo */
 .logo {
-  height: 56px;
-  float: left;
+  height: 40px;
+  display: flex;
+  align-items: center;
 }
-.logo img {
-  margin-top: -10px;
-  margin-left: -24px;
+.logo a {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
 }
-
-.header-menu-items {
-  margin: 5px;
-}
-/* Right side Menu Items */
-.right-item-1,
-.right-item-2 {
-  /*  left: 55%;*/
-  float: right;
-  margin: 0px;
-  padding: 0px;
-}
-.right-item-1 {
-  width: 60px;
+.logo img,
+.app-logo-svg {
+  height: 40px;
+  width: auto;
+  display: block;
 }
 
-.right-item-2 {
-  vertical-align: middle;
-  box-sizing: border-box;
+/* Inline brand logo — wordmark follows theme text colour via currentColor */
+.app-logo-svg {
+  color: var(--color-text);
 }
 
-.header-notification-menu {
-  width: 256px;
-  padding: 24px;
-  box-sizing: border-box;
-  border-radius: 4px;
-  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
-    0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+/* Nav */
+.app-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 12px;
+  height: 100%;
 }
 
-.header-notification-menu .header-menu-item-1 {
-  color: #0f1217;
-  font-family: Inter;
-  white-space: normal;
-  height: auto;
-  font-size: 14px;
+.app-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 16px;
+  color: var(--color-text-secondary);
+  font-size: 13.5px;
   font-weight: 500;
-  letter-spacing: 0;
-  line-height: 22px;
+  letter-spacing: 0.01em;
+  border-radius: 9px;
+  transition: background-color 0.18s ease, color 0.18s ease;
+  text-decoration: none;
 }
 
-.header-notification-menu .header-menu-item-2 {
-  line-height: 22px;
-  width: 120px;
-  padding: 0px;
-  margin-bottom: 16px;
-  margin-top: 16px;
-  margin-left: 0px;
-  background-color: white;
-  font-family: Inter;
-  font-size: 14px;
-  letter-spacing: 0;
+.app-nav-link:hover {
+  color: var(--color-text);
+  background-color: var(--color-bg-hover);
+}
+
+/*
+  antd's global reset applies `.ant-app a { color: <link-blue> }` at
+  specificity (0,1,1), which beats a bare `.app-nav-link` (0,1,0) and tints
+  the unselected tabs blue. Scope these under `.app-header-nav` to raise
+  specificity and keep the tabs on the theme text colour in every state.
+*/
+.app-header-nav .app-nav-link {
+  color: var(--color-text-secondary);
+}
+.app-header-nav .app-nav-link:hover,
+.app-header-nav .app-nav-link.page-selected {
+  color: var(--color-text);
+}
+
+.app-nav-link.page-selected {
+  color: var(--color-text);
+  background-color: var(--color-bg-hover);
+  font-weight: 600;
+}
+
+/* Underline accent anchored under the active item — the unmistakable
+   "you are here" header cue. Follows the theme text colour so it stays
+   readable in both light and dark modes. */
+.app-nav-link.page-selected::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: -6px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-text);
+}
+
+/* User menu trigger */
+.app-user-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+.app-user-trigger:hover {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text);
+}
+.app-user-caret {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+/* Notifications */
+.app-header-bell {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   cursor: pointer;
-  vertical-align: baseline;
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+.app-header-bell:hover {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+/* Drawer Nav */
+.app-drawer-nav {
+  display: flex;
+  flex-direction: column;
+}
+.app-drawer-nav .app-nav-link {
+  color: var(--color-text);
+  height: 48px;
+  border-radius: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+.app-drawer-nav .app-nav-link:hover {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text);
+}
+.app-drawer-nav .app-nav-link.page-selected {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+/* Legacy selector fallback (kept so older markup references do not break) */
+.page-selected {
+  color: #ffffff;
+}
+
+/* Notification dropdown menu (kept for any legacy usage) */
+.header-notification-menu {
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.header-user-info {
+  display: block;
+  padding: 4px 8px;
+  color: var(--color-text);
+}
+
+.header-user-psid {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
 }
 
 .icon-style {
-  padding: 0px;
-  color: #7890ac;
+  color: var(--color-text-secondary);
+}
+
+/* User menu dropdown panel (custom, no rc-menu) */
+.app-user-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: var(--z-drawer, 1000);
+  min-width: 220px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.app-user-dropdown-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  line-height: 1.4;
+}
+.app-user-dropdown-item:hover {
+  background: var(--color-primary-bg);
+}
+.app-user-dropdown-item.is-disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+.app-user-dropdown-item.is-disabled:hover {
+  background: transparent;
+}
+.app-user-dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+.app-user-dropdown-label {
+  flex: 1;
+  min-width: 0;
+}
+.app-user-dropdown-label a {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+.app-user-dropdown-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0 12px;
+  }
+  .logo img,
+  .app-logo-svg {
+    height: 32px;
+  }
 }

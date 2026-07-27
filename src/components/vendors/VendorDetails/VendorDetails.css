@@ -17,7 +17,7 @@
 .entity-main h3 {
   padding:24px 0 0 48px;
   margin: 0;
-  color: #0f1217;
+  color: var(--color-text);
   font-family: Inter-SemiBold;
   font-size: 16px;
   font-weight: 500;

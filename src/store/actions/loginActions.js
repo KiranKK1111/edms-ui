@@ -7,11 +7,6 @@ import {
   API_AUTH_URL,
 } from "../../utils/Config";
 import {
-  GRANT_TYPE,
-  PASSWORD_KEY,
-  USERNAME_KEY,
-  OVERRIDE_SESSION,
-  PASSWORD_TEXT,
   LOCAL_STORAGE_ACCESS_TOKEN,
   LOCAL_STORAGE_ENTITLEMENT_TYPE,
   ROLE_OWNER,
@@ -19,11 +14,11 @@ import {
   ROLE_ADMIN,
   LOCAL_STORAGE_OBJECT_MATRIX,
 } from "../../utils/Constants";
-import { message } from "antd";
+import { toast as message } from "../../design-system/toast";
 import { setLocalStorage } from "../../utils/UserUtils";
-import { userLogin, userLoginForgerock } from "../services/AuthService";
+import { userLoginForgerock } from "../services/AuthService";
 import { fetchUserMatrix } from "../services/AuthService";
-import moment from "moment";
+import dayjs from "dayjs";
 
 
 export const SET_USER = "SET_USER";
@@ -43,101 +38,6 @@ export const setUserMatrix = (matrix) => {
   return {
     type: OBJECT_MATRIX,
     payload: matrix,
-  };
-};
-
-/*FIRST TIME LOGIN (NO TOKEN IN LOCALSTORAGE)*/
-export const startUserLogin = (userCredentials, redirect) => {
-  return async (dispatch) => {
-    const formData = new FormData();
-    formData.append(GRANT_TYPE, PASSWORD_TEXT);
-    formData.append(USERNAME_KEY, userCredentials.username);
-
-    formData.append(PASSWORD_KEY, btoa(userCredentials.password));
-    formData.append(OVERRIDE_SESSION, false);
-
-    userLogin(formData)
-      .then((loginResponse) => {
-        // If response is not valid, display error message.
-        if (!loginResponse || !loginResponse.data) {
-          message.error("Error logging in, please refresh page and try again!");
-        }
-        const rolesUser =
-          loginResponse.data.roles &&
-          loginResponse.data.roles.length > 0 &&
-          loginResponse.data.roles[0];
-
-        let userMatrixData = [];
-        fetchUserMatrix(rolesUser)
-          .then((matrixResponse) => {
-            const { objectMatrix } = matrixResponse.data;
-            userMatrixData.push(objectMatrix);
-            localStorage.setItem(
-              LOCAL_STORAGE_OBJECT_MATRIX,
-              JSON.stringify(objectMatrix)
-            );
-            dispatch(setUserMatrix(objectMatrix));
-          })
-          .catch((err) => {
-            message.error("Error logging in getting roles! ");
-          });
-
-        /*ACCESS TOKEN RECEIVED FROM SCB DATABASE*/
-        const user = {
-          psid: userCredentials.username,
-          accessToken: loginResponse.data.access_token,
-          refreshToken: loginResponse.data.refresh_token,
-          tokenRefreshed: false,
-          uiUserRoleNew:
-            loginResponse.data.roles &&
-            loginResponse.data.roles.length > 0 &&
-            loginResponse.data.roles[0],
-          firstLoginDate: new Date(),
-          lastLoginDate: new Date(),
-        };
-
-        dispatch(setUser(user));
-
-        if (!user.uiUserRoleNew) {
-          message.error("Error, not authorised!");
-          return null;
-        } else {
-          localStorage.setItem(
-            LOCAL_STORAGE_ENTITLEMENT_TYPE,
-            user.uiUserRoleNew
-          );
-        }
-        setLocalStorage(
-          loginResponse.data.access_token,
-          loginResponse.data.refresh_token,
-          false,
-          userCredentials.username,
-          userMatrixData
-        );
-        redirect();
-      })
-      .catch((error) => {
-        //
-        // If a valid error response is recieved, display the error message else
-        // display a generic error message.
-        // Once Login functionality is sorted out, uncomment the below lines and
-        // delete hard coded values
-        //
-        if (
-          error &&
-          error.response &&
-          error.response.data &&
-          error.response.data.description
-        ) {
-          message.error(error.response.data.description);
-        } else {
-          message.error("Error logging in, please refresh page and try again!");
-        }
-
-        // Call the mock Login API and proceed.
-
-        return error;
-      });
   };
 };
 
@@ -269,13 +169,13 @@ function getDynamicRole(psid) {
 export function userDetailsLogin() {
   return axios.post(`${API_ADD_ROLE_URL}/${API_BASE_ENDPOINT}/feedLoginTime`, {
     psid: localStorage.getItem("psid"),
-    loginTime: moment(new Date()).format(),
+    loginTime: dayjs(new Date()).format(),
   });
 }
 export function userDetailsLogout() {
   return axios.put(`${API_ADD_ROLE_URL}/${API_BASE_ENDPOINT}/updateLogout`, {
     psid: localStorage.getItem("psid"),
-    lastLoginTime: moment(new Date()).format(),
+    lastLoginTime: dayjs(new Date()).format(),
   });
 }
 
@@ -365,13 +265,7 @@ export const startLogOutForgerock = () => {
       url: `${API_AUTH_URL}/${API_BASE_ENDPOINT}/logout?token=Bearer ${localStorage.getItem(
         "access_token"
       )}`,
-    })
-      .then((response) => {
-        console.log(response.data);
-      })
-      .catch((err) => {
-        return console.log(err);
-      });
+    }).catch((err) => err);
   };
 };
 

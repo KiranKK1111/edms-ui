@@ -1,14 +1,50 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Row, Col, Divider, Table } from "antd";
+import {
+  Grid,
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from "@mui/material";
 import {
   dataProtocolById,
   apiRequestParamsAllData,
   apiSourceConfigAllData,
   fileFormatDatabase,
 } from "../../../store/actions/SourceConfigActions";
-import Headers from "../../../pages/header/Header";
 import { normalText } from "../../stringConversion";
+
+// Small read-only table that mirrors the old antd <Table> (title/dataIndex).
+const SimpleTable = ({ columns, dataSource }) => (
+  <TableContainer component={Paper} variant="outlined" sx={{ mb: "30px" }}>
+    <Table size="small">
+      <TableHead>
+        <TableRow>
+          {columns.map((c) => (
+            <TableCell key={c.dataIndex} sx={{ fontWeight: 600 }}>
+              {c.title}
+            </TableCell>
+          ))}
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {dataSource.map((row, i) => (
+          <TableRow key={i}>
+            {columns.map((c) => (
+              <TableCell key={c.dataIndex}>{row[c.dataIndex]}</TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </TableContainer>
+);
+
 const SourceConfigDetails = (props) => {
   const [protocolData, setProtocolData] = useState({});
   const [requestParams, setRequestParams] = useState([]);
@@ -210,18 +246,17 @@ const SourceConfigDetails = (props) => {
 
   return (
     <div>
-      <Headers />
       <div className="content-area">
         <div className="content-wrapper">
           <div className="review-submit">
             <h3 style={{ paddingBottom: "0px" }}>Data Protocol</h3>
-            <Divider>
+            <Divider textAlign="center" sx={{ my: 1 }}>
               <strong style={{ fontSize: "13px" }}>Ftp & Sftp</strong>
             </Divider>
-            <Row>
+            <Grid container spacing={2}>
               {dataProtocolKeys.length > 0 &&
                 ftp.map((item, i) => (
-                  <Col span={8} key={i}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                     <span className="label-review">
                       {normalText(item)
                         .replace("Ftps Mode", "FTPS Mode")
@@ -243,57 +278,45 @@ const SourceConfigDetails = (props) => {
                       :
                     </span>
                     {dataProtocolFieldInfo[item]}
-                  </Col>
+                  </Grid>
                 ))}
-            </Row>
-            <Divider>
+            </Grid>
+            <Divider textAlign="center" sx={{ my: 1 }}>
               <strong style={{ fontSize: "13px" }}>Api</strong>
             </Divider>
-            <Row>
+            <Grid container spacing={2}>
               {dataProtocolKeys.length > 0 &&
                 api.map((item, i) => (
-                  <Col span={8} key={i}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                     <span className="label-review">
                       {normalText(item).replace("Api", "")}:
                     </span>
                     {dataProtocolFieldInfo[item]}
-                  </Col>
+                  </Grid>
                 ))}
-              <Divider />
-            </Row>
+            </Grid>
+            <Divider sx={{ my: 1 }} />
             {requestParams.length > 0 && (
               <>
                 <h3>API Request Params</h3>
-                <Table
-                  dataSource={requestParams}
-                  columns={columns}
-                  pagination={false}
-                  style={{ marginBottom: "30px" }}
-                  size="small"
-                />
+                <SimpleTable dataSource={requestParams} columns={columns} />
               </>
             )}
             {responseConfig.length > 0 && (
               <>
                 <h3>API Response Config</h3>
-                <Table
-                  dataSource={responseConfig}
-                  columns={columns1}
-                  pagination={false}
-                  style={{ marginBottom: "30px" }}
-                  size="small"
-                />
+                <SimpleTable dataSource={responseConfig} columns={columns1} />
               </>
             )}
             {dataFormatKeys.length > 0 && (
               <>
                 <h3 style={{ paddingBottom: "0px" }}>Data Format</h3>
-                <Divider>
+                <Divider textAlign="center" sx={{ my: 1 }}>
                   <strong style={{ fontSize: "13px" }}>CSV</strong>
                 </Divider>
-                <Row>
+                <Grid container spacing={2}>
                   {csv.map((item, i) => (
-                    <Col span={8} key={i}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                       <span className="label-review">
                         {normalText(item)
                           .replace("Csv", "")
@@ -308,15 +331,15 @@ const SourceConfigDetails = (props) => {
                         :
                       </span>
                       {dataFormatFieldInfo[item]}
-                    </Col>
+                    </Grid>
                   ))}
-                </Row>
-                <Divider>
+                </Grid>
+                <Divider textAlign="center" sx={{ my: 1 }}>
                   <strong style={{ fontSize: "13px" }}>Excel</strong>
                 </Divider>
-                <Row>
+                <Grid container spacing={2}>
                   {excel.map((item, i) => (
-                    <Col span={8} key={i}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                       <span className="label-review">
                         {normalText(item)
                           .replace("Excel", "")
@@ -334,15 +357,15 @@ const SourceConfigDetails = (props) => {
                         :
                       </span>
                       {dataFormatFieldInfo[item]}
-                    </Col>
+                    </Grid>
                   ))}
-                </Row>
-                <Divider>
+                </Grid>
+                <Divider textAlign="center" sx={{ my: 1 }}>
                   <strong style={{ fontSize: "13px" }}>Log</strong>
                 </Divider>
-                <Row>
+                <Grid container spacing={2}>
                   {log.map((item, i) => (
-                    <Col span={8} key={i}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                       <span className="label-review">
                         {normalText(item)
                           .replace("Log", "")
@@ -360,15 +383,15 @@ const SourceConfigDetails = (props) => {
                         :
                       </span>
                       {dataFormatFieldInfo[item]}
-                    </Col>
+                    </Grid>
                   ))}
-                </Row>
-                <Divider>
+                </Grid>
+                <Divider textAlign="center" sx={{ my: 1 }}>
                   <strong style={{ fontSize: "13px" }}>Protobuf</strong>
                 </Divider>
-                <Row>
+                <Grid container spacing={2}>
                   {protobuf.map((item, i) => (
-                    <Col span={8} key={i}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                       <span className="label-review">
                         {normalText(item)
                           .replace("Protobuf", "")
@@ -384,15 +407,15 @@ const SourceConfigDetails = (props) => {
                         :
                       </span>
                       {dataFormatFieldInfo[item]}
-                    </Col>
+                    </Grid>
                   ))}
-                </Row>
-                <Divider>
+                </Grid>
+                <Divider textAlign="center" sx={{ my: 1 }}>
                   <strong style={{ fontSize: "13px" }}>Xml</strong>
                 </Divider>
-                <Row>
+                <Grid container spacing={2}>
                   {xml.map((item, i) => (
-                    <Col span={8} key={i}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                       <span className="label-review">
                         {normalText(item)
                           .replace("Xml", "")
@@ -409,9 +432,9 @@ const SourceConfigDetails = (props) => {
                         :
                       </span>
                       {dataFormatFieldInfo[item]}
-                    </Col>
+                    </Grid>
                   ))}
-                </Row>
+                </Grid>
               </>
             )}
           </div>

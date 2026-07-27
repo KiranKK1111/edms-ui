@@ -1,9 +1,9 @@
-import { configure, shallow, sleep, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
+import React from "react";
+import { render } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
+import AppProviders from "../../design-system/AppProviders";
 import UserProfile from "../../pages/userProfile/UserProfile";
-
-configure({ adapter: new Adapter() });
 
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
@@ -11,9 +11,34 @@ jest.mock("react-redux", () => ({
   useDispatch: () => mockDispatch,
   connect: () => (Component) => Component,
 }));
-const wrapper = shallow(<UserProfile />);
 
-it("wrapper", () => {
-  const element = wrapper.find(".profile-container");
-  expect(element.length).toBe(1);
+const renderPage = () =>
+  render(
+    <AppProviders>
+      <MemoryRouter>
+        <UserProfile />
+      </MemoryRouter>
+    </AppProviders>
+  );
+
+describe("UserProfile", () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it("should render the profile page container", () => {
+    const { container } = renderPage();
+    expect(container.querySelector(".profile-page")).toBeInTheDocument();
+  });
+
+  it("should render the #main wrapper", () => {
+    const { container } = renderPage();
+    expect(container.querySelector("#main")).toBeInTheDocument();
+  });
+
+  it("should render the PSID label", () => {
+    localStorage.setItem("psid", "user123");
+    const { getByText } = renderPage();
+    expect(getByText(/PSID :/)).toBeInTheDocument();
+  });
 });

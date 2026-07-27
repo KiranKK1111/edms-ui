@@ -1,63 +1,71 @@
 import React from "react";
-import * as redux from "react-redux";
-import { configure, shallow, sleep, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-
-import { Form, Input } from "antd";
+import { render, screen } from "@testing-library/react";
+import { AppProviders } from "../../../design-system";
 import DatasetDetails from "../../../components/datasetForm/DatasetDetails";
 
-configure({ adapter: new Adapter() });
-
+let mockState = {};
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
+  useSelector: (cb) => cb(mockState),
   useDispatch: () => mockDispatch,
 }));
+
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useLocation: () => ({
-    pathname: "localhost:3000/example/path",
+    pathname: "/example/path",
     state: { licence: { licenseId: "" } },
   }),
 }));
 
-const dataset = {
-  formData: [
-    {
-      datasetId: "",
-      status: "",
-      description: "",
-      entityId: "",
-      licenseId: "",
-    },
-    {
-      datasetId: "",
-      status: "",
-      description: "",
-      entityId: "",
-      licenseId: "",
-    },
-  ],
-  datasetsInfo: { licenseId: "" },
-};
-const state = { dataset };
+jest.mock("../../../store/actions/datasetFormActions", () => ({
+  datasetInfo: jest.fn(),
+}));
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
+const buildState = () => ({
+  dataset: {
+    formData: [
+      { datasetId: "", status: "", description: "", entityId: "", licenseId: "" },
+    ],
+    datasetInfo: [{ licenseId: "" }],
+  },
+});
 
-jest
-  .spyOn(React, "useState")
-  .mockImplementationOnce(() => [true, () => null])
-  .mockImplementationOnce(() => [true, () => null]);
+const renderDetails = () =>
+  render(
+    <AppProviders>
+      <DatasetDetails next={jest.fn()} />
+    </AppProviders>
+  );
 
-const wrapper = shallow(<DatasetDetails />);
-describe("", () => {
-  const mockEvent = { target: { value: "test" } };
-  const element = wrapper.find(Input).at(1);
-  element.simulate("blur", mockEvent);
-  it("wrapper", () => {
-    const element = wrapper.find(Form);
-    expect(element.length).toBe(1);
+describe("DatasetDetails", () => {
+  beforeEach(() => {
+    mockState = buildState();
+  });
+
+  it("should render a form", () => {
+    const { container } = renderDetails();
+    expect(container.querySelector("form")).toBeInTheDocument();
+  });
+
+  it("should render the Long Name field", () => {
+    renderDetails();
+    expect(screen.getAllByText("Long Name").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should render the Short Name field", () => {
+    renderDetails();
+    expect(screen.getAllByText("Short Name").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should render the Description field", () => {
+    renderDetails();
+    expect(screen.getAllByText("Description").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should render the Dataset ID and Status fields", () => {
+    renderDetails();
+    expect(screen.getAllByText("Dataset ID").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Status").length).toBeGreaterThanOrEqual(1);
   });
 });

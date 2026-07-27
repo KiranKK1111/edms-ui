@@ -1,4 +1,3 @@
-import moment from "moment";
 import axios from "axios";
 import {
   API_USER_SUBSCRIPTION_MANAGEMENT_URL,

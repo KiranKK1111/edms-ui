@@ -1,23 +1,33 @@
-import { configure, shallow, sleep } from "enzyme";
-import { Dropdown, Layout, Menu, Avatar } from "antd";
+import React from "react";
+import { render } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
-import Adapter from "enzyme-adapter-react-16";
-
-import Headers, { deleteAllCookiesAndSiteData, deleteCookies } from "../../pages/header/Header";
-
-configure({ adapter: new Adapter() });
+import AppProviders from "../../design-system/AppProviders";
+import Headers, {
+  deleteAllCookiesAndSiteData,
+  deleteCookies,
+} from "../../pages/header/Header";
 
 jest.mock("react-redux", () => ({
   connect: () => (Component) => Component,
+  useSelector: jest.fn(),
+  useDispatch: () => jest.fn(),
 }));
 
 let cookie = "name=amlbcookie; max-age=0; path=/; domain=.standardchartered.com";
 let hostname = "edp-dev-a.global.standardchartered.com";
 
-describe("Parent", () => {
+const renderHeader = () =>
+  render(
+    <AppProviders>
+      <MemoryRouter>
+        <Headers />
+      </MemoryRouter>
+    </AppProviders>
+  );
 
+describe("Header", () => {
   beforeEach(() => {
-    // Mock document.cookie
     let mockCookies = "testCookie1=value1; testCookie2=value2";
     Object.defineProperty(document, "cookie", {
       get: jest.fn(() => mockCookies),
@@ -25,34 +35,30 @@ describe("Parent", () => {
         const cookieName = newCookie.split("=")[0];
         mockCookies = mockCookies
           .split(";")
-          .filter((cookie) => !cookie.trim().startsWith(cookieName))
+          .filter((c) => !c.trim().startsWith(cookieName))
           .join("; ");
       }),
       configurable: true,
     });
-
-    // Mock localStorage and sessionStorage
     Storage.prototype.clear = jest.fn();
   });
 
-  const wrapped = shallow(<Headers />);
-
-  it("Logo presenting", () => {
-    const element = wrapped.find("#corp-logo");
-    expect(element.length).toBe(1);
+  it("should render the corp logo", () => {
+    const { container } = renderHeader();
+    expect(container.querySelector("#corp-logo")).toBeInTheDocument();
   });
 
-  it("Layout presenting", () => {
-    const element = wrapped.find(Layout);
-    expect(element.length).toBe(1);
+  it("should render the app header banner", () => {
+    const { container } = renderHeader();
+    expect(container.querySelector(".app-header")).toBeInTheDocument();
   });
 
-  it("Delete cookie", () => {
+  it("should delete a cookie", () => {
     deleteCookies(cookie, hostname);
     expect(cookie.length).toBe(65);
   });
 
-  test("should delete all cookies", () => {
+  it("should delete all cookies", () => {
     deleteAllCookiesAndSiteData();
     expect(document.cookie).toBe("");
   });
@@ -69,26 +75,24 @@ describe("Parent", () => {
     expect(Storage.prototype.clear).toHaveBeenCalled();
   });
 
-  it("Delete cookie with empty hostname", () => {
+  it("should handle deleteCookies with empty hostname", () => {
     deleteCookies(cookie, "");
     expect(cookie).toBeTruthy();
   });
 
   it("should render guest menu when guestRole is set", () => {
     localStorage.setItem("guestRole", "guest");
-    const guestWrapped = shallow(<Headers />);
-    const menuItems = guestWrapped.find(Menu.Item);
-    expect(menuItems.length).toBeGreaterThanOrEqual(1);
+    const { container } = renderHeader();
+    expect(container.querySelector("#corp-logo")).toBeInTheDocument();
     localStorage.removeItem("guestRole");
   });
 
-  it("should render logged-in menu when guestRole is not set", () => {
+  it("should render logged-in header when guestRole is not set", () => {
     localStorage.removeItem("guestRole");
     localStorage.setItem("psid", "testuser");
     localStorage.setItem("entitlementType", "admin");
-    const loggedInWrapped = shallow(<Headers />);
-    const menuItems = loggedInWrapped.find(Menu.Item);
-    expect(menuItems.length).toBeGreaterThanOrEqual(1);
+    const { container } = renderHeader();
+    expect(container.querySelector(".app-header")).toBeInTheDocument();
     localStorage.removeItem("psid");
     localStorage.removeItem("entitlementType");
   });

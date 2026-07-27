@@ -1,96 +1,74 @@
-import {
-  ArrowLeftOutlined,
-  HomeOutlined,
-  PaperClipOutlined,
-} from "@ant-design/icons";
-import {
-  Breadcrumb,
-  Button,
-  Col,
-  Divider,
-  Form,
-  Input,
-  Row,
-  Tooltip,
-  PageHeader,
-} from "antd";
-import { createRef, memo, useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
-import Headers from "../../pages/header/Header";
+import { useParams, useHistory } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { Box, Divider, Grid, Tooltip, Typography } from "@mui/material";
+
 import {
   getContractDetailsByChangeRequestId,
   getContractDetailsById,
 } from "../../store/actions/contractAction";
 import { updateTaskAction } from "../../store/actions/MyTasksActions";
-import { RequestModal } from "../myTasks";
-import { useHistory } from "react-router-dom";
-import moment from "moment";
-import logoRecord from "../../images/source_icon.svg";
+import { TaskDetailLayout } from "../myTasks";
+import dayjs from "../../design-system/dayjs";
 import isAcessDisabled from "../../utils/accessMyTask";
+import { FormField, NoDataAlert } from "../../design-system";
 
-const formRef = createRef();
 export const conVertDateArrayToDate = (dateArray) => {
-  // console.log("Date = ",dateArray);
   if (dateArray) {
-    let newDatedate = dateArray[0] + "-" + dateArray[1] + "-" + dateArray[2];
-    // console.log("NewDatedate = ",newDatedate,typeof(newDatedate));
-    return moment(newDatedate.slice(0, 10)).format("DD MMM, YYYY");
+    const newDatedate = dateArray[0] + "-" + dateArray[1] + "-" + dateArray[2];
+    return dayjs(newDatedate.slice(0, 10)).format("DD MMM, YYYY");
   }
 };
+
+const InfoField = ({ label, children }) => (
+  <Box>
+    <Typography
+      component="span"
+      className="label-review"
+      sx={{ fontSize: 12, fontWeight: 600, color: "text.secondary", mr: 0.5 }}
+    >
+      {label}
+    </Typography>
+    <Typography component="span" sx={{ fontSize: 14, color: "text.primary" }}>
+      {children || "-"}
+    </Typography>
+  </Box>
+);
 
 const ContractApproveRejectView = (props) => {
   const params = useParams();
   const [approveModal, setApproveModal] = useState(false);
   const [rejectModal, setRejectModal] = useState(false);
-
-  const info = useSelector((state) => state.vendor);
-  const [vendorsList, setVendorsList] = useState([]);
-  const dispatch = useDispatch();
-  const history = useHistory();
-  const [isAppLoaded, setIsAppLoaded] = useState(false);
-
-  const { TextArea } = Input;
   const [currentActionData, setCurrentActionData] = useState({});
 
-  const loggedInTitle = localStorage.getItem("entitlementType");
-  const isAdmin = loggedInTitle && loggedInTitle.toLowerCase() === "admin";
+  const dispatch = useDispatch();
+  const history = useHistory();
+
   const myTaskData = props.location.state.myTaskData;
-
-  const submitReason = async () => {
-    const value = formRef.current.getFieldsValue();
-    if (value.reason && value.reason.length) {
-      const payload = {
-        ...currentActionData,
-        taskListRejectionReason: value.reason,
-      };
-      const res = await dispatch(updateTaskAction(payload));
-
-      formRef.current.setFieldsValue({ reason: "" });
-      setRejectModal(false);
-
-      if (res && res.data) {
-        history.push("/myTasks");
-      }
-    }
-  };
-  const handleRejectCancel = () => {
-    setRejectModal(false);
-  };
-
   const taskListData = history.location.state.myTaskData;
+
+  const {
+    control: rejectControl,
+    handleSubmit: handleRejectSubmit,
+    setError: setRejectError,
+    reset: resetReject,
+    getValues: getRejectValues,
+  } = useForm({ defaultValues: { reason: "" } });
 
   useEffect(() => {
     if (
       myTaskData.taskListObjectAction === "Update" ||
       myTaskData.taskListObjectAction === "Deactivate"
-    )
+    ) {
       dispatch(getContractDetailsByChangeRequestId(params.id));
-    else dispatch(getContractDetailsById(params.id));
+    } else {
+      dispatch(getContractDetailsById(params.id));
+    }
   }, []);
 
   const data = useSelector((state) => state.contract);
-
+  const contractDetails = (data && data.contractDetails) || {};
   const {
     agreementExpiryDate,
     agreementPartyId,
@@ -106,260 +84,204 @@ const ContractApproveRejectView = (props) => {
     agreementType,
     agreementValue,
     agreementReferenceId,
-  } = data ? data.contractDetails : {};
+  } = contractDetails;
 
   const showApproveModal = (event) => {
-    if (event) {
-      const payload = {
-        ...event,
-        taskListId: event.taskListId,
-        taskListTaskStatus: "APPROVED",
-        taskListApproveBy: localStorage.getItem("psid"),
-        roleName: localStorage.getItem("entitlementType"),
-      };
-      setCurrentActionData(payload);
-      setApproveModal(true);
-    }
-  };
-
-  const getVendorName = (id) => {
-    const selectedVendor = vendorsList.filter((vendor) => {
-      return vendor.vendorId === id;
-    });
-
-    return selectedVendor && selectedVendor[0] && selectedVendor[0].name;
+    if (!event) return;
+    const payload = {
+      ...event,
+      taskListId: event.taskListId,
+      taskListTaskStatus: "APPROVED",
+      taskListApproveBy: localStorage.getItem("psid"),
+      roleName: localStorage.getItem("entitlementType"),
+    };
+    setCurrentActionData(payload);
+    setApproveModal(true);
   };
 
   const handleApprove = async () => {
     const res = await dispatch(updateTaskAction(currentActionData));
     setApproveModal(false);
+    if (res && res.data) history.push("/myTasks");
+  };
 
-    if (res && res.data) {
-      history.push("/myTasks");
-    }
-  };
-  const handleApproveCancel = () => {
-    setApproveModal(false);
-  };
+  const handleApproveCancel = () => setApproveModal(false);
 
   const showRejectModal = (event) => {
-    if (event) {
-      const payload = {
-        ...event,
-        taskListId: event.taskListId,
-        taskListTaskStatus: "REJECTED",
-        taskListApproveBy: localStorage.getItem("psid"),
-        roleName: localStorage.getItem("entitlementType"),
-      };
-      setCurrentActionData(payload);
-      setRejectModal(true);
-    }
+    if (!event) return;
+    const payload = {
+      ...event,
+      taskListId: event.taskListId,
+      taskListTaskStatus: "REJECTED",
+      taskListApproveBy: localStorage.getItem("psid"),
+      roleName: localStorage.getItem("entitlementType"),
+    };
+    setCurrentActionData(payload);
+    setRejectModal(true);
   };
+
+  const submitReason = async () => {
+    const value = getRejectValues();
+    if (!value.reason || !value.reason.length) {
+      setRejectError("reason", { type: "required", message: "reason is mandatory !" });
+      return;
+    }
+    const payload = { ...currentActionData, taskListRejectionReason: value.reason };
+    const res = await dispatch(updateTaskAction(payload));
+    resetReject({ reason: "" });
+    setRejectModal(false);
+    if (res && res.data) history.push("/myTasks");
+  };
+
+  const handleRejectCancel = () => setRejectModal(false);
+
   const isBtnDisplay =
     taskListData.taskListTaskStatus.toString().toLowerCase() !== "pending" ||
     isAcessDisabled(myTaskData) ||
     taskListData.taskListCreatedBy === localStorage.getItem("psid");
 
+  const isUpdate =
+    myTaskData.taskListObjectAction === "Update" ||
+    myTaskData.taskListObjectAction === "Deactivate";
+
   return (
-    <>
-      <Headers />
-
-      <div className="panel" id="h-panel">
-        <div className="breadcrumb-area">
-          <Breadcrumb style={{ margin: "16px 0" }}>
-            <Breadcrumb.Item href="/catalog">
-              <HomeOutlined />
-            </Breadcrumb.Item>
-            <Breadcrumb.Item href="/myTasks">My Tasks</Breadcrumb.Item>
-            <Breadcrumb.Item>Agreement Details</Breadcrumb.Item>
-          </Breadcrumb>
-
-          <div className="btn-parent">
-            <Button
-              type="default"
-              danger
-              onClick={() => showRejectModal(taskListData)}
-              disabled={isBtnDisplay}
-            >
-              Reject
-            </Button>
-            <Button
-              type="primary"
-              onClick={() => showApproveModal(taskListData)}
-              disabled={isBtnDisplay}
-            >
-              Approve
-            </Button>
-          </div>
-        </div>
-        <PageHeader
-          title={
-            <div>
-              <img
-                src={logoRecord}
-                alt="Source Icon"
-                className="page-header-img pr-8"
-              />
-              {agreementName}
-            </div>
-          }
-          ghost={false}
-          onBack={() => props.history.push("/myTasks")}
-          className="pt-0 pb-0"
-        ></PageHeader>
-      </div>
-      <div className="content-area">
-        <div className="content-wrapper">
-          <div>
-            {data ? (
-              <div>
-                <Row gutter={[2, 4]}>
-                  <Col className="gutter-row" span={20}>
-                    <span className="details-header-review">
-                      Agreement Details
-                    </span>
-                  </Col>
-
-                  <Col span={8}>
-                    <span className="label-review">Agreement ID :</span>
-                    <span className="capitalize-text">{agreementId}</span>
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Agreement Name:</span>
-                    <span className="capitalize-text">{agreementName}</span>
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Reference ID:</span>
-                    <span className="capitalize-text">
-                      {agreementReferenceId}
-                    </span>
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Reference Text:</span>
-                    <span className="capitalize-text">
-                      {agreementReferenceText}
-                    </span>
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Agreement Type:</span>
-                    {agreementType}
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Data Source:</span>
-                    <span className="capitalize-text">{agreementPartyId}</span>
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Agreement Value:</span>
-                    <span className="capitalize-text">{agreementValue}</span>
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Signed On:</span>
-                    {console.log("Signed On = ", agreementSignedOn)}
-                    {myTaskData.taskListObjectAction === "Update" ||
-                    myTaskData.taskListObjectAction === "Deactivate"
-                      ? conVertDateArrayToDate(agreementSignedOn)
-                      : moment(agreementSignedOn).format("DD MMM, YYYY")}
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Start Date:</span>
-                    {console.log("Start Date = ", agreementStartDate)}
-                    {myTaskData.taskListObjectAction === "Update" ||
-                    myTaskData.taskListObjectAction === "Deactivate"
-                      ? conVertDateArrayToDate(agreementStartDate)
-                      : moment(agreementStartDate).format("DD MMM, YYYY")}
-                  </Col>
-
-                  <Col span={8}>
-                    <span className="label-review">Expiration Date:</span>
-                    {console.log("Expiry Date = ", agreementExpiryDate)}
-                    {agreementExpiryDate === null
-                      ? "No Expiry"
-                      : myTaskData.taskListObjectAction === "Update" ||
-                        myTaskData.taskListObjectAction === "Deactivate"
-                      ? conVertDateArrayToDate(agreementExpiryDate)
-                      : moment(agreementExpiryDate).format("DD MMM, YYYY")}
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">
-                      Scb Agreement Manager Bank ID:
-                    </span>
-                    {agreementScbAgreementMgrBankId}
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Status:</span>
-                    {agreementStatus}
-                  </Col>
-                </Row>
-                <Divider />
-                <Row gutter={[2, 4]}>
-                  <Col className="gutter-row" span={20}>
-                    <span className="details-header-review">
-                      Agreement Limitations
-                    </span>
-                  </Col>
-                  <Col span={24}>
-                    <span className="label-review">Agreement Limitations:</span>
-                    {agreementLimitations}
-                  </Col>
-                </Row>
-                <Divider />
-                <Row gutter={[2, 4]}>
-                  <Col className="gutter-row" span={20}>
-                    <span className="details-header-review">
-                      Agreement Document
-                    </span>
-                  </Col>
-                  <Col span={8}>
-                    <span className="label-review">Url To Agreement:</span>
-                    {agreementLink}
-                  </Col>
-                </Row>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <RequestModal
-          isModalVisible={approveModal}
-          handleOk={handleApprove}
-          handleCancel={handleApproveCancel}
-          title="Approve Task"
-        >
-          Are you sure you want to proceed?
-        </RequestModal>
-
-        <RequestModal
-          isModalVisible={rejectModal}
-          handleOk={submitReason}
-          handleCancel={handleRejectCancel}
-          title="Reject Task"
-        >
-          <p>
-            This will reject the task and will notify the user who submitted the
-            request. Are you sure want to proceed?.
-          </p>
-          <Form ref={formRef} onFinish={submitReason}>
-            <Row>
-              <Col className="gutter-row" span={24}>
-                {/*_____________________VENDOR DESCRIPTION__________________________*/}
-                <Form.Item
-                  label={
-                    <Tooltip placement="top" title="reason">
-                      {" "}
-                      Reason{" "}
-                    </Tooltip>
-                  }
-                  name="reason"
-                  rules={[{ required: true, message: "reason is mandatory !" }]}
-                >
-                  <TextArea rows={4} name="reason" />
-                </Form.Item>
-              </Col>
-            </Row>
-          </Form>
-        </RequestModal>
-      </div>
-    </>
+    <TaskDetailLayout
+      title={agreementName}
+      breadcrumbName="Agreement Details"
+      actionsDisabled={isBtnDisplay}
+      onApproveClick={() => showApproveModal(taskListData)}
+      onRejectClick={() => showRejectModal(taskListData)}
+      approveOpen={approveModal}
+      rejectOpen={rejectModal}
+      onApprove={handleApprove}
+      onReject={handleRejectSubmit(submitReason)}
+      onApproveCancel={handleApproveCancel}
+      onRejectCancel={handleRejectCancel}
+      className="agreement-details"
+      rejectContent={
+        <Tooltip placement="top" title="reason">
+          <span>
+            <FormField
+              name="reason"
+              label="Reason"
+              control={rejectControl}
+              type="textarea"
+              rows={4}
+              required="reason is mandatory !"
+            />
+          </span>
+        </Tooltip>
+      }
+    >
+      {agreementId || agreementName ? (
+        <Box>
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <Typography
+                component="span"
+                className="details-header-review"
+                sx={{ fontSize: 16, fontWeight: 600 }}
+              >
+                Agreement Details
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Agreement ID :">{agreementId}</InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Agreement Name:">{agreementName}</InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Reference ID:">{agreementReferenceId}</InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Reference Text:">{agreementReferenceText}</InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Agreement Type:">{agreementType}</InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Data Source:">{agreementPartyId}</InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Agreement Value:">{agreementValue}</InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Signed On:">
+                {isUpdate
+                  ? conVertDateArrayToDate(agreementSignedOn)
+                  : agreementSignedOn
+                  ? dayjs(agreementSignedOn).format("DD MMM, YYYY")
+                  : ""}
+              </InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Start Date:">
+                {isUpdate
+                  ? conVertDateArrayToDate(agreementStartDate)
+                  : agreementStartDate
+                  ? dayjs(agreementStartDate).format("DD MMM, YYYY")
+                  : ""}
+              </InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Expiration Date:">
+                {agreementExpiryDate === null
+                  ? "No Expiry"
+                  : isUpdate
+                  ? conVertDateArrayToDate(agreementExpiryDate)
+                  : agreementExpiryDate
+                  ? dayjs(agreementExpiryDate).format("DD MMM, YYYY")
+                  : ""}
+              </InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Scb Agreement Manager Bank ID:">
+                {agreementScbAgreementMgrBankId}
+              </InfoField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Status:">{agreementStatus}</InfoField>
+            </Grid>
+          </Grid>
+          <Divider sx={{ my: 3 }} />
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <Typography
+                component="span"
+                className="details-header-review"
+                sx={{ fontSize: 16, fontWeight: 600 }}
+              >
+                Agreement Limitations
+              </Typography>
+            </Grid>
+            <Grid size={12}>
+              <InfoField label="Agreement Limitations:">{agreementLimitations}</InfoField>
+            </Grid>
+          </Grid>
+          <Divider sx={{ my: 3 }} />
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <Typography
+                component="span"
+                className="details-header-review"
+                sx={{ fontSize: 16, fontWeight: 600 }}
+              >
+                Agreement Document
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <InfoField label="Url To Agreement:">{agreementLink}</InfoField>
+            </Grid>
+          </Grid>
+        </Box>
+      ) : (
+        <NoDataAlert
+          title="Agreement details not available"
+          message="The agreement details for this task could not be found or have not been provided."
+        />
+      )}
+    </TaskDetailLayout>
   );
 };
 

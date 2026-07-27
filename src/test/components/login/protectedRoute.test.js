@@ -1,9 +1,7 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Route, Redirect } from "react-router-dom";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter, Switch, Route } from "react-router-dom";
 import ProtectedRoute from "../../../components/login/protectedRoute";
-
-configure({ adapter: new Adapter() });
 
 jest.mock("../../../store/services/AuthService", () => ({
   isAuthenticated: jest.fn(),
@@ -11,7 +9,21 @@ jest.mock("../../../store/services/AuthService", () => ({
 
 const { isAuthenticated } = require("../../../store/services/AuthService");
 
-const DummyComponent = () => <div>Protected Content</div>;
+const DummyComponent = (props) => (
+  <div>Protected Content {props.extraProp}</div>
+);
+
+const renderRoute = (extraProps = {}, entry = "/test") =>
+  render(
+    <MemoryRouter initialEntries={[entry]}>
+      <Switch>
+        <ProtectedRoute component={DummyComponent} path="/test" {...extraProps} />
+        <Route path="/">
+          <div>Redirected Home</div>
+        </Route>
+      </Switch>
+    </MemoryRouter>
+  );
 
 describe("ProtectedRoute", () => {
   beforeEach(() => {
@@ -19,80 +31,39 @@ describe("ProtectedRoute", () => {
     jest.clearAllMocks();
   });
 
-  it("should render a Route component", () => {
-    const wrapper = shallow(
-      <ProtectedRoute component={DummyComponent} path="/test" />
-    );
-    expect(wrapper.find(Route).length).toBe(1);
+  it("should render the protected component when authenticated", () => {
+    isAuthenticated.mockReturnValue(true);
+    renderRoute();
+    expect(screen.getByText("Protected Content")).toBeInTheDocument();
   });
 
-  it("should pass path prop to Route", () => {
-    const wrapper = shallow(
-      <ProtectedRoute component={DummyComponent} path="/dashboard" />
-    );
-    expect(wrapper.find(Route).prop("path")).toBe("/dashboard");
-  });
-
-  it("should render component when guestRole is set", () => {
+  it("should render the component when guestRole is set", () => {
     localStorage.setItem("guestRole", "guest");
     isAuthenticated.mockReturnValue(false);
-    const wrapper = shallow(
-      <ProtectedRoute component={DummyComponent} path="/test" />
-    );
-    const route = wrapper.find(Route);
-    const renderProp = route.prop("render");
-    const result = renderProp({ location: { pathname: "/test" } });
-    expect(result.type).toBe(DummyComponent);
+    renderRoute();
+    expect(screen.getByText("Protected Content")).toBeInTheDocument();
   });
 
-  it("should render component when code is set in localStorage", () => {
+  it("should render the component when code is set in localStorage", () => {
     localStorage.setItem("code", "auth-code-123");
     isAuthenticated.mockReturnValue(false);
-    const wrapper = shallow(
-      <ProtectedRoute component={DummyComponent} path="/test" />
-    );
-    const route = wrapper.find(Route);
-    const renderProp = route.prop("render");
-    const result = renderProp({ location: { pathname: "/test" } });
-    expect(result.type).toBe(DummyComponent);
-  });
-
-  it("should render component when isAuthenticated returns true", () => {
-    isAuthenticated.mockReturnValue(true);
-    const wrapper = shallow(
-      <ProtectedRoute component={DummyComponent} path="/test" />
-    );
-    const route = wrapper.find(Route);
-    const renderProp = route.prop("render");
-    const result = renderProp({ location: { pathname: "/test" } });
-    expect(result.type).toBe(DummyComponent);
+    renderRoute();
+    expect(screen.getByText("Protected Content")).toBeInTheDocument();
   });
 
   it("should redirect to / when not authenticated", () => {
     isAuthenticated.mockReturnValue(false);
-    const wrapper = shallow(
-      <ProtectedRoute component={DummyComponent} path="/test" />
-    );
-    const route = wrapper.find(Route);
-    const renderProp = route.prop("render");
-    const result = renderProp({ location: { pathname: "/test" } });
-    expect(result.type).toBe(Redirect);
-    expect(result.props.to).toEqual({ pathname: "/" });
+    renderRoute();
+    expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
+    expect(screen.getByText("Redirected Home")).toBeInTheDocument();
   });
 
   it("should pass extra props to the component", () => {
     localStorage.setItem("guestRole", "guest");
-    const wrapper = shallow(
-      <ProtectedRoute
-        component={DummyComponent}
-        path="/test"
-        extraProp="value"
-      />
+    isAuthenticated.mockReturnValue(false);
+    renderRoute({ extraProp: "value" });
+    expect(screen.getByText(/Protected Content/)).toHaveTextContent(
+      "Protected Content value"
     );
-    const route = wrapper.find(Route);
-    const renderProp = route.prop("render");
-    const result = renderProp({ location: { pathname: "/test" } });
-    expect(result.type).toBe(DummyComponent);
-    expect(result.props.extraProp).toBe("value");
   });
 });

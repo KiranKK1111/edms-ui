@@ -1,62 +1,72 @@
 import React from "react";
 import * as redux from "react-redux";
-import { configure, shallow, sleep, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
+import { render, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
+import AppProviders from "../../design-system/AppProviders";
 import MasterData from "../../pages/masterData/MasterData";
 
-configure({ adapter: new Adapter() });
 jest.spyOn(console, "error").mockImplementation(() => {});
+
 const mockDispatch = jest.fn();
+
 jest.mock("react-redux", () => ({
   useSelector: jest.fn(),
   useDispatch: () => mockDispatch,
   connect: () => (Component) => Component,
 }));
 
-const vendor = {
-  loading: false,
+jest.mock("../../pages/masterData/VendorData", () => () => (
+  <div data-testid="mock-vendor-data" />
+));
+jest.mock("../../pages/masterData/DataSetData", () => () => (
+  <div data-testid="mock-dataset-data" />
+));
+
+const state = {
+  dataset: { datasetsInfo: [] },
+  datafeedInfo: { datafeedsData: [] },
+  contract: { data: [[]] },
+  vendor: { list: [], loading: false },
 };
-const dataset = {
-  datasetsInfo: [],
-};
-const datafeedInfo = {
-  datafeedsData: [],
-};
-const state = { vendor, dataset, datafeedInfo };
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
+const renderPage = (props = {}) =>
+  render(
+    <AppProviders>
+      <MemoryRouter>
+        <MasterData {...props} />
+      </MemoryRouter>
+    </AppProviders>
+  );
 
-const props = {
-  contracts: [[{}]],
-  vendors: {
-    list: [],
-  },
-};
-const setState = jest.fn();
-const useStateSpy = jest.spyOn(React, "useState");
-
-useStateSpy.mockImplementation((init) => [init, setState]);
-useStateSpy.mockImplementation((init) => [init, setState]);
-useStateSpy.mockImplementation((init) => [init, setState]);
-useStateSpy.mockImplementation((init) => [init, setState]);
-useStateSpy.mockImplementation((init) => [init, setState]);
-useStateSpy.mockImplementation((init) => [init, setState]);
-
-const wrapper = shallow(<MasterData {...props} />);
-
-describe("Parent", () => {
-  it("wrapper", () => {
-    const element = wrapper.find(".dashboard-main");
-    expect(element.length).toBe(1);
+describe("MasterData", () => {
+  beforeEach(() => {
+    mockDispatch.mockReturnValue(
+      Promise.resolve({ status: 200, data: { entityManagementList: [] } })
+    );
+    jest
+      .spyOn(redux, "useSelector")
+      .mockImplementation((selector) => selector(state));
   });
-  it("Input", () => {
-    const mockEvent = { target: { value: "test" } };
-    const element = wrapper.find("#inp-search");
-    element.simulate("change", mockEvent);
-    expect(mockEvent).toBeTruthy();
+
+  it("should render the search input", async () => {
+    const { container, findByText } = renderPage();
+    await findByText("Entity Details");
+    expect(container.querySelector("#inp-search")).toBeInTheDocument();
+  });
+
+  it("should render the Entity Details section", async () => {
+    const { findByText } = renderPage();
+    expect(await findByText("Entity Details")).toBeInTheDocument();
+  });
+
+  it("should handle search input change", async () => {
+    const { container, findByText } = renderPage();
+    await findByText("Entity Details");
+    const input =
+      container.querySelector("#inp-search input") ||
+      container.querySelector("#inp-search");
+    fireEvent.change(input, { target: { value: "test" } });
+    expect(input).toBeInTheDocument();
   });
 });

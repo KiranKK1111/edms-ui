@@ -1,100 +1,80 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { CheckCircleFilled } from "@ant-design/icons";
+import React from "react";
+import { render, screen } from "@testing-library/react";
 import { TCVendorRequestSubscription } from "../../../components/termsAndConditions/tcVendorRequestSubscription";
-
-configure({ adapter: new Adapter() });
 
 describe("TCVendorRequestSubscription", () => {
   it("should render the component", () => {
-    const wrapper = shallow(<TCVendorRequestSubscription />);
-    expect(wrapper.exists()).toBe(true);
+    const { container } = render(<TCVendorRequestSubscription />);
+    expect(container.querySelector(".accepted-parent")).toBeInTheDocument();
   });
 
   it("should render the header text", () => {
-    const wrapper = shallow(<TCVendorRequestSubscription />);
-    expect(wrapper.find("h3").text()).toBe(
+    const { container } = render(<TCVendorRequestSubscription />);
+    expect(container.querySelector("h3").textContent).toBe(
       "Terms & Conditions On-Demand Vendor request"
     );
   });
 
   it("should render terms-conditions div when view is not rd", () => {
-    const wrapper = shallow(<TCVendorRequestSubscription view="tc" />);
-    expect(wrapper.find(".terms-conditions").length).toBe(1);
+    const { container } = render(<TCVendorRequestSubscription view="tc" />);
+    expect(container.querySelector(".terms-conditions")).toBeInTheDocument();
   });
 
   it("should not render terms-conditions div when view is rd", () => {
-    const wrapper = shallow(<TCVendorRequestSubscription view="rd" />);
-    expect(wrapper.find(".terms-conditions").length).toBe(0);
+    const { container } = render(<TCVendorRequestSubscription view="rd" />);
+    expect(container.querySelector(".terms-conditions")).not.toBeInTheDocument();
   });
 
   it("should show Accepted text when view is not tc", () => {
-    const wrapper = shallow(<TCVendorRequestSubscription view="review" />);
-    expect(wrapper.find("span").text()).toContain("Accepted");
+    render(<TCVendorRequestSubscription view="review" />);
+    expect(screen.getByText(/Accepted/)).toBeInTheDocument();
   });
 
   it("should not show Accepted text when view is tc", () => {
-    const wrapper = shallow(<TCVendorRequestSubscription view="tc" />);
-    const spans = wrapper.find(".accepted-parent").find("span");
-    expect(spans.length).toBe(0);
+    render(<TCVendorRequestSubscription view="tc" />);
+    expect(screen.queryByText(/Accepted/)).not.toBeInTheDocument();
   });
 
-  it("should show CheckCircleFilled icon when view is not tc", () => {
-    const wrapper = shallow(<TCVendorRequestSubscription view="review" />);
-    expect(wrapper.find(CheckCircleFilled).length).toBe(1);
+  it("should show the accepted icon when view is not tc", () => {
+    const { container } = render(<TCVendorRequestSubscription view="review" />);
+    expect(container.querySelector(".accepted-parent svg")).toBeInTheDocument();
   });
 
   it("should apply opacity 0.5 when subForFlag true and dfVendor is Y", () => {
-    const wrapper = shallow(
-      <TCVendorRequestSubscription
-        subForFlag={true}
-        dfVendor="Y"
-        view="tc"
-      />
+    const { container } = render(
+      <TCVendorRequestSubscription subForFlag={true} dfVendor="Y" view="tc" />
     );
-    const parent = wrapper.find(".accepted-parent");
-    expect(parent.prop("style")).toEqual({ opacity: "0.5" });
+    expect(container.querySelector(".accepted-parent").style.opacity).toBe("0.5");
   });
 
   it("should apply opacity 0.5 when subForFlag false and vendorRequest not Y", () => {
-    const wrapper = shallow(
-      <TCVendorRequestSubscription
-        subForFlag={false}
-        vendorRequest="N"
-        view="tc"
-      />
+    const { container } = render(
+      <TCVendorRequestSubscription subForFlag={false} vendorRequest="N" view="tc" />
     );
-    const parent = wrapper.find(".accepted-parent");
-    expect(parent.prop("style")).toEqual({ opacity: "0.5" });
+    expect(container.querySelector(".accepted-parent").style.opacity).toBe("0.5");
   });
 
-  it("should apply opacity none when subForFlag true and dfVendor not Y", () => {
-    const wrapper = shallow(
-      <TCVendorRequestSubscription
-        subForFlag={true}
-        dfVendor="N"
-        view="tc"
-      />
+  it("should not apply opacity 0.5 when subForFlag true and dfVendor not Y", () => {
+    const { container } = render(
+      <TCVendorRequestSubscription subForFlag={true} dfVendor="N" view="tc" />
     );
-    const parent = wrapper.find(".accepted-parent");
-    expect(parent.prop("style")).toEqual({ opacity: "none" });
+    expect(container.querySelector(".accepted-parent").style.opacity).not.toBe(
+      "0.5"
+    );
   });
 
-  it("should apply opacity none when subForFlag false and vendorRequest is Y", () => {
-    const wrapper = shallow(
-      <TCVendorRequestSubscription
-        subForFlag={false}
-        vendorRequest="Y"
-        view="tc"
-      />
+  it("should not apply opacity 0.5 when subForFlag false and vendorRequest is Y", () => {
+    const { container } = render(
+      <TCVendorRequestSubscription subForFlag={false} vendorRequest="Y" view="tc" />
     );
-    const parent = wrapper.find(".accepted-parent");
-    expect(parent.prop("style")).toEqual({ opacity: "none" });
+    expect(container.querySelector(".accepted-parent").style.opacity).not.toBe(
+      "0.5"
+    );
   });
 
   it("should render Governance heading", () => {
-    const wrapper = shallow(<TCVendorRequestSubscription view="tc" />);
-    expect(wrapper.find("h4").text()).toBe(
+    const { container } = render(<TCVendorRequestSubscription view="tc" />);
+    expect(container.querySelector("h4").textContent).toBe(
       "Required Governance/Compliance approvals"
     );
   });

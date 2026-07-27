@@ -1,44 +1,28 @@
-import React, { useState, useEffect, memo, createRef } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import {
-  Button,
-  Col,
-  DatePicker,
-  Form,
-  Input,
-  Row,
-  Select,
-  Tooltip,
-  Checkbox,
-  Layout,
-  Modal,
-  Divider,
-  Space,
-  Upload,
-  Radio,
-  message,
-} from "antd";
-import TextArea from "antd/lib/input/TextArea";
-import {
-  HomeOutlined,
-  DownOutlined,
-  UploadOutlined,
-  PaperClipOutlined,
-  DeleteOutlined,
-  LinkOutlined,
-  CloseCircleOutlined,
-} from "@ant-design/icons";
-import "antd/dist/antd.css";
-import moment from "moment";
+import { useForm } from "react-hook-form";
+import { Box, Button, Divider, Grid } from "@mui/material";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { FieldLabel, FormField, imperativeConfirm } from "../../design-system";
+import { toast as message } from "../../design-system/toast";
 import "./GeneralConfiguration.css";
 import { configUiFn } from "../../store/actions/datafeedAction";
 import { tokenEx } from "../../test/regEx";
-const { Content } = Layout;
-const { confirm } = Modal;
+
+const REQUEST_METHOD_OPTIONS = [
+  { value: "GET", label: "GET" },
+  { value: "POST", label: "POST" },
+];
+
+const TOKEN_REQ_OPTIONS = [
+  { value: "Yes", label: "Yes" },
+  { value: "No", label: "No" },
+];
 
 const ApiConfiguration = (props) => {
-  const formRef = createRef();
   const dispatch = useDispatch();
   const params = useParams();
   const configValues = useSelector((state) => state.datafeedInfo.congigUi);
@@ -51,23 +35,28 @@ const ApiConfiguration = (props) => {
   const [showFileNew, setShowFileNew] = useState(false);
 
   const [requestBodyObj, setRequestBodyObj] = useState();
+  const [requestBodyFileName, setRequestBodyFileName] = useState("");
 
-  useEffect(() => {
-    if (props.formData) {
-      formRef.current.submit();
-      props.next(false);
-    }
-  }, [props.formData]);
+  const { control, watch, setValue, getValues, trigger } = useForm({
+    defaultValues: {
+      requestMethod: "POST",
+      requestParameter: "",
+      requestHeaders: "",
+      requestBody: "",
+      tokenReq: "No",
+      userName: "",
+      grantType: "",
+      tokenURL: "",
+      passwordProperty: "",
+      contentType: "",
+      requestBodyAuth: "",
+      tokenResponseKey: "",
+      tokenPrefix: "",
+    },
+    mode: "onChange",
+  });
 
-  const layout = {
-    labelCol: {
-      span: 8,
-    },
-    wrapperCol: {
-      span: 16,
-    },
-    labelWrap: true,
-  };
+  const tokenReqWatch = watch("tokenReq");
 
   const isTokenReq = (event) => {
     setTokenReq(event.target.value);
@@ -81,6 +70,33 @@ const ApiConfiguration = (props) => {
     setUploadOn(true);
   };
 
+  // Replaces antd Upload beforeUpload — read file content into the requestBody field.
+  const handleFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const validTypes = ["text/plain", "text/csv", "application/json", ""];
+    const validExts = /\.(json|txt|csv)$/i;
+    if (!validExts.test(file.name)) {
+      message.error("Please upload a .json or .txt file.");
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const content = evt.target.result;
+      setValue("requestBody", content);
+      setRequestBodyFileName(file.name);
+      setRequestBodyObj(file);
+      setShowFileNew(true);
+      setUploadOn(true);
+    };
+    reader.onerror = () => {
+      message.error("Failed to read file.");
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   const bindData = (data) => {
     const items = Object.keys(data);
     if (items.length) {
@@ -88,27 +104,33 @@ const ApiConfiguration = (props) => {
         if (subItem == "requestBodyObj") {
           setRequestBodyObj(data[subItem]);
           setShowFileNew(true);
+        } else if (subItem == "requestBodyFileName") {
+          setRequestBodyFileName(data[subItem] || "");
+          if (data[subItem]) setUploadOn(true);
         } else if (subItem == "requestMethod") {
           setRequestMethod(data[subItem] != "" ? data[subItem] : "POST");
         }
-        formRef.current.setFieldsValue({
-          [subItem]: data[subItem],
-        });
+        setValue(subItem, data[subItem]);
       });
     }
   };
 
   useEffect(() => {
     if (!props.formData && Object.keys(configValues).length > 0) {
-      formRef.current.setFieldsValue({
-        requestMethod: configValues.hasOwnProperty("requestMethod")
+      setValue(
+        "requestMethod",
+        configValues.hasOwnProperty("requestMethod")
           ? configValues["requestMethod"]
-          : "POST",
-        tokenReq: configValues.hasOwnProperty("tokenReq")
+          : "POST"
+      );
+      setValue(
+        "tokenReq",
+        configValues.hasOwnProperty("tokenReq")
           ? configValues["tokenReq"]
-          : "No",
-      });
+          : "No"
+      );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -116,370 +138,322 @@ const ApiConfiguration = (props) => {
       bindData(configValues);
       setTokenReq(configValues.tokenReq);
       if (configValues.requestBody != "") {
-        //let filename=configValues.requestBody
         setUploadOn(true);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configValues]);
 
   const onFinish = (values) => {
     if (values["tokenReq"] === "No") {
       values.tokenURL = "";
-      values.username = "";
+      values.userName = "";
       values.passwordProperty = "";
+      values.contentType = "";
+      values.requestBodyAuth = "";
+      values.tokenResponseKey = "";
+      values.tokenPrefix = "";
     }
     values.requestBodyObj = requestBodyObj;
+    values.requestBodyFileName = requestBodyFileName;
     let finalData = { ...configValues, ...values };
     dispatch(configUiFn(finalData));
     props.next(true, finalData);
   };
 
-  const propsFile = {
-    showUploadList: false,
-    name: "requestBody",
-    maxCount: 1,
-    accept: ".txt,csv", //".pptx,.docx,.pdf,.xslx,.csv ",
-    beforeUpload: (file, fileList) => {
-      if (file.type !== "text/plain" && file.type !== "text/csv") {
-        message.error("Please upload a supported format file.");
-      } else {
-        // setRequestBodyObj(file);
-      }
-    },
-    onRemove: () => {
-      setUploadOn(false);
-      setEditOn(true);
-    },
-    async customRequest({
-      action,
-      data,
-      file,
-      filename,
-      headers,
-      onError,
-      onProgress,
-      onSuccess,
-      withCredentials,
-    }) {},
-    onChange(info) {},
-  };
+  useEffect(() => {
+    if (props.formData) {
+      trigger().then((ok) => {
+        if (ok) onFinish(getValues());
+      });
+      props.next(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.formData]);
+
+  // Parent flips `prevData` when Previous is clicked: persist the draft as-is
+  // (no validation, no field clearing — possibly incomplete input must survive
+  // the round trip) and then navigate back.
+  useEffect(() => {
+    if (props.prevData) {
+      const values = getValues();
+      values.requestBodyObj = requestBodyObj;
+      values.requestBodyFileName = requestBodyFileName;
+      const finalData = { ...configValues, ...values };
+      dispatch(configUiFn(finalData));
+      props.previous(true, finalData);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.prevData]);
 
   const handleDeleteFileUpload = () => {
     setUploadOn(false);
     setShowFileNew(false);
     setRequestBodyObj();
+    setRequestBodyFileName("");
+    setValue("requestBody", "");
   };
 
-  const handleDeleteFile = (record, type) => {
+  const handleDeleteFile = async (record, type) => {
     if (type === "upload") {
-      var data = {
-        showFileNew: false,
-        uploadOn: false,
-        requestBodyObj: {},
-      };
-      confirm({
+      const ok = await imperativeConfirm({
         title: "Do you want to replace the item",
-        icon: <CloseCircleOutlined style={{ color: "red" }} />,
-        okType: "danger",
         content: "This file is already existing. Replace? ",
-        onOk() {
-          handleDeleteFileUpload(data);
-        },
-        onCancel() {
-          //setShowPdf(true);
-          setUploadOn(true);
-          setShowFileNew(true);
-        },
+        okText: "OK",
+        okColor: "error",
       });
+      if (ok) {
+        handleDeleteFileUpload();
+      } else {
+        setUploadOn(true);
+        setShowFileNew(true);
+      }
     } else {
-      confirm({
+      const ok = await imperativeConfirm({
         title: "Do you want to replace the item",
-        icon: <CloseCircleOutlined style={{ color: "red" }} />,
-        okType: "danger",
         content: "This file/link is already existing. Replace? ",
-        onOk() {
-          setShowPdf(false);
-          setUploadOn(false);
-        },
-        onCancel() {
-          setShowPdf(true);
-          setUploadOn(false);
-        },
+        okText: "OK",
+        okColor: "error",
       });
+      if (ok) {
+        setShowPdf(false);
+        setUploadOn(false);
+      } else {
+        setShowPdf(true);
+        setUploadOn(false);
+      }
     }
   };
 
+  const uploadDisabled =
+    (showPdf || uploadOn || showFileNew) &&
+    requestBodyObj &&
+    requestBodyObj.name;
+
   return (
-    <Form
-      name="br-one"
-      {...layout}
-      onFinish={onFinish}
-      className="label-wrap"
+    <Box
+      component="form"
+      noValidate
+      className="config-form"
       style={{
         overflowWrap: "break-word",
         wordWrap: "break-word",
         whiteSpace: "normal",
       }}
-      ref={formRef}
     >
-      <Row gutter={[78, 0]}>
-        <Col span={8}>
+      <Grid container>
+        <Grid size={{ xs: 12 }}>
           <h3
             className="content-header"
             style={{ paddingBottom: "16px", fontWeight: "bold" }}
           >
             Request Details
           </h3>
-        </Col>
-      </Row>
-      <Row gutter={[78, 0]}>
-        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-          <Form.Item
-            label={
-              <Tooltip title="JSON request method.">Request method</Tooltip>
-            }
+        </Grid>
+      </Grid>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel text="Request method" tooltip="JSON request method." />
+          <FormField
             name="requestMethod"
-            rules={[
-              { required: true, message: "Request method is mandatory !" },
-            ]}
-          >
-            <Radio.Group value={requestMethod} onChange={isRequestMethod}>
-              <Radio value="GET">GET</Radio>
-              <Radio defaultChecked value={"POST"}>
-                POST
-              </Radio>
-            </Radio.Group>
-          </Form.Item>
+            type="radio"
+            row
+            control={control}
+            onChange={isRequestMethod}
+            options={REQUEST_METHOD_OPTIONS}
+          />
 
-          <Form.Item label="Request parameters" name="requestParameter">
-            <Input name="requestParameter" type="text" id="requestParameter" />
-          </Form.Item>
-        </Col>
-        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-          <Form.Item
-            label={
-              <Tooltip title="Choose the file that contains the request body information.">
-                Request body
-              </Tooltip>
-            }
-            name="requestBody"
-            type="file"
-            id="fileInput"
-            onChange={handleFile}
-            rules={[
-              {
-                required: true,
-                message: "Please Upload a valid file",
-              },
-            ]}
-          >
-            <Space
-              direction="vertical"
-              style={{
-                width: "100%",
-              }}
-              size="large"
-            >
+          <Box sx={{ mt: 2 }}>
+            <FieldLabel text="Request parameters" />
+            <FormField name="requestParameter" control={control} />
+          </Box>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel
+            text="Request body"
+            tooltip="Enter the request body as JSON text, or upload a .json/.txt file. When a file is uploaded its content is read and stored. Either option is optional."
+          />
+          <Box sx={{ mb: 1 }}>
+            <FormField
+              name="requestBody"
+              type="textarea"
+              rows={3}
+              control={control}
+              placeholder={uploadOn && requestBodyFileName ? `Content loaded from: ${requestBodyFileName}` : "Enter request body (JSON), or upload a file below"}
+              inputProps={{ maxLength: 5000, readOnly: !!(uploadOn && requestBodyFileName) }}
+              sx={uploadOn && requestBodyFileName ? { bgcolor: "var(--color-bg-subtle, #f6f8fa)" } : {}}
+            />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadFileIcon />}
+                disabled={!!(uploadOn && requestBodyFileName)}
+              >
+                Upload JSON / Text file
+                <input
+                  type="file"
+                  hidden
+                  accept=".json,.txt"
+                  onChange={handleFileChange}
+                />
+              </Button>
               <div
                 style={{
-                  display: "flex",
-                  //height: 30,
-                  //marginLeft: 70,
-                  //marginBottom: 15
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  color: "var(--color-text-tertiary)",
                 }}
               >
-                <Upload {...propsFile} maxCount={1}>
-                  <Button
-                    disabled={
-                      (showPdf || uploadOn || showFileNew) &&
-                      requestBodyObj &&
-                      requestBodyObj.name
-                    }
-                    icon={<UploadOutlined />}
-                  >
-                    Click to Upload
-                  </Button>
-                  <div
-                    style={{
-                      //marginLeft: '18%',
-                      fontSize: "10px",
-                      fontWeight: "bold",
-                      input: "read-only",
-                      color: "gray",
-                    }}
-                  >
-                    Please upload a text file with JSON contents
-                  </div>
-                </Upload>
-                {showFileNew && requestBodyObj && requestBodyObj.name && (
-                  <Button
-                    //disabled={isButtonDisabled}
-                    type="button"
-                    className="link-button talign"
-                    alt={requestBodyObj.name}
-                    onClick={() => handleDeleteFile(requestBodyObj, "upload")}
-                  >
-                    <strong>
-                      &nbsp;&nbsp; &nbsp;&nbsp; <PaperClipOutlined /> &nbsp;
-                      {requestBodyObj.name}&nbsp;&nbsp;
-                      <DeleteOutlined
-                        style={{
-                          border: "1px solid red",
-                          color: "red",
-                          width: 20,
-                          height: 20,
-                          margin: 0,
-                        }}
-                      />
-                    </strong>
-                  </Button>
-                )}
+                Optional — upload a .json or .txt file to populate the request body
               </div>
-            </Space>
-          </Form.Item>
-          {/*showPdf && (
-            <Button
-              //disabled={isButtonDisabled}
-              type="button"
-              className="link-button talign"
-              alt={requestBodyObj}
-              style={{ marginLeft: 30 }}
-            >
-              <strong>
-                &nbsp;&nbsp; &nbsp;&nbsp;{" "}
-                <PaperClipOutlined /> &nbsp;
-                                    {requestBodyObj}&nbsp;&nbsp;
-                                    <DeleteOutlined
+            </Box>
+            {showFileNew && requestBodyFileName && (
+              <Button
+                type="button"
+                className="link-button talign"
+                onClick={() => handleDeleteFile(requestBodyObj, "upload")}
+              >
+                <strong
                   style={{
-                    border: "1px solid red",
-                    color: "red",
-                    width: 20,
-                    height: 20,
-                    margin: 0,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
                   }}
-                />
-              </strong>
-            </Button>
-                )}*/}
+                >
+                  <AttachFileIcon fontSize="small" />
+                  {requestBodyFileName}
+                  <DeleteIcon
+                    fontSize="small"
+                    style={{
+                      border: "1px solid var(--color-error)",
+                      color: "var(--color-error)",
+                    }}
+                  />
+                </strong>
+              </Button>
+            )}
+          </Box>
 
-          <Form.Item
-            label="Request headers"
+          <FieldLabel text="Request headers" />
+          <FormField
             name="requestHeaders"
-            rules={[
-              { required: true, message: "Request headers is mandatory !" },
-            ]}
-          >
-            <TextArea
-              name="requestHeaders"
-              rows={3}
-              showCount
-              maxLength={1000}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-      <Divider plain></Divider>
-      <Row gutter={[78, 0]}>
-        <Col span={8}>
+            type="textarea"
+            rows={3}
+            control={control}
+            inputProps={{ maxLength: 1000 }}
+          />
+        </Grid>
+      </Grid>
+      <Divider sx={{ my: 1 }} />
+      <Grid container>
+        <Grid size={{ xs: 12 }}>
           <h3
             className="content-header"
             style={{ paddingBottom: "16px", fontWeight: "bold" }}
           >
             Authentication Details
           </h3>
-        </Col>
-      </Row>
-      <Row gutter={[78, 0]}>
-        <Col span={12}>
-          <Form.Item
-            label={
-              <Tooltip title="Enter yes if a token is required.">
-                Token requirement
-              </Tooltip>
-            }
+        </Grid>
+      </Grid>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FieldLabel
+            text="Token requirement"
+            tooltip="Enter yes if a token is required."
+          />
+          <FormField
             name="tokenReq"
-            rules={[
-              { required: true, message: "Token requirement is mandatory !" },
-            ]}
-          >
-            <Radio.Group value={tokenReq} onChange={isTokenReq}>
-              <Radio value={"Yes"}>Yes</Radio>
-              <Radio defaultChecked value={"No"}>
-                No
-              </Radio>
-            </Radio.Group>
-          </Form.Item>
-          {tokenReq === "Yes" ? (
-            <Form.Item
-              label={
-                <Tooltip
-                  title="Username to be used for token authentication.
-                "
-                >
-                  Username
-                </Tooltip>
-              }
-              name="userName"
-              rules={[{ required: true, message: "Username is mandatory !" }]}
-            >
-              <Input name="userName" type="text" id="userName" />
-            </Form.Item>
+            type="radio"
+            row
+            control={control}
+            onChange={isTokenReq}
+            options={TOKEN_REQ_OPTIONS}
+          />
+          {tokenReqWatch === "Yes" ? (
+            <Box sx={{ mt: 2 }}>
+              <FieldLabel
+                text="Username"
+                tooltip="Username to be used for token authentication."
+              />
+              <FormField name="userName" control={control} />
+              <Box sx={{ mt: 2 }}>
+                <FieldLabel
+                  text="Grant type"
+                  tooltip="The OAuth grant type used for token authentication."
+                />
+                <FormField name="grantType" control={control} />
+              </Box>
+              <Box sx={{ mt: 2 }}>
+                <FieldLabel
+                  text="Token response key"
+                  tooltip="The key in the token endpoint response JSON that contains the access token (e.g. 'access_token')."
+                />
+                <FormField name="tokenResponseKey" control={control} />
+              </Box>
+              <Box sx={{ mt: 2 }}>
+                <FieldLabel
+                  text="Token prefix"
+                  tooltip="The prefix prepended to the token value in the Authorization header (e.g. 'Bearer')."
+                />
+                <FormField name="tokenPrefix" control={control} />
+              </Box>
+            </Box>
           ) : (
             ""
           )}
-        </Col>
-        {tokenReq === "Yes" ? (
-          <Col span={12}>
-            <Form.Item
-              label={
-                <Tooltip
-                  title={`The token URL to be used.  For example example: 
-              "https://selectapi.datascope.refinitiv.com/RestApi/v1/Authentication/RequestToken"
-            `}
-                >
-                  Token URL
-                </Tooltip>
-              }
+        </Grid>
+        {tokenReqWatch === "Yes" ? (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FieldLabel
+              text="Token URL"
+              tooltip={`The token URL to be used.  For example example: "https://selectapi.datascope.refinitiv.com/RestApi/v1/Authentication/RequestToken"`}
+            />
+            <FormField
               name="tokenURL"
-              rules={[
-                {
-                  required: true,
-                  message: "Token URL property is mandatory !",
-                },
-                {
-                  pattern: new RegExp(tokenEx),
+              control={control}
+              rules={{
+                pattern: {
+                  value: new RegExp(tokenEx),
                   message: "Not a valid Token URL",
                 },
-              ]}
-            >
-              <Input name="tokenURL" type="text" id="tokenURL" />
-            </Form.Item>
-            <Form.Item
-              label={
-                <Tooltip
-                  title="The password property used to connect to the password vault.  You will need to get this from the dev team.
-                "
-                >
-                  Password property
-                </Tooltip>
-              }
-              name="passwordProperty"
-              rules={[
-                { required: true, message: "Password property is mandatory !" },
-              ]}
-            >
-              <Input
-                name="passwordProperty"
-                type="text"
-                id="passwordProperty"
+              }}
+            />
+            <Box sx={{ mt: 2 }}>
+              <FieldLabel
+                text="Password property"
+                tooltip="The password property used to connect to the password vault.  You will need to get this from the dev team."
               />
-            </Form.Item>
-          </Col>
+              <FormField name="passwordProperty" control={control} />
+            </Box>
+            <Box sx={{ mt: 2 }}>
+              <FieldLabel
+                text="Content type"
+                tooltip="The Content-Type header value for the token request (e.g. 'application/json', 'application/x-www-form-urlencoded')."
+              />
+              <FormField name="contentType" control={control} />
+            </Box>
+            <Box sx={{ mt: 2 }}>
+              <FieldLabel
+                text="Request body"
+                tooltip="The request body sent to the token endpoint to obtain an access token."
+              />
+              <FormField
+                name="requestBodyAuth"
+                type="textarea"
+                rows={3}
+                control={control}
+                inputProps={{ maxLength: 2000 }}
+              />
+            </Box>
+          </Grid>
         ) : (
           ""
         )}
-      </Row>
-    </Form>
+      </Grid>
+    </Box>
   );
 };
 

@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkedms_ui=globalThis.webpackChunkedms_ui||[]).push([[289,613],{98349(e,s,t){t.r(s),t.d(s,{default:()=>i});t(9950);var a=t(16673),u=t(63357),r=t(44414);const i=()=>{const e=(0,a.useHistory)().location.pathname.includes("modifyAgreement");return(0,r.jsx)(u.default,{resource:"agreement",mode:e?"edit":"create"})}}}]);

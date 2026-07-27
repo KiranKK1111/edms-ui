@@ -1,12 +1,9 @@
-import moment from "moment";
+import dayjs from "../../../design-system/dayjs";
 
 export const bindData = (data, form1) => {
   if (data && data.length > 0) {
-    
     data.forEach((item) => {
       Object.keys(item).forEach((subItem) => {
-        
-
         if (
           [
             "distributeDerivedData",
@@ -37,7 +34,11 @@ export const bindData = (data, form1) => {
           });
         } else if (subItem === "expirationDate") {
           form1.setFieldsValue({
-            expirationDate: item[subItem] && moment.utc(moment(new Date(item[subItem])).format("YYYY-MM-DD[T]HH:mm:ss")),
+            expirationDate:
+              item[subItem] &&
+              dayjs.utc(
+                dayjs(new Date(item[subItem])).format("YYYY-MM-DD[T]HH:mm:ss")
+              ),
           });
         } else {
           form1.setFieldsValue({

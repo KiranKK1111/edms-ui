@@ -1,37 +1,51 @@
-import * as redux from "react-redux";
-import { configure, shallow, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-
-import { Breadcrumb, Button } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { AppProviders } from "../../../design-system";
 import DocumentationTab from "../../../components/dataset/DocumentationTab";
 
-configure({ adapter: new Adapter() });
-
-const mockDispatch = jest.fn();
+let mockState = {};
+const mockDispatch = jest.fn(() => Promise.resolve({}));
 jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
+  useSelector: (cb) => cb(mockState),
   useDispatch: () => mockDispatch,
 }));
 
-const dataset = {
-  subscriptionInfo: { data: { taskStatus: "", subscriptionId: "" } },
-};
-const fileUpload = {
-  fileLists: {
-    documentList: "",
-  },
-};
-const state = { dataset, fileUpload };
+jest.mock("../../../store/actions/DatasetPageActions", () => ({
+  fetchUrlsInfo: jest.fn(),
+}));
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
+jest.mock("../../../store/actions/datafeedAction", () => ({
+  startGetAllDocuments: jest.fn(),
+  startDownloadDocument: jest.fn(),
+}));
 
-const wrapper = mount(<DocumentationTab />);
+const buildState = () => ({
+  dataset: { subscriptionInfo: { data: { taskStatus: "", subscriptionId: "" } } },
+  fileUpload: { fileLists: { documentList: "" } },
+});
 
-describe("Parent", () => {
-  it("wrapper", () => {
-    const element = wrapper.find("#main");
-    expect(element.length).toBe(1);
+const renderTab = () =>
+  render(
+    <AppProviders>
+      <MemoryRouter>
+        <DocumentationTab catalogueObj={{ datasetId: "D1", dataFeedId: "F1" }} />
+      </MemoryRouter>
+    </AppProviders>
+  );
+
+describe("DocumentationTab", () => {
+  beforeEach(() => {
+    mockState = buildState();
+  });
+
+  it("should render the main container", () => {
+    const { container } = renderTab();
+    expect(container.querySelector("#main")).toBeInTheDocument();
+  });
+
+  it("should render the Documentation heading", async () => {
+    renderTab();
+    expect(await screen.findByText("Documentation")).toBeInTheDocument();
   });
 });

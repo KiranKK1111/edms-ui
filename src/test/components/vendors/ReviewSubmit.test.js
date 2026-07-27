@@ -1,110 +1,97 @@
-import * as redux from "react-redux";
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Row, Col } from "antd";
+import React from "react";
+import { screen } from "@testing-library/react";
+
+import { renderWithProviders } from "../../utils/renderWithProviders";
 import ReviewSubmit from "../../../components/vendors/AddVendor/ReviewSubmit";
 
-configure({ adapter: new Adapter() });
+// Mutable state read by the mocked useSelector. The factory function runs
+// lazily (per render), so reassigning this between tests is honoured even
+// though resetMocks is ON.
+let mockVendorState = { data: {} };
 
-const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
-  useDispatch: () => mockDispatch,
+  ...jest.requireActual("react-redux"),
+  useSelector: (cb) => cb({ vendor: mockVendorState }),
 }));
 
-const setupSelector = (vendorData = {}) => {
-  const state = { vendor: { data: vendorData } };
-  redux.useSelector.mockImplementation((cb) => cb(state));
+const setVendorData = (data) => {
+  mockVendorState = { data };
 };
 
 describe("ReviewSubmit (Vendor)", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it("should render main container", () => {
-    setupSelector({
+  it("should render the main container", () => {
+    setVendorData({
       longName: "Test Vendor",
       shortName: "TV",
       entityDescription: "A test vendor",
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find("#main").length).toBe(1);
+    const { container } = renderWithProviders(<ReviewSubmit />);
+    expect(container.querySelector("#main")).toBeInTheDocument();
   });
 
-  it("should render Row component", () => {
-    setupSelector({
-      longName: "Test Vendor",
-      shortName: "TV",
-      entityDescription: "Description",
-    });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find(Row).length).toBe(1);
-  });
-
-  it("should render Col for each data field", () => {
-    setupSelector({
+  it("should render a label for each data field", () => {
+    setVendorData({
       longName: "Test Vendor",
       shortName: "TV",
       entityType: "Vendor",
       entityDescription: "A test vendor",
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find(Col).length).toBe(4);
+    const { container } = renderWithProviders(<ReviewSubmit />);
+    expect(
+      container.querySelectorAll(".label-review").length
+    ).toBeGreaterThanOrEqual(4);
   });
 
-  it("should give entityDescription col span 16", () => {
-    setupSelector({
-      longName: "Test",
-      entityDescription: "Description",
+  it("should display the field values", () => {
+    setVendorData({
+      longName: "Test Vendor",
+      shortName: "TV",
+      entityDescription: "A test vendor",
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    const descCol = wrapper
-      .find(Col)
-      .filterWhere((c) => c.prop("span") === 16);
-    expect(descCol.length).toBe(1);
+    renderWithProviders(<ReviewSubmit />);
+    expect(screen.getByText("Test Vendor")).toBeInTheDocument();
+    expect(screen.getByText("TV")).toBeInTheDocument();
+    expect(screen.getByText("A test vendor")).toBeInTheDocument();
   });
 
-  it("should give non-description cols span 8", () => {
-    setupSelector({
+  it("should render the Description label", () => {
+    setVendorData({
       longName: "Test",
-      shortName: "T",
-      entityDescription: "Description",
+      entityDescription: "Some details here",
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    const normalCols = wrapper
-      .find(Col)
-      .filterWhere((c) => c.prop("span") === 8);
-    expect(normalCols.length).toBe(2);
+    renderWithProviders(<ReviewSubmit />);
+    expect(screen.getByText(/^Description/)).toBeInTheDocument();
   });
 
-  it("should display dash for empty values", () => {
-    setupSelector({
+  it("should display a dash for empty values", () => {
+    setVendorData({
       longName: "",
       shortName: "TV",
       entityDescription: "Description",
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.text()).toContain("-");
+    renderWithProviders(<ReviewSubmit />);
+    expect(screen.getAllByText("-").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render website as a link", () => {
-    setupSelector({
+  it("should render the website as a link", () => {
+    setVendorData({
       website: "www.example.com",
       entityDescription: "Test",
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    const link = wrapper.find("a");
-    expect(link.length).toBe(1);
-    expect(link.prop("href")).toBe("https://www.example.com");
+    renderWithProviders(<ReviewSubmit />);
+    const link = screen.getByRole("link", { name: "www.example.com" });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "https://www.example.com");
   });
 
-  it("should display label-review spans", () => {
-    setupSelector({
+  it("should render label-review spans", () => {
+    setVendorData({
       longName: "Test",
       entityDescription: "Description",
     });
-    const wrapper = shallow(<ReviewSubmit />);
-    expect(wrapper.find(".label-review").length).toBeGreaterThanOrEqual(1);
+    const { container } = renderWithProviders(<ReviewSubmit />);
+    expect(
+      container.querySelectorAll(".label-review").length
+    ).toBeGreaterThanOrEqual(1);
   });
 });

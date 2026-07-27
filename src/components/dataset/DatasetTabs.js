@@ -1,32 +1,13 @@
-import { useState, useEffect, createRef } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useLocation } from "react-router-dom";
-import { SearchOutlined } from "@ant-design/icons";
-import {
-  Button,
-  Card,
-  Descriptions,
-  Divider,
-  Input,
-  Layout,
-  Menu,
-  Skeleton,
-  Space,
-  Tabs,
-  Form,
-  Alert,
-} from "antd";
+import { useState } from "react";
+import { Alert, Box, Skeleton, Tab, Tabs } from "@mui/material";
+
 import Overview from "./Overview";
 import LicenceScope from "./LicenceScope";
-import MetadataTable from "./MetadataTable";
 import SubscribersTab from "./SubscribersTab";
 import SubscriptionsTab from "./SubscriptionsTab";
 import DocumentationTab from "./DocumentationTab";
-import { schedulerDatabase } from "../../store/actions/SourceConfigActions";
-import isSubscribersTabVisible from "../../utils/accessSubscribersTab";
-
-import moment from "moment";
 import MetadataTab from "./MetadataTab";
+
 import isButtonObject from "../../utils/accessButtonCheck";
 import {
   CATELOG_MANAGEMENT_PAGE,
@@ -38,30 +19,15 @@ import {
 } from "../../utils/Constants";
 import getPermissionObject from "../../utils/accessObject";
 
-const { TabPane } = Tabs;
-
 const DatasetTabs = (props) => {
   const { datafeedStatus } = props;
-  const [activeTab, setActiveTab] = useState(1);
-  const [licenseData, setLicenseData] = useState([]);
+  const [activeTab, setActiveTab] = useState("1");
+
   const dataFamilyLoading = props.dataFamily && props.dataFamily.loading;
   const licenseLoading = props.license && props.license.loading;
   const vendorLoading = props.vendor && props.vendor.loading;
   const contractLoading = props.contract && props.contract.loading;
   const sourceConfigLoading = props.sourceConfig && props.sourceConfig.loading;
-  const location = useLocation();
-
-  const {
-    userData: licenseUserData,
-    allowedUserTypes,
-    projectSubscription,
-    licenseType,
-    noOfLicenses,
-    licensesUsed,
-  } = props.license && props.license.data ? props.license.data : {};
-
-  const { description: vendorDescription } =
-    props.vendor && props.vendor.data ? props.vendor.data : {};
 
   if (
     dataFamilyLoading ||
@@ -70,141 +36,118 @@ const DatasetTabs = (props) => {
     contractLoading ||
     sourceConfigLoading
   ) {
-    return <Skeleton active />;
+    return <Skeleton variant="rectangular" height={240} />;
   }
 
-  // Business Management, data display Value
-  let businessUnitDisplay = null;
-  if (licenseUserData) {
-    if (licenseUserData.toLowerCase() === "no") {
-      businessUnitDisplay = "All";
-    } else {
-      businessUnitDisplay = allowedUserTypes;
-    }
-  }
-
-  // Project Specific, data display value
-  let projectSpecificDisplay = null;
-  if (projectSubscription) {
-    if (projectSubscription.toLowerCase() === "no") {
-      projectSpecificDisplay = "None";
-    } else {
-      projectSpecificDisplay = "List of specific project -> - Not Available -";
-    }
-  }
-
-  let country = "";
-
-  let productDescription = "-";
-
-  let totalLicenses = "";
-  let listSpecificProject = "";
-
-  const loggedInTitle = localStorage.getItem("entitlementType");
-
-  const isOverviewTab = !isButtonObject(
-    CATELOG_MANAGEMENT_PAGE,
-    CATELOG_OVERVIEW_TAB
-  );
-  const isMetadataTab = !isButtonObject(
-    CATELOG_MANAGEMENT_PAGE,
-    CATELOG_MATADATA_TAB
-  );
+  const isOverviewTab = !isButtonObject(CATELOG_MANAGEMENT_PAGE, CATELOG_OVERVIEW_TAB);
+  const isMetadataTab = !isButtonObject(CATELOG_MANAGEMENT_PAGE, CATELOG_MATADATA_TAB);
 
   const getObjectForSubscription = getPermissionObject(
     CATELOG_MANAGEMENT_PAGE,
     CATELOG_MY_SUBSCRIPTION
   );
-
   const getObjectForSubscribers = getPermissionObject(
     CATELOG_MANAGEMENT_PAGE,
     CATELOG_SUBSCRIBERS_TAB
   );
-
-  let loginedRold = localStorage.getItem("entitlementType");
-  const isGuestRole = loginedRold
-    ? undefined
-    : localStorage.getItem("guestRole");
-
+  const loginedRold = localStorage.getItem("entitlementType");
+  const isGuestRole = loginedRold ? undefined : localStorage.getItem("guestRole");
   const getObjectForDocumentation = getPermissionObject(
     CATELOG_MANAGEMENT_PAGE,
     CATELOG_DOCUMENTATION_TAB
   );
 
-  return (
-    <Tabs defaultActiveKey={`${activeTab}`} style={{ fontWeight: "bold" }}>
-      <TabPane
-        tab="Overview"
-        key="1"
-        style={{ fontWeight: "normal" }}
-        disabled={isOverviewTab}
-      >
-        {datafeedStatus && datafeedStatus.toLowerCase() === "pending" ? (
-          <Alert
-            message="This data feed is currently under review by an Approver. You may request for access once it is approved."
-            type="warning"
-            showIcon
-            closable
-            className="mb-16"
-          />
-        ) : null}
-        <Overview />
-      </TabPane>
-      <TabPane tab="Licence scope" key="2" style={{ fontWeight: "bold" }}>
-        <LicenceScope />
-      </TabPane>
-      <TabPane
-        tab="Schema"
-        key="3"
-        style={{ fontWeight: "bold" }}
-        disabled={isMetadataTab}
-      >
-        <MetadataTab />
-      </TabPane>
-      {getObjectForSubscription &&
-      (getObjectForSubscription.permission === "R" ||
-        getObjectForSubscription.permission === "RW") ? (
-        <TabPane
-           tab="My Subscriptions"
-          key="8"
-          disabled={
-            !getObjectForSubscription.permission === "R" ||
-            !getObjectForSubscription.permission === "RW"
-          }
-        >
-          <SubscriptionsTab />
-        </TabPane>
-      ) : null}
+  const items = (() => {
+    const list = [
+      {
+        key: "1",
+        label: "Overview",
+        disabled: isOverviewTab,
+        content: (
+          <>
+            {datafeedStatus && datafeedStatus.toLowerCase() === "pending" && (
+              <Alert
+                severity="warning"
+                onClose={() => {}}
+                className="mb-16"
+                sx={{ mb: 2 }}
+              >
+                This data feed is currently under review by an Approver. You
+                may request for access once it is approved.
+              </Alert>
+            )}
+            <Overview />
+          </>
+        ),
+      },
+      { key: "2", label: "Licence scope", content: <LicenceScope /> },
+      { key: "3", label: "Schema", disabled: isMetadataTab, content: <MetadataTab /> },
+    ];
 
-      {getObjectForSubscribers && getObjectForSubscribers.permission === "R" ? (
-        <TabPane
-          tab="Subscribers"
-          key="9"
-          style={{ fontWeight: "normal" }}
-          disabled={
-            getObjectForDocumentation &&
-            !getObjectForDocumentation.permission === "R"
-          }
+    if (
+      getObjectForSubscription &&
+      (getObjectForSubscription.permission === "R" ||
+        getObjectForSubscription.permission === "RW")
+    ) {
+      list.push({
+        key: "8",
+        label: "My Subscriptions",
+        content: <SubscriptionsTab />,
+      });
+    }
+
+    if (getObjectForSubscribers && getObjectForSubscribers.permission === "R") {
+      list.push({
+        key: "9",
+        label: "Subscribers",
+        content: <SubscribersTab />,
+      });
+    }
+
+    if (
+      isGuestRole ||
+      (getObjectForDocumentation && getObjectForDocumentation.permission === "R")
+    ) {
+      list.push({
+        key: "10",
+        label: "Documentation",
+        content: <DocumentationTab catalogueObj={props.catalogueObj} />,
+      });
+    }
+
+    return list;
+  })();
+
+  return (
+    <Box>
+      <Tabs
+        value={activeTab}
+        onChange={(_, val) => setActiveTab(val)}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+      >
+        {items.map((it) => (
+          <Tab
+            key={it.key}
+            value={it.key}
+            label={it.label}
+            disabled={!!it.disabled}
+            sx={{ fontWeight: 500 }}
+          />
+        ))}
+      </Tabs>
+      {items.map((it) => (
+        <Box
+          key={it.key}
+          role="tabpanel"
+          hidden={activeTab !== it.key}
+          sx={{ pt: 2 }}
         >
-          <SubscribersTab />
-        </TabPane>
-      ) : null}
-      {isGuestRole ||
-      (getObjectForDocumentation &&
-        getObjectForDocumentation.permission === "R") ? (
-        <TabPane
-          tab="Documentation"
-          key="10"
-          style={{ fontWeight: "bold" }}
-          disabled={
-            getObjectForDocumentation &&
-            !getObjectForDocumentation.permission === "R"
-          }
-        >
-          <DocumentationTab catalogueObj={props.catalogueObj} />
-        </TabPane>
-      ) : null}
-    </Tabs>
+          {activeTab === it.key && it.content}
+        </Box>
+      ))}
+    </Box>
   );
 };
 

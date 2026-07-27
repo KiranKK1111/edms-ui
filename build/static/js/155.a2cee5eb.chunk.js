@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkedms_ui=globalThis.webpackChunkedms_ui||[]).push([[155,613],{18507(e,t,s){s.r(t),s.d(t,{default:()=>c});var a=s(16673),u=s(63357),d=(s(8440),s(44414));const c=()=>{const e=(0,a.useLocation)(),t=!(!e.state||!e.state.isUpdate);return(0,d.jsx)(u.default,{resource:"datafeed",mode:t?"edit":"create"})}},8440(){}}]);

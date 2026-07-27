@@ -1,21 +1,16 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Breadcrumb } from "antd";
-import { Link } from "react-router-dom";
+import React from "react";
+import { renderWithProviders } from "../../utils/renderWithProviders";
 import BreadcrumbComponent from "../../../components/breadcrumb/Breadcrumb";
-
-configure({ adapter: new Adapter() });
 
 describe("BreadcrumbComponent", () => {
   it("should render a Breadcrumb component", () => {
-    const wrapper = shallow(<BreadcrumbComponent />);
-    expect(wrapper.find(Breadcrumb).length).toBe(1);
+    const { container } = renderWithProviders(<BreadcrumbComponent />);
+    expect(container.querySelector(".app-breadcrumb")).toBeInTheDocument();
   });
 
   it("should render home icon link to /catalog", () => {
-    const wrapper = shallow(<BreadcrumbComponent />);
-    const homeLink = wrapper.find(Link).first();
-    expect(homeLink.prop("to")).toBe("/catalog");
+    const { container } = renderWithProviders(<BreadcrumbComponent />);
+    expect(container.querySelector("a[href='/catalog']")).toBeInTheDocument();
   });
 
   it("should render breadcrumb items from props", () => {
@@ -23,38 +18,36 @@ describe("BreadcrumbComponent", () => {
       { name: "Datasets", url: "/datasets" },
       { name: "Details" },
     ];
-    const wrapper = shallow(<BreadcrumbComponent breadcrumb={breadcrumb} />);
-    const items = wrapper.find(Breadcrumb.Item);
-    // 1 home + 2 breadcrumb items
-    expect(items.length).toBe(3);
-  });
-
-  it("should render Link for items with url", () => {
-    const breadcrumb = [{ name: "Datasets", url: "/datasets" }];
-    const wrapper = shallow(<BreadcrumbComponent breadcrumb={breadcrumb} />);
-    const links = wrapper.find(Link);
-    expect(links.length).toBe(2);
-    expect(links.at(1).prop("to")).toBe("/datasets");
-    expect(links.at(1).children().text()).toBe("Datasets");
+    const { container, getByText } = renderWithProviders(
+      <BreadcrumbComponent breadcrumb={breadcrumb} />
+    );
+    // Datasets is a non-last item with a url -> link; Details is the last item -> text.
+    const datasetsLink = getByText("Datasets");
+    expect(datasetsLink.closest("a")).toHaveAttribute("href", "/datasets");
+    expect(getByText("Details")).toBeInTheDocument();
+    expect(getByText("Details").closest("a")).toBeNull();
+    // home link + Datasets link
+    expect(container.querySelectorAll("a").length).toBe(2);
   });
 
   it("should render text only for items without url", () => {
     const breadcrumb = [{ name: "Details" }];
-    const wrapper = shallow(<BreadcrumbComponent breadcrumb={breadcrumb} />);
-    const items = wrapper.find(Breadcrumb.Item);
-    expect(items.at(1).children().text()).toBe("Details");
+    const { getByText } = renderWithProviders(
+      <BreadcrumbComponent breadcrumb={breadcrumb} />
+    );
+    expect(getByText("Details").closest("a")).toBeNull();
   });
 
   it("should handle empty breadcrumb array", () => {
-    const wrapper = shallow(<BreadcrumbComponent breadcrumb={[]} />);
-    const items = wrapper.find(Breadcrumb.Item);
-    expect(items.length).toBe(1);
+    const { container } = renderWithProviders(
+      <BreadcrumbComponent breadcrumb={[]} />
+    );
+    expect(container.querySelectorAll("a").length).toBe(1);
   });
 
   it("should handle undefined breadcrumb", () => {
-    const wrapper = shallow(<BreadcrumbComponent />);
-    const items = wrapper.find(Breadcrumb.Item);
-    expect(items.length).toBe(1);
+    const { container } = renderWithProviders(<BreadcrumbComponent />);
+    expect(container.querySelectorAll("a").length).toBe(1);
   });
 
   it("should render multiple breadcrumb items in order", () => {
@@ -63,15 +56,30 @@ describe("BreadcrumbComponent", () => {
       { name: "Vendors", url: "/vendors" },
       { name: "Details" },
     ];
-    const wrapper = shallow(<BreadcrumbComponent breadcrumb={breadcrumb} />);
-    const items = wrapper.find(Breadcrumb.Item);
-    expect(items.length).toBe(4);
+    const { container, getByText } = renderWithProviders(
+      <BreadcrumbComponent breadcrumb={breadcrumb} />
+    );
+    expect(getByText("Master Data").closest("a")).toHaveAttribute(
+      "href",
+      "/masterdata"
+    );
+    expect(getByText("Vendors").closest("a")).toHaveAttribute(
+      "href",
+      "/vendors"
+    );
+    expect(getByText("Details").closest("a")).toBeNull();
+    // home + Master Data + Vendors
+    expect(container.querySelectorAll("a").length).toBe(3);
   });
 
   it("should have truncate-text class on links", () => {
-    const breadcrumb = [{ name: "Test", url: "/test" }];
-    const wrapper = shallow(<BreadcrumbComponent breadcrumb={breadcrumb} />);
-    const link = wrapper.find(Link).at(1);
-    expect(link.hasClass("truncate-text")).toBe(true);
+    const breadcrumb = [
+      { name: "Test", url: "/test" },
+      { name: "Last" },
+    ];
+    const { getByText } = renderWithProviders(
+      <BreadcrumbComponent breadcrumb={breadcrumb} />
+    );
+    expect(getByText("Test").closest("a")).toHaveClass("truncate-text");
   });
 });

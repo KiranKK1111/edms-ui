@@ -1,45 +1,69 @@
+import React from "react";
 import * as redux from "react-redux";
-import { configure, shallow, sleep, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
+import { render } from "@testing-library/react";
 
+import AppProviders from "../../design-system/AppProviders";
 import AddEditDocuments from "../../pages/datafeed/AddEditDocuments";
 
-configure({ adapter: new Adapter() });
+jest.spyOn(console, "error").mockImplementation(() => {});
+jest.spyOn(console, "warn").mockImplementation(() => {});
 
-const props = {
-  location: {
-    state: {
-      editObj: {},
-    },
-    pathname: "/addDocuments",
-  },
-};
 const mockDispatch = jest.fn();
+
 jest.mock("react-redux", () => ({
   useSelector: jest.fn(),
   useDispatch: () => mockDispatch,
   connect: () => (Component) => Component,
 }));
+
 jest.mock("react-router-dom", () => ({
-  useParams: jest.fn().mockReturnValue({ dsDfId: "", docObjectIds: "" }),
-  useHistory: jest.fn(),
+  __esModule: true,
+  useParams: () => ({ dsDfId: "DS1", docObjectIds: "" }),
+  useHistory: () => ({ push: jest.fn() }),
+  useLocation: () => ({ pathname: "/addDocuments", state: {} }),
+  Link: ({ children }) => <a>{children}</a>,
 }));
 
-const fileUpload = { fileLists: { documentList: "" } };
+jest.mock("../../components/Modals/DocumentDeleteValidate", () => () => (
+  <div data-testid="mock-doc-delete-validate" />
+));
 
-const dataset = { datasetsInfo: {} };
+const props = {
+  location: {
+    state: { editObj: {} },
+    pathname: "/addDocuments",
+  },
+  history: { push: jest.fn() },
+};
 
-const datafeedInfo = { datafeedsData: {} };
+const state = {
+  fileUpload: { fileLists: { documentList: "" } },
+  dataset: { datasetsInfo: [] },
+  datafeedInfo: { datafeedsData: [] },
+};
 
-const state = { fileUpload, dataset, datafeedInfo };
+describe("AddEditDocuments", () => {
+  beforeEach(() => {
+    jest
+      .spyOn(redux, "useSelector")
+      .mockImplementation((callback) => callback(state));
+  });
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
+  it("should render the main wrapper", () => {
+    const { container } = render(
+      <AppProviders>
+        <AddEditDocuments {...props} />
+      </AppProviders>
+    );
+    expect(container.querySelector("#main")).toBeInTheDocument();
+  });
 
-const wrapper = shallow(<AddEditDocuments {...props} />);
-
-it("wrapper", () => {
-  const element = wrapper.find("#main");
-  expect(element.length).toBe(1);
+  it("should render the Document details heading", () => {
+    const { getByText } = render(
+      <AppProviders>
+        <AddEditDocuments {...props} />
+      </AppProviders>
+    );
+    expect(getByText("Document details")).toBeInTheDocument();
+  });
 });

@@ -1,46 +1,30 @@
-//______________Lib imports begin_____________
-import {
-  Col,
-  Form,
-  Input,
-  Layout,
-  PageHeader,
-  Radio,
-  Row,
-  Space,
-  Table,
-  Tag,
-  Tooltip,
-  Breadcrumb,
-  message,
-  Spin,
-  Badge,
-  Button,
-} from "antd";
-/*________________antD library imports begin*/
-import {
-  HomeOutlined,
-  MessageOutlined,
-  MessageFilled,
-  MessageTwoTone,
-  InfoCircleOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
-import "antd/dist/antd.css";
-import React, { createRef, useEffect, useState, memo, useRef } from "react";
+import React, { useEffect, useMemo, useState, memo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import moment from "moment";
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import {
+  CheckCircleOutlined as CheckCircleOutlineIcon,
+  HighlightOff as CloseCircleIcon,
+  InfoOutlined as InfoOutlinedIcon,
+} from "@mui/icons-material";
+
+import { DataTable, PageLayout } from "../../design-system";
+import { getPageConfig } from "../../config/pageConfig";
+import dayjs from "../../design-system/dayjs";
 import { camelText } from "../../components/stringConversion";
-import RequestModal from "../../components/myTasks/RequestModal";
 import {
   getAllTasks,
-  getOverViewRecordsList,
   updateTaskAction,
 } from "../../store/actions/MyTasksActions.js";
-//______________ component imports begin_________
-import Headers from "../header/Header";
-//________________css imports*/
 import "./MyTasksDashboard.css";
 import ApproveRejectModal from "../../components/Modals/ApproveRejectModal";
 import { startGetDatafeeds } from "../../store/actions/datafeedAction";
@@ -52,10 +36,9 @@ import {
   DATASET_OWNER,
 } from "../../utils/Constants";
 import { checkForString } from "../../utils/warningUtils.js";
+import { isDatasetDelegateRole } from "../../utils/accessMyTask";
 
-const MyTasksDashboardNew = (props) => {
-  const { Content } = Layout;
-
+const MyTasksDashboardNew = () => {
   const [taskListStatus, setTaskListStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
@@ -63,25 +46,18 @@ const MyTasksDashboardNew = (props) => {
   const [disabledSubmitBtn, setDisabledSubmitBtn] = useState(false);
   const [approveModal, setApproveModal] = useState(false);
   const [rejectModal, setRejectModal] = useState(false);
-  const [columns, setColumns] = useState([]);
   const [currentActionData, setCurrentActionData] = useState({});
-
   const [data, setData] = useState([]);
-  const dispatch = useDispatch();
-  const list = useSelector((state) => state.myTasks);
   const [pendingList, setPendingList] = useState([]);
   const [completedList, setCompletedList] = useState([]);
-  let disabledCheckForRecord = true;
+
+  const dispatch = useDispatch();
+  const list = useSelector((state) => state.myTasks);
+  const history = useHistory();
+
   let approvedReject;
   let approvedRejectSubs;
   let approvedRejectRemain;
-  const history = useHistory();
-  const [isActionSubmitted, setisActionSubmitted] = useState(false);
-  const [disableButton, setDisableButton] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [searchedColumn, setSearchedColumn] = useState("");
-  const searchInput = useRef(null);
-
   const objectMatrix = JSON.parse(localStorage.getItem("objectMatrix")) || [];
   if (objectMatrix && objectMatrix.length > 0) {
     approvedReject = objectMatrix.filter(
@@ -101,205 +77,57 @@ const MyTasksDashboardNew = (props) => {
           APPROVE_REJECT_BTN_REMAINING.toLowerCase()
     );
   }
-  const handleSearch = (selectedKeys, confirm, dataIndex) => {
-    confirm();
-    setSearchText(selectedKeys[0]);
-    setSearchedColumn(dataIndex);
-    console.log(selectedKeys[0]);
-  };
-  const handleReset = (clearFilters) => {
-    clearFilters();
-    setSearchText("");
-  };
-  const getColumnSearchProps = (dataIndex) => ({
-    filterDropdown: ({
-      setSelectedKeys,
-      selectedKeys,
-      confirm,
-      clearFilters,
-      close,
-    }) => (
-      <div
-        style={{
-          padding: 8,
-        }}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <Input
-          ref={searchInput}
-          placeholder={`Search`}
-          value={selectedKeys[0]}
-          onChange={(e) =>
-            setSelectedKeys(e.target.value ? [e.target.value] : [])
-          }
-          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
-          style={{
-            marginBottom: 8,
-            display: "block",
-          }}
-        />
-        <Space>
-          <Button
-            type="primary"
-            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
-            icon={<SearchOutlined />}
-            size="small"
-            style={{
-              width: 90,
-            }}
-          >
-            Search
-          </Button>
-          <Button
-            onClick={() => clearFilters && handleReset(clearFilters)}
-            size="small"
-            style={{
-              width: 90,
-            }}
-          >
-            Reset
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => {
-              confirm({
-                closeDropdown: false,
-              });
-              setSearchText(selectedKeys[0]);
-              setSearchedColumn(dataIndex);
-            }}
-            style={{ visibility: "hidden" }}
-          >
-            Filter
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => {
-              close();
-            }}
-            style={{ visibility: "hidden" }}
-          >
-            close
-          </Button>
-        </Space>
-      </div>
-    ),
-    filterIcon: (filtered) => (
-      <SearchOutlined
-        style={{
-          color: filtered ? "#1890ff" : undefined,
-        }}
-      />
-    ),
-    onFilter: (value, record) => {
-      let filterData;
-      if (record[dataIndex] !== null) {
-        filterData = record[dataIndex]
-          .toString()
-          .toLowerCase()
-          .includes(value.toLowerCase());
-      }
-      return filterData;
-    },
-    onFilterDropdownOpenChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
-      }
-    },
-    render: (text) => text,
-  });
 
   const navigateToView = (event) => {
-    if (event.taskListObjectAction === "Create") {
-      if (event.taskListObject === "Entity") {
+    const action = event.taskListObjectAction;
+    const obj = event.taskListObject;
+    const objLower = (obj || "").toLowerCase();
+    const idForCreate = event.taskListPkey;
+    const idForUpdate = event.crId;
+    const taskId = event.taskListId;
+    const id = action === "Create" ? idForCreate : idForUpdate;
+
+    if (action === "Create" || action === "Update" || action === "Deactivate") {
+      if (obj === "Entity") {
         history.push({
-          pathname: `vendorDetails/${event.taskListPkey}/${event.taskListId}`,
+          pathname: `vendorDetails/${id}/${taskId}`,
           state: { myTaskData: event },
         });
-      } else if (event.taskListObject === "Licence") {
+      } else if (obj === "Licence") {
         history.push({
-          pathname: `licenseDetails/${event.taskListPkey}/${event.taskListId}`,
+          pathname: `licenseDetails/${id}/${taskId}`,
           state: { myTaskData: event },
         });
-      } else if (event.taskListObject === "Agreement") {
+      } else if (obj === "Agreement") {
         history.push({
-          pathname: `AgreementDetails/${event.taskListPkey}/${event.taskListId}`,
+          pathname: `AgreementDetails/${id}/${taskId}`,
           state: { myTaskData: event },
         });
-      } else if (
-        event.taskListObject === "Datafeed" ||
-        event.taskListObject.toLowerCase() === "data feed"
-      ) {
+      } else if (obj === "Datafeed" || objLower === "data feed") {
         history.push({
-          pathname: `DatafeedDetails/${event.taskListPkey}/${event.taskListId}`,
+          pathname: `DatafeedDetails/${id}/${taskId}`,
           state: { myTaskData: event },
         });
-      } else if (event.taskListObject === "Dataset") {
+      } else if (obj === "Dataset") {
         history.push({
-          pathname: `DatasetDetails/${event.taskListPkey}/${event.taskListId}`,
+          pathname: `DatasetDetails/${id}/${taskId}`,
           state: { myTaskData: event },
         });
-      } else if (event.taskListObject === "RecurrenceScheduler") {
+      } else if (obj === "RecurrenceScheduler") {
         history.push(`schedulerDetails/${event.key}/${event.taskId}`);
-      } else if (event.taskListObject === "Subscription") {
+      } else if (obj === "Subscription") {
         history.push({
-          pathname: `requestDetails/${event.taskListPkey}/${event.taskListId}`,
+          pathname: `requestDetails/${id}/${taskId}`,
           state: { myTaskData: event },
         });
-      } else if (event.taskListObject === "SourceConfiguration") {
-        history.push(`sourceConfigDetails/${event.key}/${event.taskId}`);
-      }
-    } else if (
-      event.taskListObjectAction === "Update" ||
-      event.taskListObjectAction === "Deactivate"
-    ) {
-      if (event.taskListObject === "Entity") {
-        history.push({
-          pathname: `vendorDetails/${event.crId}/${event.taskListId}`,
-          state: { myTaskData: event },
-        });
-      } else if (event.taskListObject === "Licence") {
-        history.push({
-          pathname: `licenseDetails/${event.crId}/${event.taskListId}`,
-          state: { myTaskData: event },
-        });
-      } else if (event.taskListObject === "Agreement") {
-        history.push({
-          pathname: `AgreementDetails/${event.crId}/${event.taskListId}`,
-          state: { myTaskData: event },
-        });
-      } else if (
-        event.taskListObject === "Datafeed" ||
-        event.taskListObject.toLowerCase() === "data feed"
-      ) {
-        history.push({
-          pathname: `DatafeedDetails/${event.crId}/${event.taskListId}`,
-          state: { myTaskData: event },
-        });
-      } else if (event.taskListObject === "Dataset") {
-        history.push({
-          pathname: `DatasetDetails/${event.crId}/${event.taskListId}`,
-          state: { myTaskData: event },
-        });
-      } else if (event.taskListObject === "RecurrenceScheduler") {
-        history.push(`schedulerDetails/${event.key}/${event.taskId}`);
-      } else if (event.taskListObject === "Subscription") {
-        history.push({
-          pathname: `requestDetails/${event.crId}/${event.taskListId}`,
-          state: { myTaskData: event },
-        });
-      } else if (event.taskListObject === "SourceConfiguration") {
+      } else if (obj === "SourceConfiguration") {
         history.push(`sourceConfigDetails/${event.key}/${event.taskId}`);
       }
     }
   };
-  function onlyUnique(value, index, array) {
-    return array.indexOf(value) === index;
-  }
-  const onStatusChange = (event) => {
-    setTaskListStatus(event.target.value);
+
+  const onStatusChange = (_, value) => {
+    if (value !== null) setTaskListStatus(value);
   };
 
   const showApproveModal = (event) => {
@@ -333,255 +161,174 @@ const MyTasksDashboardNew = (props) => {
     }
   };
 
-  const loginedRold = localStorage.getItem("entitlementType");
-
-  let loadingContent;
   const refreshPage = () => {
-    //window.location.reload();
     setLoading(true);
     setDisabledSubmitBtn(false);
-    //toggleData(taskListStatus);
   };
-  useEffect(() => {
-    setColumns([
-      /*{
-                title: "ID",
-                dataIndex: "taskListId",
-                ellipsis: false,
-                width: '25%',
-                sorter: (a, b) =>
-                    a.taskListId.localeCompare(b.taskListId),
-                
-            },*/
+
+  const isActionDisabledForRecord = (record) => {
+    let disabled = true;
+    if (approvedReject && approvedReject.length > 0 && approvedReject[0].permission === "RW") {
+      disabled = false;
+    } else if (
+      approvedRejectSubs &&
+      approvedRejectSubs.length > 0 &&
+      approvedRejectRemain &&
+      approvedRejectRemain.length > 0
+    ) {
+      const isSubscription =
+        record &&
+        record.taskListObject &&
+        record.taskListObject.toLowerCase() === "subscription";
+      if (isSubscription && approvedRejectSubs[0].permission === "RW") {
+        disabled = false;
+      }
+    }
+    return (
+      disabledSubmitBtn ||
+      disabled ||
+      isDatasetDelegateRole() ||
+      !checkForString("currentUserRole", DATASET_OWNER)
+    );
+  };
+
+  const columns = useMemo(
+    () => [
       {
-        title: "Object name",
-        dataIndex: "taskListDescription",
-        ellipsis: false,
-        width: "29%",
-        ...getColumnSearchProps("taskListDescription"),
-        sorter: (a, b) =>
-          a.taskListDescription != null
-            ? a.taskListDescription.localeCompare(b.taskListDescription)
-            : b.taskListDescription != null
-            ? b.taskListDescription.localeCompare(a.taskListDescription)
-            : null,
-        render: (text, record) => (
-          <Space size="middle">
-            <button
-              type="button"
-              className="link-button talign"
-              onClick={() => navigateToView(record)}
-              alt={text}
-            >
-              {text}
-            </button>
-          </Space>
+        accessorKey: "taskListDescription",
+        header: "Object name",
+        size: 320,
+        Cell: ({ cell, row }) => (
+          <button
+            type="button"
+            className="link-button talign"
+            onClick={() => navigateToView(row.original)}
+          >
+            {cell.getValue()}
+          </button>
         ),
       },
       {
-        title: "Object type",
-        dataIndex: "taskListObject",
-        sorter: (a, b) => a.taskListObject.localeCompare(b.taskListObject),
-        ellipsis: true,
-        filters: [
-          {
-            text: "Entity",
-            value: "entity",
-          },
-          {
-            text: "Agreement",
-            value: "agreement",
-          },
-          {
-            text: "Licence",
-            value: "licence",
-          },
-          {
-            text: "Dataset",
-            value: "dataset",
-          },
-          {
-            text: "Data Feed",
-            value: "data feed",
-          },
-          {
-            text: "Subscription",
-            value: "subscription",
-          },
+        accessorKey: "taskListObject",
+        header: "Object type",
+        size: 140,
+        filterVariant: "select",
+        filterSelectOptions: [
+          "Entity",
+          "Agreement",
+          "Licence",
+          "Dataset",
+          "Data Feed",
+          "Subscription",
         ],
-        onFilter: (value, record) =>
-          record.taskListObject.toString().toLowerCase().includes(value),
       },
       {
-        title: "Operation",
-        dataIndex: "taskListObjectAction",
-        sorter: (a, b) =>
-          a.taskListObjectAction.localeCompare(b.taskListObjectAction),
-        ellipsis: true,
-        filters: [
-          {
-            text: "Create",
-            value: "create",
-          },
-          {
-            text: "Update",
-            value: "update",
-          },
-          {
-            text: "Deactivate",
-            value: "deactivate",
-          },
-        ],
-        onFilter: (value, record) =>
-          record.taskListObjectAction.toString().toLowerCase().includes(value),
+        accessorKey: "taskListObjectAction",
+        header: "Operation",
+        size: 130,
+        filterVariant: "select",
+        filterSelectOptions: ["Create", "Update", "Deactivate"],
       },
       {
-        title: "Submitted by",
-        dataIndex: "taskListCreatedBy",
-        ellipsis: true,
-        ...getColumnSearchProps("taskListCreatedBy"),
-        sorter: (a, b) => {
-          if (a.taskListCreatedBy && b.taskListCreatedBy)
-            return a.taskListCreatedBy - b.taskListCreatedBy;
-        },
+        accessorKey: "taskListCreatedBy",
+        header: "Submitted by",
+        size: 140,
       },
       {
-        title: "Submitted on",
-        dataIndex: "taskListCreatedOn",
-        sorter: (a, b) => {
-          return new Date(a.taskListCreatedOn) - new Date(b.taskListCreatedOn);
-        },
-        ellipsis: true,
-        render: (value, record) => {
-          return moment(record.taskListCreatedOn).format("DD MMM YYYY");
-        },
+        accessorKey: "taskListCreatedOn",
+        header: "Submitted on",
+        size: 140,
+        sortingFn: (rowA, rowB) =>
+          new Date(rowA.original.taskListCreatedOn) -
+          new Date(rowB.original.taskListCreatedOn),
+        Cell: ({ row }) =>
+          row.original.taskListCreatedOn
+            ? dayjs(row.original.taskListCreatedOn).format("DD MMM YYYY")
+            : "",
       },
       {
-        title: "Action by",
-        dataIndex: "taskListApproveBy",
-        ellipsis: true,
-        ...getColumnSearchProps("taskListApproveBy"),
-        sorter: (a, b) => {
-          if (a.taskListApproveBy && b.taskListApproveBy) {
-            return a.taskListApproveBy - b.taskListApproveBy;
+        accessorKey: "taskListApproveBy",
+        header: "Action by",
+        size: 130,
+      },
+      {
+        accessorKey: "taskListApproveOn",
+        header: "Action on",
+        size: 130,
+        sortingFn: (rowA, rowB) =>
+          new Date(rowA.original.taskListApproveOn) -
+          new Date(rowB.original.taskListApproveOn),
+        Cell: ({ row }) =>
+          row.original.taskListApproveOn
+            ? dayjs(row.original.taskListApproveOn).format("DD MMM YYYY")
+            : "",
+      },
+      {
+        id: "taskId",
+        header: "Action",
+        accessorKey: "taskListTaskStatus",
+        size: 170,
+        filterVariant: "select",
+        filterSelectOptions: ["Approved", "Rejected", "Pending"],
+        Cell: ({ row }) => {
+          const record = row.original;
+          const status = (record.taskListTaskStatus || "").toLowerCase();
+          if (status === "approved") {
+            return (
+              <Chip
+                size="small"
+                color="success"
+                variant="outlined"
+                icon={<CheckCircleOutlineIcon fontSize="small" />}
+                label={camelText(record.taskListTaskStatus)}
+              />
+            );
           }
-        },
-        render: (value, record) => {
-          return record.taskListApproveBy != null
-            ? record.taskListApproveBy
-            : "";
-        },
-      },
-      {
-        title: "Action on",
-        dataIndex: "taskListApproveOn",
-        ellipsis: true,
-        sorter: (a, b) => {
-          return new Date(a.taskListApproveOn) - new Date(b.taskListApproveOn);
-        },
-        render: (value, record) => {
-          return record.taskListApproveOn != null
-            ? moment(record.taskListApproveOn).format("DD MMM YYYY")
-            : "";
-        },
-      },
-      {
-        title: "Action",
-        key: "taskId",
-        width: "11%",
-        sorter: (a, b) => {
-          return a.taskListTaskStatus.localeCompare(b.taskListTaskStatus);
-        },
-        filters: [
-          {
-            text: "Approved",
-            value: "approved",
-          },
-          {
-            text: "Rejected",
-            value: "rejected",
-          },
-          {
-            text: "Pending",
-            value: "pending",
-          },
-        ],
-        onFilter: (value, record) =>
-          record.taskListTaskStatus.toString().toLowerCase().includes(value),
-
-        render: (text, record) => {
-          let taskListObject = record && record.taskListObject;
-          if (
-            approvedReject.length > 0 &&
-            approvedReject[0].permission === "RW"
-          ) {
-            disabledCheckForRecord = false;
-          } else if (
-            approvedRejectSubs.length > 0 &&
-            approvedRejectRemain.length > 0
-          ) {
-            if (
-              taskListObject.toLowerCase() === "subscription" &&
-              approvedRejectSubs[0].permission === "RW"
-            ) {
-              disabledCheckForRecord = false;
-            } else {
-              disabledCheckForRecord = true;
-            }
+          if (status === "rejected") {
+            return (
+              <Chip
+                size="small"
+                color="error"
+                variant="outlined"
+                icon={
+                  <Tooltip title={record.taskListRejectionReason || ""}>
+                    <InfoOutlinedIcon fontSize="small" />
+                  </Tooltip>
+                }
+                label={camelText(record.taskListTaskStatus)}
+                deleteIcon={<CloseCircleIcon fontSize="small" />}
+              />
+            );
           }
-          let isDisabled =
-            disabledSubmitBtn ||
-            disabledCheckForRecord ||
-            !checkForString("currentUserRole", DATASET_OWNER)
-          return (
-            <div>
-              <Space size="middle">
-                {record.taskListTaskStatus.toLowerCase() == "approved" ? (
-                  <Tag color="green">
-                    {" "}
-                    {camelText(record.taskListTaskStatus)}{" "}
-                  </Tag>
-                ) : record.taskListTaskStatus.toLowerCase() == "rejected" ? (
-                  <Tag color="red">
-                    <span style={{ color: "#007AFF" }}>
-                      <Tooltip title={record.taskListRejectionReason}>
-                        <InfoCircleOutlined
-                          style={{ fontSize: "10px", color: "red" }}
-                        />{" "}
-                      </Tooltip>
-                    </span>
-                    {camelText(record.taskListTaskStatus)}
-                  </Tag>
-                ) : record.taskListTaskStatus.toLowerCase() == "pending" ? (
-                  <>
-                    <button
-                      type="button"
-                      className="link-button"
-                      onClick={() => showApproveModal(record)}
-                      disabled={isDisabled}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      className="link-button"
-                      onClick={() => showRejectModal(record)}
-                      disabled={isDisabled}
-                    >
-                      {" "}
-                      Reject
-                    </button>
-                  </>
-                ) : (
-                  ""
-                )}
-              </Space>
-            </div>
-          );
+          if (status === "pending") {
+            const disabled = isActionDisabledForRecord(record);
+            return (
+              <Box sx={{ display: "inline-flex", gap: 1 }}>
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => showApproveModal(record)}
+                  disabled={disabled}
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => showRejectModal(record)}
+                  disabled={disabled}
+                >
+                  Reject
+                </button>
+              </Box>
+            );
+          }
+          return null;
         },
       },
-    ]);
-  }, []);
+    ],
+    [disabledSubmitBtn]
+  );
 
   useEffect(() => {
     if (!isPageLoaded || !list || !list.list || !list.list.length) {
@@ -590,19 +337,18 @@ const MyTasksDashboardNew = (props) => {
       setIsPageLoaded(true);
     } else {
       if (!data || !data.length || list.list.length) {
-        let sortedData = list.list.sort(function (a, b) {
-          // Turn your strings into dates, and then subtract them
-          // to get a value that is either negative, positive, or zero.
-          return new Date(b.taskListCreatedOn) - new Date(a.taskListCreatedOn);
-        });
+        const sortedData = list.list.slice().sort(
+          (a, b) =>
+            new Date(b.taskListCreatedOn) - new Date(a.taskListCreatedOn)
+        );
         setData(sortedData);
         setLoading(false);
         setCountObj(list.data);
         setCompletedList(list.completedList);
         setPendingList(list.pendingList);
       } else if (
-        list.completedList.length == 0 ||
-        list.pendingList.length == 0
+        list.completedList.length === 0 ||
+        list.pendingList.length === 0
       ) {
         setCompletedList(list.completedList);
         setPendingList(list.pendingList);
@@ -611,127 +357,106 @@ const MyTasksDashboardNew = (props) => {
         setCountObj(list.data);
       }
     }
-  }, [
-    list,
-    dispatch,
-    list && list.list,
-    list && list.pendingList,
-    list && list.completedList,
-  ]);
+  }, [list, dispatch]);
 
-  if (loading) {
-    loadingContent = (
-      <Col
-        span={24}
-        style={{
-          textAlign: "center",
-          background: "#f0f2f5",
-          paddingTop: "8%",
-        }}
-        id="spinner"
-      >
-        <Spin tip="Loading..." />
-      </Col>
-    );
-  } else {
-    loadingContent = (
-      <>
-        <div className="dashboard-layout" id="main">
-          <div>
-            <div className="content-wrapper">
-              <div className="header-utlis">
-                <h3>My Tasks ({data && data.length == 0 ? 0 : data.length})</h3>
-              </div>
+  const tableDataSource = useMemo(() => {
+    if (taskListStatus === "pending") return pendingList;
+    if (taskListStatus === "completed") return completedList;
+    return data;
+  }, [taskListStatus, pendingList, completedList, data]);
 
-              <Radio.Group
-                className="sider-radio-group-button"
-                defaultValue="all"
-                onChange={onStatusChange}
-                value={taskListStatus}
-              >
-                <Radio.Button
-                  className="sider-radio-button"
-                  value="pending"
-                  id="btn-pending"
-                >
-                  Pending
-                </Radio.Button>
-                <Radio.Button className="sider-radio-button" value="completed">
-                  Completed
-                </Radio.Button>
-                <Radio.Button className="sider-radio-button" value="all">
-                  All
-                </Radio.Button>
-              </Radio.Group>
-            </div>
-            {columns.length > 0 ? (
-              <Table
-                size="small"
-                rowKey={(record) => record.taskListId}
-                style={{ padding: 24 }}
-                columns={columns}
-                dataSource={
-                  taskListStatus == "pending"
-                    ? pendingList
-                    : taskListStatus == "completed"
-                    ? completedList
-                    : data
-                }
-                //onChange={onChange123}
-              />
-            ) : null}
-          </div>
-        </div>
-      </>
-    );
-  }
+  const myTasksPage = getPageConfig("myTasks");
 
-  let myTasksTitle = (
-    <span>
-      My Tasks
-      <Badge
-        color="#52c41a"
-        style={{ verticalAlign: "-webkit-baseline-middle", left: "2.8%" }}
-      />
-    </span>
-  );
   return (
-    <>
-      <Headers />
-      <Row>
-        <Layout>
-          <Content>
-            <div className="dashboard-header" id="header-panel">
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Breadcrumb style={{ margin: "16px 0" }}>
-                  <Breadcrumb.Item href="/catalog">
-                    <HomeOutlined />
-                  </Breadcrumb.Item>
-                  <Breadcrumb.Item>My Tasks</Breadcrumb.Item>
-                </Breadcrumb>
-              </div>
-              <div>
-                <PageHeader title={myTasksTitle} ghost={false}></PageHeader>
-              </div>
-            </div>
+    <PageLayout
+      bounded
+      breadcrumb={myTasksPage.breadcrumb}
+      title={myTasksPage.title}
+      subtitle={myTasksPage.subtitle}
+      backTo={myTasksPage.backTo}
+      badge={myTasksPage.badge}
+    >
+      <Box className="page-layout-card">
+        {loading ? (
+          <Box
+            sx={{
+              flex: "1 1 auto",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: 320,
+            }}
+            id="spinner"
+          >
+            <CircularProgress size={48} />
+          </Box>
+        ) : (
+          <>
+            <Box
+              className="header-utlis"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 2,
+                flexWrap: "wrap",
+              }}
+            >
+              <Typography
+                component="h3"
+                sx={{
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "text.primary",
+                  m: 0,
+                }}
+              >
+                My Tasks ({data ? data.length : 0})
+              </Typography>
+              <ToggleButtonGroup
+                size="small"
+                color="primary"
+                value={taskListStatus}
+                exclusive
+                onChange={onStatusChange}
+              >
+                <ToggleButton value="pending" id="btn-pending">
+                  Pending
+                </ToggleButton>
+                <ToggleButton value="completed">Completed</ToggleButton>
+                <ToggleButton value="all">All</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
 
-            {loadingContent}
-          </Content>
-        </Layout>{" "}
-        {/*---------------Ends */}
-        <ApproveRejectModal
-          approveModal={approveModal}
-          currentActionData={currentActionData}
-          getStatus={null}
-          rejectModal={rejectModal}
-          setDisabledSubmitBtn={setDisabledSubmitBtn}
-          disabledSubmitBtn={disabledSubmitBtn}
-          refreshPage={refreshPage}
-          data={data}
-          setData={setData}
-        />
-      </Row>
-    </>
+            <Box className="page-layout-fill">
+              <DataTable
+                columns={columns}
+                data={tableDataSource || []}
+                rowKey="taskListId"
+                initialState={{
+                  density: "compact",
+                  pagination: { pageIndex: 0, pageSize: 10 },
+                }}
+                emptyState={{ title: "No tasks to show" }}
+                muiTableContainerProps={{ sx: { maxHeight: "none" } }}
+              />
+            </Box>
+          </>
+        )}
+      </Box>
+
+      <ApproveRejectModal
+        approveModal={approveModal}
+        currentActionData={currentActionData}
+        getStatus={null}
+        rejectModal={rejectModal}
+        setDisabledSubmitBtn={setDisabledSubmitBtn}
+        disabledSubmitBtn={disabledSubmitBtn}
+        refreshPage={refreshPage}
+        data={data}
+        setData={setData}
+      />
+    </PageLayout>
   );
 };
 

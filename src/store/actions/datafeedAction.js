@@ -1,5 +1,5 @@
 import axios from "axios";
-import { message } from "antd";
+import { toast as message } from "../../design-system/toast";
 import {
   API_BASE_ENDPOINT,
 } from "../../utils/Config";
@@ -115,26 +115,138 @@ export const checkIfRouteIsRunning = () => {
 
 export const startConfigUi = (isUpdate, formData, isRouteRunning) => {
   return async () => {
-    const response = await axios({
-      method: isUpdate ? "PUT" : "POST",
-      url: isUpdate
-        ? `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/datafeeddetails/updateRoute`
-        : !isRouteRunning ?
-          `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/datafeeddetails/createRoute` :
-          message.error(`Route is already running with routeName ${formData.routeName}`),
-      headers: {
-        token: `Bearer ${localStorage.getItem("access_token")}`,
-      },
-      data: formData,
-    });
-    if (response && response.data) {
-      if (response.data.status == "EXCEPTION") {
-        message.error(response.data.message);
-      } else {
-        message.success(response.data.message);
-      }
+    if (!isUpdate && isRouteRunning) {
+      message.error(`Route is already running with routeName ${formData.routeName}`);
+      return null;
     }
-    return response.data.status !== "EXCEPTION" ? response : null;
+    try {
+      const response = await axios({
+        method: isUpdate ? "PUT" : "POST",
+        url: isUpdate
+          ? `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/datafeeddetails/updateRoute`
+          : `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/datafeeddetails/createRoute`,
+        headers: {
+          token: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+        data: formData,
+      });
+      if (response?.data?.status === "EXCEPTION") {
+        message.error(response.data.message);
+        return null;
+      }
+      if (response?.data?.message) message.success(response.data.message);
+      return response;
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        (typeof err.response?.data === "string" ? err.response.data : null) ||
+        err.message ||
+        "Failed to save route configuration";
+      message.error(msg);
+      // Return a sentinel — on 5xx the DB record may already exist (Camel start failed after insert)
+      return { routeError: true, status: err.response?.status ?? 500 };
+    }
+  };
+};
+
+export const startConfigUiAuth = (isUpdate, authData) => {
+  return async () => {
+    try {
+      const response = await axios({
+        method: isUpdate ? "PUT" : "POST",
+        url: isUpdate
+          ? `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/authenticationdetails/editAuthenticationDetails/${authData.dataFeedId}`
+          : `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/authenticationdetails`,
+        headers: {
+          token: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+        // PUT uses AuthenticationDetailsUpdateDto (no dataFeedId in body);
+        // POST uses AuthenticationDetailsDto (includes dataFeedId in body).
+        data: isUpdate
+          ? {
+              userName: authData.userName,
+              grantType: authData.grantType,
+              passwordProperty: authData.passwordProperty,
+              url: authData.url,
+              requestBody: authData.requestBody,
+              contentType: authData.contentType,
+              tokenResponseKey: authData.tokenResponseKey,
+              tokenPrefix: authData.tokenPrefix,
+            }
+          : {
+              dataFeedId: authData.dataFeedId,
+              userName: authData.userName,
+              grantType: authData.grantType,
+              passwordProperty: authData.passwordProperty,
+              url: authData.url,
+              requestBody: authData.requestBody,
+              contentType: authData.contentType,
+              tokenResponseKey: authData.tokenResponseKey,
+              tokenPrefix: authData.tokenPrefix,
+            },
+      });
+      if (response && response.data && response.data.status === "EXCEPTION") {
+        message.error(response.data.message);
+      }
+      return response;
+    } catch (err) {
+      message.error(err.message);
+      return null;
+    }
+  };
+};
+
+// ApiDetailsDto (POST) uses multipart/form-data — requestBody is a MultipartFile.
+// ApiDetailsUpdateDto (PUT) uses JSON — requestBody is a plain string.
+export const startConfigUiApiDetails = (isUpdate, apiData) => {
+  return async () => {
+    try {
+      if (isUpdate) {
+        const response = await axios({
+          method: "PUT",
+          url: `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/apidetails/editApiDetails/${apiData.dataFeedId}`,
+          headers: {
+            token: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+          data: {
+            requestMethod: apiData.requestMethod,
+            requestParameters: apiData.requestParameters,
+            requestBody: apiData.requestBody,
+            requestHeaders: apiData.requestHeaders,
+            lastUpdatedBy: apiData.lastUpdatedBy,
+          },
+        });
+        if (response && response.data && response.data.status === "EXCEPTION") {
+          message.error(response.data.message);
+        }
+        return response;
+      } else {
+        const formData = new FormData();
+        formData.append("dataFeedDetailsId", apiData.dataFeedDetailsId || "");
+        formData.append("requestMethod", apiData.requestMethod || "");
+        formData.append("requestParameters", apiData.requestParameters || "");
+        formData.append("requestHeaders", apiData.requestHeaders || "");
+        formData.append("createdBy", apiData.createdBy || "");
+        if (apiData.requestBodyFile) {
+          formData.append("requestBody", apiData.requestBodyFile);
+        }
+        const response = await axios({
+          method: "POST",
+          url: `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/apidetails`,
+          headers: {
+            token: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+          data: formData,
+        });
+        if (response && response.data && response.data.status === "EXCEPTION") {
+          message.error(response.data.message);
+        }
+        return response;
+      }
+    } catch (err) {
+      message.error(err.message);
+      return null;
+    }
   };
 };
 
@@ -149,7 +261,6 @@ export const startConfigUiHistory = (values) => {
       if (res && res.data) {
         message.success(`Successfully submitted! `);
       }
-      // console.log(res);
       return res;
     } catch (err) {
       message.error(err.message);
@@ -231,13 +342,20 @@ export const getConfigById = (id) => {
           lastUpdatedBy: data["lastUpdatedBy"],
           lastUpdatedOn: data["lastUpdatedOn"],
           splittingRequirement:
-            data["splittingCanonicalClass"] != null &&
-            data["splittingCanonicalClass"] !== ""
+            (data["splittingCanonicalClass"] ??
+              data["splitterCanonicalClass"]) != null &&
+            (data["splittingCanonicalClass"] ??
+              data["splitterCanonicalClass"]) !== ""
               ? "Yes"
               : "No",
           routeType: data["routeTypeCanonicalClass"],
           configurationStatus:
-            data["isEnabled"] === true ? "Active" : "Inactive",
+            (data["isEnabled"] ?? data["enabled"]) === false
+              ? "Inactive"
+              : "Active",
+          // Preserve the raw enabled flag so an edit round-trips it back
+          // unchanged instead of re-deriving it from the status string.
+          isEnabled: data["isEnabled"] ?? data["enabled"],
           proxyRequirement: data["proxyUsed"] === true ? "Yes" : "No",
           proxyHostname: data["proxyHost"],
           proxyPort: data["proxyPort"],
@@ -255,6 +373,45 @@ export const getConfigById = (id) => {
           isChecksum: data["isChecksum"],
           vendorRequestConfig: data["vendorRequestConfig"]
         };
+
+        // For HTTPS feeds, also load existing API details and auth details
+        // so the API Configuration step pre-populates on edit.
+        if (data["sourceProtocol"] === "HTTPS" && data["dataFeedDetailsId"]) {
+          const [apiRes, authRes] = await Promise.allSettled([
+            axios({
+              method: "GET",
+              url: `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/apidetails/byDataFeedDetailsId?dataFeedDetailsId=${data["dataFeedDetailsId"]}`,
+              headers: { token: `Bearer ${localStorage.getItem("access_token")}` },
+            }),
+            axios({
+              method: "GET",
+              url: `${API_BASE_URL_FOR_DATAFLOW}/${API_BASE_ENDPOINT}/authenticationdetails/byDataFeedId?dataFeedId=${data["dataFeedId"]}`,
+              headers: { token: `Bearer ${localStorage.getItem("access_token")}` },
+            }),
+          ]);
+
+          if (apiRes.status === "fulfilled" && apiRes.value?.data) {
+            const a = apiRes.value.data;
+            values.requestMethod = a["requestMethod"] || "POST";
+            values.requestParameter = a["requestParameters"] || "";
+            values.requestHeaders = a["requestHeaders"] || "";
+            values.requestBody = a["requestBody"] || "";
+          }
+
+          if (authRes.status === "fulfilled" && authRes.value?.data) {
+            const au = authRes.value.data;
+            values.tokenReq = "Yes";
+            values.userName = au["userName"] || "";
+            values.grantType = au["grantType"] || "";
+            values.tokenURL = au["url"] || "";
+            values.passwordProperty = au["passwordProperty"] || "";
+            values.contentType = au["contentType"] || "";
+            values.requestBodyAuth = au["requestBody"] || "";
+            values.tokenResponseKey = au["tokenResponseKey"] || "";
+            values.tokenPrefix = au["tokenPrefix"] || "";
+          }
+        }
+
         dispatch(configUiFn(values, false));
       } else {
         dispatch(configUiFn({}, false));
@@ -514,8 +671,7 @@ export const startCheckDocument = (fileName, docObjectId) => {
     requestOptions
   )
     .then((response) => response.text())
-    .then((result) => console.log(result))
-    .catch((error) => console.log("error", error));
+    .catch((error) => error);
 
   return async (dispatch) => { };
 };

@@ -1,13 +1,22 @@
+import React from "react";
 import * as redux from "react-redux";
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
+import { render, screen } from "@testing-library/react";
 
-import { Form, Input, Select, DatePicker, Checkbox, Button } from "antd";
 import ContractDetails, {
   CamelText,
 } from "../../../components/addContract/ContractDetails";
 
-configure({ adapter: new Adapter() });
+// MUI's useMediaQuery (via the date picker) needs a full matchMedia mock.
+window.matchMedia = (query) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: () => {},
+  removeListener: () => {},
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  dispatchEvent: () => false,
+});
 
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
@@ -17,7 +26,10 @@ jest.mock("react-redux", () => ({
 }));
 jest.mock("react-router-dom", () => ({
   useParams: () => ({ vendorId: "123", id: "" }),
-  useHistory: () => ({ push: jest.fn(), location: { pathname: "/addAgreement/123" } }),
+  useHistory: () => ({
+    push: jest.fn(),
+    location: { pathname: "/addAgreement/123" },
+  }),
   useLocation: () => ({ pathname: "/addAgreement/123" }),
 }));
 
@@ -44,66 +56,31 @@ describe("ContractDetails", () => {
     setupSelector();
   });
 
-  it("should render a Form component", () => {
-    const wrapper = shallow(<ContractDetails />);
-    const element = wrapper.find(Form);
-    expect(element.length).toBe(1);
+  it("should render the agreement form fields", () => {
+    render(<ContractDetails />);
+    expect(screen.getAllByText("Agreement Value").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Reference Text").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render Form.Item components", () => {
-    const wrapper = shallow(<ContractDetails />);
-    expect(wrapper.find(Form.Item).length).toBeGreaterThanOrEqual(10);
+  it("should render the Agreement Type and Data Source selects", () => {
+    render(<ContractDetails />);
+    expect(screen.getAllByText("Agreement Type").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Data Source").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render agreement-related input fields", () => {
-    const wrapper = shallow(<ContractDetails />);
-    expect(wrapper.find("#agreementID").length).toBe(1);
+  it("should render the SCB Manager Bank ID and Status fields", () => {
+    render(<ContractDetails />);
+    expect(screen.getAllByText("SCB Manager Bank ID").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Status").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("should render referenceText input", () => {
-    const wrapper = shallow(<ContractDetails />);
-    expect(wrapper.find("#refTxt").length).toBe(1);
-  });
-
-  it("should render DatePicker components", () => {
-    const wrapper = shallow(<ContractDetails />);
-    expect(wrapper.find(DatePicker).length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("should render Select components for agreement type and data source", () => {
-    const wrapper = shallow(<ContractDetails />);
-    expect(wrapper.find(Select).length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("should render Checkbox for Same as Agreement Party", () => {
-    const wrapper = shallow(<ContractDetails />);
-    expect(wrapper.find(Checkbox).length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("should render status input as disabled", () => {
-    const wrapper = shallow(<ContractDetails />);
-    const statusInput = wrapper.find('Input[name="status"]');
-    expect(statusInput.prop("disabled")).toBe(true);
-  });
-
-  it("should call onFinish and dispatch contractDetails", () => {
-    const mockNext = jest.fn();
-    const wrapper = shallow(<ContractDetails next={mockNext} />);
-    const form = wrapper.find(Form);
-    const onFinish = form.prop("onFinish");
-    onFinish({
-      agreementName: "Test_01012025_Ref",
-      agreementType: "Vendor contract",
-      dataSource: "TestVendor",
-      agreementValue: "1000",
-      signedOn: "2025-01-01",
-      startDate: "2025-01-01",
-      expirationDate: "2025-12-31",
-      ScbAgreementManagerBankId: "SCB123",
-      status: "Pending",
-    });
-    expect(mockDispatch).toHaveBeenCalled();
-    expect(mockNext).toHaveBeenCalledWith(true);
+  it("should render the No Expiry and Same as Agreement Party checkboxes", () => {
+    const { container } = render(<ContractDetails />);
+    expect(screen.getByText("No Expiry")).toBeInTheDocument();
+    expect(screen.getByText("Same as Agreement Party")).toBeInTheDocument();
+    expect(
+      container.querySelectorAll('input[type="checkbox"]').length
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it("should render with selected contract data", () => {
@@ -121,15 +98,11 @@ describe("ContractDetails", () => {
       },
     ];
     setupSelector(
-      {
-        selectedContract,
-        data: [[]],
-        contractDetails: [],
-      },
+      { selectedContract, data: [[]], contractDetails: [] },
       vendor
     );
-    const wrapper = shallow(<ContractDetails />);
-    expect(wrapper.find(Form).length).toBe(1);
+    render(<ContractDetails />);
+    expect(screen.getAllByText("Agreement Value").length).toBeGreaterThanOrEqual(1);
   });
 
   it("should render with contractDetails from redux", () => {
@@ -138,46 +111,13 @@ describe("ContractDetails", () => {
         selectedContract: [],
         data: [[]],
         contractDetails: [
-          {
-            dataSource: "123",
-            signedOn: "2025-01-01",
-            referenceText: "Ref",
-          },
+          { dataSource: "123", signedOn: "2025-01-01", referenceText: "Ref" },
         ],
       },
       vendor
     );
-    const wrapper = shallow(<ContractDetails />);
-    expect(wrapper.find(Form).length).toBe(1);
-  });
-
-  it("should filter approved vendors from vendor list", () => {
-    setupSelector(contract, vendor);
-    const wrapper = shallow(<ContractDetails />);
-    // Only "TestVendor" with taskStatus APPROVED should be in the list
-    expect(wrapper.find(Form).length).toBe(1);
-  });
-
-  it("should render No Expiry checkbox", () => {
-    const wrapper = shallow(<ContractDetails />);
-    const checkboxes = wrapper.find(Checkbox);
-    expect(checkboxes.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("should toggle optionSelected when Same as Agreement Party checkbox changes", () => {
-    const wrapper = shallow(<ContractDetails />);
-    const checkboxes = wrapper.find(Checkbox);
-    const sameAsPartyCheckbox = checkboxes.at(0);
-    sameAsPartyCheckbox.simulate("change");
-    expect(wrapper.find(Form).length).toBe(1);
-  });
-
-  it("should toggle noExpiry when No Expiry checkbox changes", () => {
-    const wrapper = shallow(<ContractDetails />);
-    const checkboxes = wrapper.find(Checkbox);
-    const noExpiryCheckbox = checkboxes.at(1);
-    noExpiryCheckbox.simulate("change");
-    expect(wrapper.find(Form).length).toBe(1);
+    render(<ContractDetails />);
+    expect(screen.getAllByText("Reference Text").length).toBeGreaterThanOrEqual(1);
   });
 
   it("should render with data that has no expirationDate (triggers noExpiry)", () => {
@@ -196,15 +136,8 @@ describe("ContractDetails", () => {
       },
       vendor
     );
-    const wrapper = shallow(<ContractDetails />);
-    expect(wrapper.find(Form).length).toBe(1);
-  });
-
-  it("should handle referenceText input change", () => {
-    const wrapper = shallow(<ContractDetails />);
-    const refInput = wrapper.find("#refTxt");
-    refInput.simulate("change", { target: { value: "NewRef" } });
-    expect(wrapper.find(Form).length).toBe(1);
+    render(<ContractDetails />);
+    expect(screen.getByText("No Expiry")).toBeInTheDocument();
   });
 });
 

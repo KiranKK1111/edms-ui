@@ -1,0 +1,76 @@
+/*
+  tokens.css — non-colour design tokens only (spacing, radius, typography,
+  breakpoints, z-index). ALL colour and shadow tokens are owned by the single
+  source of truth at design-system/palette.js and injected onto <html> at
+  runtime by ThemeModeContext. Do not add colour values here.
+*/
+:root {
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-pill: 9999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --bp-sm: 576px;
+  --bp-md: 768px;
+  --bp-lg: 992px;
+  --bp-xl: 1280px;
+  --bp-2xl: 1600px;
+
+  --header-height: 66px;
+  --z-header: 100;
+  --z-drawer: 1000;
+  --z-modal: 1050;
+}
+
+/*
+  Smooth the light/dark hand-off. Scoped to surface-level properties to avoid
+  janky transitions on layout. Respects reduced-motion preferences.
+*/
+body,
+.app-shell,
+.app-shell-main,
+.app-header,
+.ds-card,
+.ds-card-flat,
+.ds-surface,
+.content-wrapper {
+  transition: background-color 0.24s ease, border-color 0.24s ease,
+    color 0.24s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .app-shell,
+  .app-shell-main,
+  .app-header,
+  .ds-card,
+  .ds-card-flat,
+  .ds-surface,
+  .content-wrapper {
+    transition: none;
+  }
+}

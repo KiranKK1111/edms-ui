@@ -1,54 +1,84 @@
-.header-one{
-    box-sizing: border-box;
-    height: 129px; 
-    
-    border: 1px solid #DFE3E9;
-    border-radius: 4px;
-    background-color: #FFFFFF;
-    box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
-    padding: 0px 25px;
+.header-one {
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 24px 16px;
+  margin: 16px 24px 0;
 }
 
-.reactangletwo{
-    box-sizing: border-box;
-    padding-left: 24px;
-    margin-left: -24px;
-    border-radius: 4px;
-    background-color: #FFFFFF;
-    box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
-    padding: 35px;
-      margin: 24px;
-      
-  }
+.nvh-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
 
-  .add-new-license-headers{
-    height: 28px;
+.nvh-breadcrumb {
+  margin: 8px 0;
+}
+
+.nvh-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.reactangletwo {
+  box-sizing: border-box;
+  padding-left: 24px;
+  margin-left: -24px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  padding: 35px;
+  margin: 24px;
+}
+
+.add-new-license-headers {
+  height: 28px;
   width: 119px;
-  color: #0F1217;
-  font-family: Inter;
+  color: var(--color-text);
+  font-family: var(--font-family);
   font-size: 20px;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 28px;
-  }
-  .arrow-left{
-    height: 16px;
-    width: 16px;
-    color: #000000;
-    margin-right: 7px;
-  }
+}
 
-  .alert-header{
-      margin: 24px;
-      box-sizing: border-box;
-  height: 38px;
- 
-  border: 1px solid #FFEEBB;
-  border-radius: 4px;
-  background-color: #FFF9E7;
-  box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
+.arrow-left {
+  height: 16px;
+  width: 16px;
+  color: var(--color-text);
+  margin-right: 7px;
+}
+
+.alert-header {
+  margin: 24px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-warning-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.home-page {
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .header-one {
+    margin: 12px;
+    padding: 12px 16px;
   }
-  .home-page{
-    margin-left: -25px;
-    margin-top: -13px;
+  .nvh-top-bar {
+    flex-direction: column;
+    align-items: stretch;
   }
+  .nvh-actions {
+    justify-content: flex-end;
+  }
+}

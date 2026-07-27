@@ -1,30 +1,56 @@
-import { configure, shallow, sleep, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-
-import { Form } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { AppProviders } from "../../../design-system";
 import LicenseLimitations from "../../../components/license/licenseLimitations/LicenseLimitations";
 
-configure({ adapter: new Adapter() });
-
+let mockState = {};
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
+  useSelector: (cb) => cb(mockState),
   useDispatch: () => mockDispatch,
 }));
-jest.mock("react-router-dom", () => ({
-  __esModule: true,
-  useLocation: jest.fn().mockReturnValue({
-    pathname: "/another-route",
-    search: "",
-    hash: "",
-    state: null,
-    key: "5nvxpbdafa",
-  }),
-  useParams: jest.fn(),
-}));
-const wrapper = shallow(<LicenseLimitations />);
 
-it("wrapper", () => {
-  const element = wrapper.find(Form);
-  expect(element.length).toBe(1);
+jest.mock("react-router-dom", () => {
+  const actual = jest.requireActual("react-router-dom");
+  const location = { pathname: "/another-route", state: null };
+  const params = {};
+  return {
+    ...actual,
+    useLocation: () => location,
+    useParams: () => params,
+  };
+});
+
+jest.mock("../../../store/actions/licensedataAction", () => ({
+  support: jest.fn(),
+}));
+
+const buildState = () => ({
+  license: { selectedLicense: "" },
+  licenseReq: { support: [] },
+});
+
+const renderLimitations = () =>
+  render(
+    <AppProviders>
+      <LicenseLimitations next={jest.fn()} />
+    </AppProviders>
+  );
+
+describe("LicenseLimitations", () => {
+  beforeEach(() => {
+    mockState = buildState();
+  });
+
+  it("should render the Licence Limitations field", () => {
+    renderLimitations();
+    expect(
+      screen.getAllByText("Licence Limitations").length
+    ).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should render a textarea input", () => {
+    const { container } = renderLimitations();
+    expect(container.querySelector("textarea")).toBeInTheDocument();
+  });
 });

@@ -1,49 +1,39 @@
 import { useSelector } from "react-redux";
-import { Col, Row, Divider, Form, message } from "antd";
-import lo from "lodash";
-import moment from "moment";
+import { Box, Chip, Divider, Grid } from "@mui/material";
+import isEmpty from "lodash/isEmpty";
+import dayjs from "../../design-system/dayjs";
+import { toast as message } from "../../design-system/toast";
 import "./ReviewSubmit.css";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom/cjs/react-router-dom.min";
 import { checkForString } from "../../utils/warningUtils";
 import { DATA_OPERATIONS } from "../../utils/Constants";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+
+const ReviewItem = ({ label, children, size }) => (
+  <Grid size={size}>
+    <span className="label-review">{label}:</span> {children}
+  </Grid>
+);
+
 const ReviewSubmit = (props) => {
   const [loading, setLoading] = useState();
   const configValues = useSelector((state) => state.datafeedInfo.congigUi);
-  const location = useLocation();
-  const loadingConfig = useSelector(
-    (state) => state.datafeedInfo
-  );
+  const loadingConfig = useSelector((state) => state.datafeedInfo);
   let splitterCanonicalClass;
-  const layout = {
-    // labelCol: {
-    // span: 10,
-    //},
-    wrapperCol: {
-      span: 14,
-    },
-    labelWrap: true,
-  };
   const key = "updatable";
   useEffect(() => {
     if (loadingConfig.loadingConfig) {
       window.setTimeout(loadingConfig.loadingConfig, 100);
-    }
-    else {
-      if (!checkForString("currentUserRole", DATA_OPERATIONS) && lo.isEmpty(loadingConfig.congigUi)) {
-        message.warning({
-          content: "No Configuration Data",
-          key,
-        });
+    } else {
+      if (
+        !checkForString("currentUserRole", DATA_OPERATIONS) &&
+        isEmpty(loadingConfig.congigUi)
+      ) {
+        message.warning("No Configuration Data");
       }
     }
   }, [loadingConfig]);
   const mainConfig_set1 = [
-    //"dataFeedId",
-    //"dataFeedConfigurationId",
-    //"storageLocation",
-    //"configurationCreatedOn",
-    //"createdBy",
     { label: "Start date", value: "startDate" },
     { label: "Expiry date", value: "expiryDate" },
     { label: "Key location", value: "keyLocation" },
@@ -87,8 +77,12 @@ const ReviewSubmit = (props) => {
   ];
 
   const vendorRequest = [
-    { label: "On-Demand Vendor request configuration", value: "vendorRequestConfig", show: true },
-  ]
+    {
+      label: "On-Demand Vendor request configuration",
+      value: "vendorRequestConfig",
+      show: true,
+    },
+  ];
 
   const history = [
     { label: "History load required", value: "histLoad", show: true },
@@ -111,8 +105,7 @@ const ReviewSubmit = (props) => {
 
   const apiConfiguration = [
     { label: "Request method", value: "requestMethod", type: "text" },
-    { label: "Request body", value: "requestBodyObj", type: "file" },
-    { label: "Request parameters", value: "requestParameters", type: "text" },
+    { label: "Request parameters", value: "requestParameter", type: "text" },
     { label: "Request headers", value: "requestHeaders", type: "text" },
   ];
 
@@ -125,12 +118,32 @@ const ReviewSubmit = (props) => {
     },
     {
       label: "Username",
-      value: "username",
+      value: "userName",
       show: configValues["tokenReq"] == "Yes" ? true : false,
     },
     {
       label: "Password property",
       value: "passwordProperty",
+      show: configValues["tokenReq"] == "Yes" ? true : false,
+    },
+    {
+      label: "Content type",
+      value: "contentType",
+      show: configValues["tokenReq"] == "Yes" ? true : false,
+    },
+    {
+      label: "Request body",
+      value: "requestBodyAuth",
+      show: configValues["tokenReq"] == "Yes" ? true : false,
+    },
+    {
+      label: "Token response key",
+      value: "tokenResponseKey",
+      show: configValues["tokenReq"] == "Yes" ? true : false,
+    },
+    {
+      label: "Token prefix",
+      value: "tokenPrefix",
       show: configValues["tokenReq"] == "Yes" ? true : false,
     },
   ];
@@ -171,19 +184,19 @@ const ReviewSubmit = (props) => {
   const getDataFeedTypeText = () => {
     if (
       configValues["dataFeedType"] ==
-      "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute" ||
+        "com.scb.edms.edmsdataflowsvc.routes.FundamentalsRoute" ||
       configValues["dataFeedType"] == "xml"
     ) {
       splitterCanonicalClass = "xml";
     } else if (
       configValues["dataFeedType"] ==
-      "com.scb.edms.edmsdataflowsvc.routes.JSONSplitValidateRoute" ||
+        "com.scb.edms.edmsdataflowsvc.routes.JSONSplitValidateRoute" ||
       configValues["dataFeedType"] == "json"
     ) {
       splitterCanonicalClass = "json";
     } else if (
       configValues["dataFeedType"] ==
-      "com.scb.edms.edmsdataflowsvc.routes.XpathSplitValidateRoute" ||
+        "com.scb.edms.edmsdataflowsvc.routes.XpathSplitValidateRoute" ||
       configValues["dataFeedType"] == "xpath"
     ) {
       splitterCanonicalClass = "xpath";
@@ -196,10 +209,7 @@ const ReviewSubmit = (props) => {
   return (
     <div className="review-submit">
       <h3>Main Configuration</h3>
-      {/*configValues && Object.keys(configValues).length && (*/}
-      <Form
-        name="br-one"
-        {...layout}
+      <Box
         className="label-wrap"
         style={{
           overflowWrap: "break-word",
@@ -208,150 +218,117 @@ const ReviewSubmit = (props) => {
         }}
       >
         <>
-          <Row gutter={[40, 0]}>
-            {mainConfig_set1.map((item) => {
-              return item.value == "storageLocation" ? (
-                <Col key={item.label} span={16} className="storageLocation">
-                  {/*<span className="label-review">
-              {" "}
-              {item.label}:
-          </span>*/}
-                  <Form.Item name={item.value} label={item.label}>
-                    {configValues[item.value]}
-                  </Form.Item>
-                </Col>
+          <Grid container spacing={2}>
+            {mainConfig_set1.map((item) =>
+              item.value == "storageLocation" ? (
+                <ReviewItem
+                  key={item.label}
+                  size={8}
+                  label={item.label}
+                >
+                  {configValues[item.value]}
+                </ReviewItem>
               ) : (
-                <Col key={item.label} span={8}>
-                  <Form.Item name={item.value} label={item.label}>
-                    {item.value === "startDate" || item.value === "expiryDate"
-                      ? moment(new Date(configValues[item.value])).format(
+                <ReviewItem key={item.label} size={4} label={item.label}>
+                  {item.value === "startDate" || item.value === "expiryDate"
+                    ? dayjs(new Date(configValues[item.value])).format(
                         "DD MMM YYYY"
                       )
-                      : configValues[item.value]}
-                  </Form.Item>
-                  {/*<span className="label-review">
-                {" "}
-                {item.label}:
-                </span>
-              {item.value === "startDate" || item.value === "expiryDate"
-                ? moment(new Date(configValues[item.value])).format("DD MMM YYYY")
-          : configValues[item.value]}*/}
-                </Col>
+                    : configValues[item.value]}
+                </ReviewItem>
               )
-            }
             )}
-          </Row>
-          <Divider plain></Divider>
-          <Row gutter={[40, 0]}>
+          </Grid>
+          <Divider sx={{ my: 1 }} />
+          <Grid container spacing={2}>
             {mainConfig_set2.map((item) => (
-              <Col
+              <ReviewItem
                 key={item.label}
-                span={item.value == "sourceFolder" ? 16 : 8}
-                className={item.value == "sourceFolder" ? "sourcefolder" : ""}
+                size={item.value == "sourceFolder" ? 8 : 4}
+                label={item.label}
               >
-                <Form.Item name={item.value} label={item.label}>
-                  {configValues[item.value]}
-                </Form.Item>
-                {/*<span className="label-review"> {item.label}:</span>
-              {configValues[item.value]}*/}
-              </Col>
+                {configValues[item.value]}
+              </ReviewItem>
             ))}
-          </Row>
-          <Divider plain></Divider>
-          <Row gutter={[40, 0]}>
+          </Grid>
+          <Divider sx={{ my: 1 }} />
+          <Grid container spacing={2}>
             {mainConfig_set3.map((item) =>
               item.value == "filenameFormat" ? (
-                <Col key={item.label} span={16} className="sourcefolder">
-                  <Form.Item name={item.value} label={item.label}>
-                    {configValues[item.value]}
-                  </Form.Item>
-                  {/*<span className="label-review"> {item.label}:</span>
-            {configValues[item.value]}*/}
-                </Col>
+                <ReviewItem key={item.label} size={8} label={item.label}>
+                  {configValues[item.value]}
+                </ReviewItem>
               ) : (
-                <Col key={item.label} span={8}>
-                  <Form.Item name={item.value} label={item.label}>
-                    {item.value == "routeType"
-                      ? configValues[item.value] ==
+                <ReviewItem key={item.label} size={4} label={item.label}>
+                  {item.value == "routeType"
+                    ? configValues[item.value] ==
                         "com.scb.edms.edmsdataflowsvc.routes.ScheduledRoute" ||
-                        configValues[item.value] == "Scheduled"
-                        ? "Scheduled"
-                        : "One-time"
-                      : item.value == "splittingRequirement"
-                        ? configValues[item.value] == "Yes"
-                          ? "Applicable"
-                          : "Not applicable"
-                        : configValues[item.value] === true
-                          ? "True"
-                          : configValues[item.value] === false
-                            ? "False"
-                            : configValues[item.value]}
-                  </Form.Item>
-                  {/*<span className="label-review"> {item.label}:</span>
-              {item.value=="routeType"?(configValues[item.value]=="com.scb.edms.edmsdataflowsvc.routes.ScheduledRoute" || configValues[item.value]=="Scheduled"?"Scheduled":"One-time"):item.value=="splittingRequirement"?(configValues[item.value]=="Yes"?"Applicable":"Not applicable"):configValues[item.value]}
-            */}
-                </Col>
+                      configValues[item.value] == "Scheduled"
+                      ? "Scheduled"
+                      : "One-time"
+                    : item.value == "splittingRequirement"
+                      ? configValues[item.value] == "Yes"
+                        ? "Applicable"
+                        : "Not applicable"
+                      : configValues[item.value] === true
+                        ? "True"
+                        : configValues[item.value] === false
+                          ? "False"
+                          : configValues[item.value]}
+                </ReviewItem>
               )
             )}
-          </Row>
-          <Divider plain></Divider>
+          </Grid>
+          <Divider sx={{ my: 1 }} />
           <h3>Proxy</h3>
-          <Row gutter={[40, 0]}>
+          <Grid container spacing={2}>
             {proxy.map((item) =>
               item.show ? (
-                <Col key={item.label} span={8}>
-                  <Form.Item name={item.value} label={item.label}>
-                    {configValues[item.value]}
-                  </Form.Item>
-                  {/*<span className="label-review"> {item.label}:</span>
-              {configValues[item.value]}*/}
-                </Col>
+                <ReviewItem key={item.label} size={4} label={item.label}>
+                  {configValues[item.value]}
+                </ReviewItem>
               ) : (
                 ""
               )
             )}
-          </Row>
-          <Divider plain></Divider>
+          </Grid>
+          <Divider sx={{ my: 1 }} />
           <h3>On-Demand Vendor request</h3>
-          <Row gutter={[40, 0]}>
+          <Grid container spacing={2}>
             {vendorRequest.map((item) =>
               item.show ? (
-                <Col key={item.label} span={8}>
-                  <Form.Item name={item.value} label={item.label}>
-                    {item.value == "vendorRequestConfig" ? configValues[item.value] == "Y"
+                <ReviewItem key={item.label} size={4} label={item.label}>
+                  {item.value == "vendorRequestConfig"
+                    ? configValues[item.value] == "Y"
                       ? "Yes"
-                      : "No" : configValues[item.value]}
-                  </Form.Item>
-                </Col>
+                      : "No"
+                    : configValues[item.value]}
+                </ReviewItem>
               ) : (
                 ""
               )
             )}
-          </Row>
-          <Divider plain></Divider>
+          </Grid>
+          <Divider sx={{ my: 1 }} />
           {configValues["histLoad"] == "Yes" ? (
             <>
               <h3>Historic Load</h3>
-              <Row gutter={[40, 0]}>
+              <Grid container spacing={2}>
                 {history.map((item) =>
                   item.show ? (
-                    <Col span={8}>
-                      <Form.Item name={item.value} label={item.label}>
-                        {item.value == "historicLoadStartDate"
-                          ? moment(new Date(configValues[item.value])).format(
+                    <ReviewItem key={item.label} size={4} label={item.label}>
+                      {item.value == "historicLoadStartDate"
+                        ? dayjs(new Date(configValues[item.value])).format(
                             "DD MMM YYYY"
                           )
-                          : configValues[item.value]}
-                      </Form.Item>
-                      {/*<span className="label-review"> {item.label}:</span>
-              {item.value=="historicLoadStartDate"?moment(new Date(configValues[item.value])).format("DD MMM YYYY"):configValues[item.value]}*/}
-                    </Col>
+                        : configValues[item.value]}
+                    </ReviewItem>
                   ) : (
                     ""
                   )
                 )}
-              </Row>
-              <Divider plain></Divider>
+              </Grid>
+              <Divider sx={{ my: 1 }} />
             </>
           ) : (
             ""
@@ -360,33 +337,65 @@ const ReviewSubmit = (props) => {
         {configValues["sourceProtocol"] == "HTTPS" ? (
           <>
             <h3>Request Details</h3>
-            <Row gutter={[40, 0]}>
+            <Grid container spacing={2}>
               {apiConfiguration.map((item) => (
-                <Col span={8}>
-                  <Form.Item name={item.value} label={item.label}>
-                    {/*<span className="label-review"> {item.label}:</span>*/}
-                    {item.type == "file"
-                      ? configValues[item.value].name
-                      : configValues[item.value]}
-                  </Form.Item>
-                </Col>
+                <ReviewItem key={item.label} size={4} label={item.label}>
+                  {configValues[item.value]}
+                </ReviewItem>
               ))}
-            </Row>
-            <Divider plain></Divider>
+            </Grid>
+            {/* Request body — show file name chip if uploaded via file, else show inline text */}
+            <Box sx={{ mt: 1, mb: 1 }}>
+              <Grid container spacing={2}>
+                <Grid size={12}>
+                  <span className="label-review">Request body:</span>{" "}
+                  {configValues["requestBodyFileName"] ? (
+                    <Chip
+                      size="small"
+                      icon={<AttachFileIcon fontSize="small" />}
+                      label={configValues["requestBodyFileName"]}
+                      variant="outlined"
+                      color="primary"
+                      sx={{ ml: 1 }}
+                    />
+                  ) : configValues["requestBody"] ? (
+                    <Box
+                      component="pre"
+                      sx={{
+                        mt: 1,
+                        p: 1.5,
+                        bgcolor: "var(--color-bg-subtle, #f6f8fa)",
+                        border: "1px solid var(--color-border-secondary)",
+                        borderRadius: 1,
+                        fontSize: 12,
+                        overflowX: "auto",
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-all",
+                        maxHeight: 200,
+                      }}
+                    >
+                      {configValues["requestBody"]}
+                    </Box>
+                  ) : (
+                    <span style={{ color: "var(--color-text-tertiary)" }}>—</span>
+                  )}
+                </Grid>
+              </Grid>
+            </Box>
+            <Divider sx={{ my: 1 }} />
             <h3>Authentication Details</h3>
-            <Row gutter={[40, 0]}>
+            <Grid container spacing={2}>
               {authConfiguration.map((item) =>
                 item.show ? (
-                  <Col span={8}>
-                    <span className="label-review"> {item.label}:</span>
+                  <ReviewItem key={item.label} size={4} label={item.label}>
                     {configValues[item.value]}
-                  </Col>
+                  </ReviewItem>
                 ) : (
                   ""
                 )
               )}
-            </Row>
-            <Divider plain></Divider>
+            </Grid>
+            <Divider sx={{ my: 1 }} />
           </>
         ) : (
           ""
@@ -394,52 +403,44 @@ const ReviewSubmit = (props) => {
         {configValues["splittingRequirement"] === "Yes" ? (
           <>
             <h3>Splitting Configuration</h3>
-            <Row gutter={[40, 0]}>
+            <Grid container spacing={2}>
               {splitConfigurationSchema.map((item) =>
                 item.show ? (
-                  <Col span={12}>
-                    <Form.Item name={item.value} label={item.label}>
-                      {/*<span className="label-review"> {item.label}:</span>*/}
-                      {configValues[item.value]}
-                    </Form.Item>
-                  </Col>
+                  <ReviewItem key={item.label} size={6} label={item.label}>
+                    {configValues[item.value]}
+                  </ReviewItem>
                 ) : (
                   ""
                 )
               )}
-            </Row>
-            <Row gutter={[40, 0]}>
+            </Grid>
+            <Grid container spacing={2}>
               {splitConfiguration.map((item) =>
                 item.show ? (
-                  <Col span={12}>
-                    <Form.Item name={item.value} label={item.label}>
-                      {/*<span className="label-review"> {item.label}:</span>*/}
-                      {item.type === "file"
-                        ? configValues[item.value] &&
-                          Object.keys(configValues[item.value]).length
-                          ? configValues[item.value].name
-                          : ""
-                        : item.value == "dataFeedType"
-                          ? getDataFeedTypeText(item.value)
-                          : item.value == "schemaId"
-                            ? configValues["exitingSchema"] == "No"
-                              ? ""
-                              : configValues[item.value]
-                            : configValues[item.value]}
-                    </Form.Item>
-                  </Col>
+                  <ReviewItem key={item.label} size={6} label={item.label}>
+                    {item.type === "file"
+                      ? configValues[item.value] &&
+                        Object.keys(configValues[item.value]).length
+                        ? configValues[item.value].name
+                        : ""
+                      : item.value == "dataFeedType"
+                        ? getDataFeedTypeText(item.value)
+                        : item.value == "schemaId"
+                          ? configValues["exitingSchema"] == "No"
+                            ? ""
+                            : configValues[item.value]
+                          : configValues[item.value]}
+                  </ReviewItem>
                 ) : (
                   ""
                 )
               )}
-            </Row>
+            </Grid>
           </>
         ) : (
           ""
         )}
-      </Form>
-
-      {/*})}*/}
+      </Box>
     </div>
   );
 };

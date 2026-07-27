@@ -1,64 +1,50 @@
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Result, Button } from "antd";
-import ErrorPage from "../../pages/error/ErrorPage";
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
-configure({ adapter: new Adapter() });
+import ErrorPage from "../../pages/error/ErrorPage";
 
 describe("ErrorPage", () => {
   const mockHistory = { replace: jest.fn() };
-  let wrapper;
 
   beforeEach(() => {
     mockHistory.replace.mockClear();
-    wrapper = shallow(<ErrorPage history={mockHistory} />);
   });
 
-  it("should render a Result component", () => {
-    expect(wrapper.find(Result).length).toBe(1);
+  it("should render the 404 status", () => {
+    render(<ErrorPage history={mockHistory} />);
+    expect(screen.getByText("404")).toBeInTheDocument();
   });
 
-  it("should display 404 status", () => {
-    expect(wrapper.find(Result).prop("status")).toBe("404");
+  it("should render the page-not-found heading", () => {
+    render(<ErrorPage history={mockHistory} />);
+    expect(screen.getByText("Page not found")).toBeInTheDocument();
   });
 
-  it("should display 404 title", () => {
-    expect(wrapper.find(Result).prop("title")).toBe("404");
+  it("should display the correct subtitle", () => {
+    render(<ErrorPage history={mockHistory} />);
+    expect(
+      screen.getByText("Sorry, the page you visited does not exist.")
+    ).toBeInTheDocument();
   });
 
-  it("should display correct subtitle", () => {
-    expect(wrapper.find(Result).prop("subTitle")).toBe(
-      "Sorry, the page you visited does not exist."
-    );
+  it("should render a Back Home button", () => {
+    render(<ErrorPage history={mockHistory} />);
+    expect(
+      screen.getByRole("button", { name: /Back Home/i })
+    ).toBeInTheDocument();
   });
 
-  it("should have an extra prop with a Button", () => {
-    const extraProp = wrapper.find(Result).prop("extra");
-    expect(extraProp).toBeTruthy();
-    expect(extraProp.type).toBe(Button);
-  });
-
-  it("should call history.replace with /catalog when button onClick is triggered", () => {
-    const extraProp = wrapper.find(Result).prop("extra");
-    // Call the onClick handler directly
-    extraProp.props.onClick();
+  it("should call history.replace with /catalog when button is clicked", () => {
+    render(<ErrorPage history={mockHistory} />);
+    fireEvent.click(screen.getByRole("button", { name: /Back Home/i }));
     expect(mockHistory.replace).toHaveBeenCalledWith("/catalog");
   });
 
-  it("should render Button with type primary", () => {
-    const extraProp = wrapper.find(Result).prop("extra");
-    expect(extraProp.props.type).toBe("primary");
-  });
-
-  it("should render Button with text Back Home", () => {
-    const extraProp = wrapper.find(Result).prop("extra");
-    expect(extraProp.props.children).toBe("Back Home");
-  });
-
-  it("should call history.replace only once per click", () => {
-    const extraProp = wrapper.find(Result).prop("extra");
-    extraProp.props.onClick();
-    extraProp.props.onClick();
+  it("should call history.replace once per click", () => {
+    render(<ErrorPage history={mockHistory} />);
+    const btn = screen.getByRole("button", { name: /Back Home/i });
+    fireEvent.click(btn);
+    fireEvent.click(btn);
     expect(mockHistory.replace).toHaveBeenCalledTimes(2);
   });
 });

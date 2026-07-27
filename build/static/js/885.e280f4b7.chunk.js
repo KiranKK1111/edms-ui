@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkedms_ui=globalThis.webpackChunkedms_ui||[]).push([[613,885],{20977(e,s,a){a.r(s),a.d(s,{default:()=>d});a(9950);var c=a(16673),u=a(63357),t=a(44414);const d=()=>{const{pathname:e}=(0,c.useLocation)(),s=e.includes("addLicense");return(0,t.jsx)(u.default,{resource:"licence",mode:s?"create":"edit"})}}}]);

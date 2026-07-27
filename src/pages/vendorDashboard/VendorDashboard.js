@@ -5,8 +5,7 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
 //__________ component imports begin__________
-import Headers from "../../pages/header/Header";
-import VendorData from "./VendorData";
+import VendorData from "../masterData/VendorData";
 import {
   startGetVendors,
   startDeleteVendor,
@@ -17,32 +16,29 @@ import { startGetLicenses } from "../../store/actions/licenseAction";
 //___________CSS imports_______________
 import "./VendorDashboard.css";
 
-//_____________AntD library imports begin_____________
-import "antd/dist/antd.css";
+//_____________MUI + design-system imports begin_____________
+import { SideNav, EmptyState, ActionsMenu } from "../../design-system";
+import imperativeConfirm from "../../design-system/imperativeConfirm";
 import {
-  Menu,
-  Badge,
   Alert,
-  Empty,
-  Dropdown,
-  Modal,
-  Layout,
-  Breadcrumb,
+  Box,
+  Breadcrumbs,
   Button,
+  Chip,
   Divider,
-  Descriptions,
-} from "antd";
+  Typography,
+} from "@mui/material";
 import {
-  EditOutlined,
-  DeleteOutlined,
-  HomeOutlined,
-  ArrowLeftOutlined,
-} from "@ant-design/icons";
-const { Sider, Content, Header } = Layout;
+  Edit as EditOutlined,
+  Delete as DeleteOutlined,
+  Home as HomeOutlined,
+  ArrowBack as ArrowLeftOutlined,
+} from "@mui/icons-material";
 
 //_________________ VendorDashboard ___________________________________________________
 const VendorDashboard = (props) => {
   const [vendorID, setVendorId] = useState(0);
+  const [alertDismissed, setAlertDismissed] = useState(false);
   const dispatch = useDispatch();
 
   let VendorDeleteMessage = "";
@@ -54,10 +50,12 @@ const VendorDashboard = (props) => {
 
   //*FETCHING ALL VENDOR RECORDS (Fixing Vendor Key for Persistence on page refresh )
   useEffect(() => {
+    let mounted = true;
     const getData = async () => {
       const resp = await props.dispatch(startGetVendors());
     };
     getData().then((response) => {
+      if (!mounted) return;
       if (vendorID === 0) {
         if (Number(fixingVendorKey) === 0 && props.vendors.length > 0) {
           setVendorId(props.vendors[0].entityId);
@@ -66,6 +64,9 @@ const VendorDashboard = (props) => {
         }
       }
     });
+    return () => {
+      mounted = false;
+    };
   }, [props.vendors.length]);
 
   //*FETCHING ALL CONTRACTS
@@ -112,16 +113,13 @@ const VendorDashboard = (props) => {
       VendorDeleteMessage = `Your request to Delete Vendor will be submitted for approval.
         Do you want to proceed ?`;
     }
-    Modal.confirm({
-      title: (
-        <h3>
-          <b>Delete Vendor ? </b>{" "}
-        </h3>
-      ),
+    imperativeConfirm({
+      title: "Delete Vendor ?",
       content: VendorDeleteMessage,
       okText: "Delete",
-      okType: "danger",
-      onOk() {
+      okColor: "error",
+    }).then((ok) => {
+      if (ok) {
         if (numOfContracts === 0) {
           dispatch(startDeleteVendor(dataObj))
             .then(() => {
@@ -133,33 +131,26 @@ const VendorDashboard = (props) => {
               return error;
             });
         }
-      },
+      }
     });
   };
 
   //"MANAGE BUTTON" ON VENDOR DETAILS
-  const manageVendorMenu = (Data) => {
-    const manageMenu = (
-      <Menu className="more-vendor-menu">
-        <Menu.Item className="edit-vendor-menu">
-          <EditOutlined />
-          <Link to={`/vendorDashboard/modifyVendor/${Data.vendorId}`}>
-            {" "}
-            <b>Edit</b>{" "}
-          </Link>
-        </Menu.Item>
-        <Menu.Item
-          className="warn-vendor-menu"
-          onClick={() => handleDeleteVendor(Data)}
-        >
-          <span>
-            <DeleteOutlined /> <b>Delete</b>
-          </span>
-        </Menu.Item>
-      </Menu>
-    );
-    return manageMenu;
-  };
+  const manageVendorMenu = (Data) => [
+    {
+      key: "edit",
+      icon: <EditOutlined fontSize="small" />,
+      to: `/vendorDashboard/modifyVendor/${Data.vendorId}`,
+      label: <b>Edit</b>,
+    },
+    {
+      key: "delete",
+      icon: <DeleteOutlined fontSize="small" />,
+      danger: true,
+      onClick: () => handleDeleteVendor(Data),
+      label: <b>Delete</b>,
+    },
+  ];
 
   //ENABLING & DISABLING OF BUTTONS ON VENDOR DASHBOARD
   let disableAddContract = false;
@@ -190,30 +181,44 @@ const VendorDashboard = (props) => {
 
   return (
     <div className="dashboard-main">
-      <Headers />
-
-      <Layout className="dashboard-page">
-        <Header className="dashboard-header">
+      <Box className="dashboard-page">
+        <Box className="dashboard-header">
           <div className="dashboard-header-line1">
-            <Breadcrumb className="dashboard-header-link">
-              <Breadcrumb.Item>
-                <Link to="/catalog">
-                  {" "}
-                  <HomeOutlined />{" "}
-                </Link>{" "}
-              </Breadcrumb.Item>
-              <Breadcrumb.Item> VendorDashboard</Breadcrumb.Item>
-            </Breadcrumb>
+            <Breadcrumbs
+              className="dashboard-header-link"
+              separator="/"
+              aria-label="breadcrumb"
+            >
+              <Link
+                to="/catalog"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  color: "inherit",
+                }}
+              >
+                <HomeOutlined fontSize="small" />
+              </Link>
+              <Typography component="span">VendorDashboard</Typography>
+            </Breadcrumbs>
 
-            <Button className="dashboard-header-button" type="primary">
-              <Link to="/vendorDashboard/addVendor"> + Add entity </Link>
+            <Button
+              className="dashboard-header-button"
+              variant="contained"
+              component={Link}
+              to="/vendorDashboard/addVendor"
+            >
+              + Add entity
             </Button>
           </div>
 
           <div className="dashboard-header-title">
             <h2>
               <Link to="/catalog">
-                <ArrowLeftOutlined size="small" style={{ color: "black" }} />{" "}
+                <ArrowLeftOutlined
+                  fontSize="small"
+                  style={{ color: "var(--color-text)" }}
+                />{" "}
               </Link>{" "}
               <b> Vendors </b>
             </h2>
@@ -224,132 +229,131 @@ const VendorDashboard = (props) => {
               onboarded contracts here for users to access its datasets.{" "}
             </p>
           </div>
-        </Header>
+        </Box>
 
-        <Layout className="dashboard-content">
-          <Header className="dashboard-content-title">
+        <Box className="dashboard-content">
+          <Box className="dashboard-content-title">
             <h2>
               <b> All Vendors </b>
             </h2>
             <Divider />
-          </Header>
+          </Box>
 
           {/*SIDER DISPLAYED ON DASHBOARD */}
           {vendorDetails ? (
-            <Layout className="dashboard-vendors">
-              <Sider
+            <Box className="dashboard-vendors">
+              <Box
                 className="dashboard-vendors-sider"
-                width={216}
-                style={{
+                sx={{
+                  width: 216,
                   height: "100%",
                   left: 0,
                   overflow: "auto",
                   position: "relative",
                 }}
               >
-                <Menu
-                  mode="inline"
-                  defaultSelectedKeys={
-                    fixingVendorKey ? [`${fixingVendorKey}`] : ["0"]
+                <SideNav
+                  defaultSelectedKey={
+                    fixingVendorKey ? `${fixingVendorKey}` : "0"
                   }
-                  style={{ height: "auto" }}
-                >
-                  {props.vendors &&
-                    props.vendors.map((ele, i) => {
-                      return (
-                        <Menu.Item
-                          key={i}
-                          onClick={() => {
-                            handleVendorClick(ele.entityId, i);
-                          }}
-                        >
-                          {ele.shortName}
-                        </Menu.Item>
-                      );
-                    })}
-                </Menu>
-              </Sider>
+                  items={
+                    props.vendors
+                      ? props.vendors.map((ele, i) => ({
+                          key: i,
+                          label: ele.shortName,
+                          onClick: () => handleVendorClick(ele.entityId, i),
+                        }))
+                      : []
+                  }
+                />
+              </Box>
 
               {/*VENDOR DETAILS DISPLAYED ON DASHBOARD */}
-              <Content className="dashboard-vendors-data">
+              <Box className="dashboard-vendors-data">
                 {vendorDetails &&
                   vendorDetails.entityStatus &&
-                  vendorDetails.entityStatus.toLowerCase() === "pending" && (
+                  vendorDetails.entityStatus.toLowerCase() === "pending" &&
+                  !alertDismissed && (
                     <Alert
                       className="dashboard-vendors-alert"
-                      message='This vendor has been submitted for review.
-                         You will be able to add contracts and licences once the vendor is approved.
-                         See "Status" below for details.'
-                      type="warning"
-                      showIcon
-                      closable
-                    />
+                      severity="warning"
+                      onClose={() => setAlertDismissed(true)}
+                    >
+                      This vendor has been submitted for review. You will be
+                      able to add contracts and licences once the vendor is
+                      approved. See "Status" below for details.
+                    </Alert>
                   )}
 
-                <Descriptions
-                  className="dashboard-vendors-descriptions"
-                  size="small"
-                  title="Entity Details"
-                  extra={
-                    <Dropdown.Button
-                      overlay={() => {
-                        const Data = {
-                          vendorId: vendorDetails.entityId,
-                          name: vendorDetails.longName,
-                          taskStatus: vendorDetails.entityStatus,
-                        };
-                        return manageVendorMenu(Data);
-                      }}
+                <Box className="dashboard-vendors-descriptions">
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography component="h4" sx={{ fontWeight: 600, m: 0 }}>
+                      Entity Details
+                    </Typography>
+                    <ActionsMenu
+                      label="Manage"
                       disabled={disableManage}
+                      items={manageVendorMenu({
+                        vendorId: vendorDetails.entityId,
+                        name: vendorDetails.longName,
+                        taskStatus: vendorDetails.entityStatus,
+                      })}
+                    />
+                  </Box>
+
+                  <p>
+                    <b>Entity ID</b> : {vendorDetails.entityId}
+                  </p>
+                  <p>
+                    <b>Long Name</b> : {vendorDetails.longName}
+                  </p>
+                  <p>
+                    <b>Short Name</b> : {vendorDetails.shortName}
+                  </p>
+                  <p>
+                    <b>Entity Type</b> : {vendorDetails.entityType}
+                  </p>
+                  <p>
+                    <b>Website</b> :{" "}
+                    <a
+                      href={`http://${vendorDetails.website}`}
+                      target="_blank"
+                      rel="noreferrer"
                     >
-                      <b>Manage</b>
-                    </Dropdown.Button>
-                  }
-                >
-                  <Descriptions.Item label={<b>Entity ID</b>}>
-                    {vendorDetails.entityId}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label={<b>Long Name</b>}>
-                    {vendorDetails.longName}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label={<b>Short Name</b>}>
-                    {vendorDetails.shortName}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label={<b>Entity Type</b>}>
-                    {vendorDetails.entityType}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label={<b>Website</b>}>
-                    <a href={`http://${vendorDetails.website}`} target="_blank">
-                       {vendorDetails.website} 
+                      {vendorDetails.website}
                     </a>
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label={<b>Status</b>}>
+                  </p>
+                  <p>
+                    <b>Status</b> :{" "}
                     {vendorDetails &&
                       vendorDetails.entityStatus &&
                       (vendorDetails.entityStatus.toLowerCase() === "active" ? (
-                        <Badge
+                        <Chip
                           className="style-badge"
-                          status="success"
-                          text="Active"
+                          size="small"
+                          color="success"
+                          variant="outlined"
+                          label="Active"
                         />
                       ) : (
-                        <Badge
+                        <Chip
                           className="style-badge"
-                          status="warning"
-                          text={vendorDetails.entityStatus}
+                          size="small"
+                          color="warning"
+                          variant="outlined"
+                          label={vendorDetails.entityStatus}
                         />
                       ))}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item>
-                    {vendorDetails.entityDescription}{" "}
-                  </Descriptions.Item>
-                </Descriptions>
+                  </p>
+                  <p>{vendorDetails.entityDescription} </p>
+                </Box>
 
                 {/*CONTRACT & LICENSES */}
                 <div className="dashboard-contract-table-heading">
@@ -359,21 +363,19 @@ const VendorDashboard = (props) => {
                     </h4>
                     <Button
                       className="dashboard-add-contract-button"
-                      type="primary"
+                      variant="contained"
                       disabled={disableAddContract}
+                      component={Link}
+                      to={`/vendorDashboard/${vendorDetails.vendorId}/addContract`}
                     >
-                      <Link
-                        to={`/vendorDashboard/${vendorDetails.vendorId}/addContract`}
-                      >
-                        + Add Contract
-                      </Link>
+                      + Add Contract
                     </Button>
                   </div>
                 </div>
 
                 {/* CALLING VENDOR DATA COMPONENT FOR DISPLAYING CONTRACT & LICENSES USING EXPANDABLE TABLE */}
-                <Layout className="dash-dash-dash">
-                  <Content className="dashboard-vendors-contracts">
+                <Box className="dash-dash-dash">
+                  <Box className="dashboard-vendors-contracts">
                     {props.contracts ? (
                       props.contracts.length > 0 ? (
                         <VendorData
@@ -382,74 +384,68 @@ const VendorDashboard = (props) => {
                           disableAllButtons={disableAll}
                         />
                       ) : (
-                        <Content className="dashboard-vendors-contracts-empty">
+                        <Box className="dashboard-vendors-contracts-empty">
                           <h2> No contracts</h2>
-                        </Content>
+                        </Box>
                       )
                     ) : (
-                      <Layout>
+                      <Box>
                         {" "}
                         {/*NO CONTRACTS FOR THE VENDOR CLICKED*/}
-                        <Content className="dashboard-contracts-empty-page">
-                          <Empty
-                            image={Empty.PRESENTED_IMAGE_SIMPLE}
-                            imageStyle={{
-                              height: 60,
-                            }}
-                            description={
-                              <span>
-                                There are no contracts for this vendor
-                              </span>
-                            }
-                          >
-                            {vendorDetails &&
-                            vendorDetails.taskStatus &&
-                            vendorDetails.taskStatus.toLowerCase() ===
-                              "approved" ? (
-                              <Button type="primary">
-                                <Link
+                        <Box className="dashboard-contracts-empty-page">
+                          <EmptyState
+                            title=""
+                            description="There are no contracts for this vendor"
+                            action={
+                              vendorDetails &&
+                              vendorDetails.taskStatus &&
+                              vendorDetails.taskStatus.toLowerCase() ===
+                                "approved" ? (
+                                <Button
+                                  variant="contained"
+                                  component={Link}
                                   to={`/vendorDashboard/${vendorDetails.vendorId}/addContract`}
                                 >
                                   + Add Contract
-                                </Link>
-                              </Button>
-                            ) : (
-                              <Button type="primary" disabled>
-                                {" "}
-                                + Add Contract{" "}
-                              </Button>
-                            )}
-                          </Empty>
-                          ,
-                        </Content>
-                      </Layout>
+                                </Button>
+                              ) : (
+                                <Button variant="contained" disabled>
+                                  {" "}
+                                  + Add Contract{" "}
+                                </Button>
+                              )
+                            }
+                          />
+                        </Box>
+                      </Box>
                     )}
-                  </Content>
-                </Layout>
-              </Content>
-            </Layout>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
           ) : (
-            <Layout>
+            <Box>
               {" "}
               {/*NO VENDORS IN DATABASE*/}
-              <Content className="dashboard-vendors-empty-page">
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  imageStyle={{
-                    height: 60,
-                  }}
-                  description={<span>There are no active vendors</span>}
-                >
-                  <Button type="primary">
-                    <Link to="/vendorDashboard/addVendor">+ Add entity</Link>
-                  </Button>
-                </Empty>
-                ,
-              </Content>
-            </Layout>
+              <Box className="dashboard-vendors-empty-page">
+                <EmptyState
+                  title=""
+                  description="There are no active vendors"
+                  action={
+                    <Button
+                      variant="contained"
+                      component={Link}
+                      to="/vendorDashboard/addVendor"
+                    >
+                      + Add entity
+                    </Button>
+                  }
+                />
+              </Box>
+            </Box>
           )}
-        </Layout>
-      </Layout>
+        </Box>
+      </Box>
     </div>
   );
 };

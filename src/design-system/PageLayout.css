@@ -1,0 +1,142 @@
+/*
+  PageLayout — shared page shell. Default mode flows naturally inside the
+  AppLayout main scroller; `bounded` mode locks the page to viewport height
+  so an inner table can scroll on its own without producing a window-level
+  scrollbar.
+*/
+
+.page-layout {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-layout);
+  padding: clamp(12px, 2vw, 24px);
+  gap: clamp(14px, 1.6vw, 20px);
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.page-layout-bounded {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-layout-hero {
+  flex: 0 0 auto;
+}
+
+.page-layout-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.6vw, 20px);
+  min-width: 0;
+}
+
+.page-layout-bounded .page-layout-content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/*
+  Card primitive for content placed under the hero. Use this as a drop-in
+  wrapper when a section needs the same surface as the catalogue card.
+*/
+.page-layout-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: clamp(14px, 1.8vw, 20px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.page-layout-bounded .page-layout-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/*
+  Task-detail card (My Tasks detail pages). In bounded mode the generic card
+  is overflow:hidden so a `.page-layout-fill` child can scroll. The My Tasks
+  detail card has NO fill child — its own padded flex-column body IS the
+  content — so the CARD itself must scroll. Override the bounded card's
+  overflow:hidden here.
+
+  Specificity is a tie with the rule above (both 0,0,2,0), so this MUST stay
+  immediately AFTER that block to win on source order. Do not relocate it to a
+  separately-imported stylesheet that could load earlier, or it will silently
+  lose the tie.
+*/
+.page-layout-bounded .task-detail-card {
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Reserve a stable scrollbar gutter so content doesn't shift when the
+     scrollbar appears, and the bar never hugs the content's right edge. */
+  scrollbar-gutter: stable;
+}
+
+/*
+  Fill region inside a bounded page-layout-card. Wrap a DataTable (or any
+  scrollable widget that should claim the remaining card space) in
+  <div className="page-layout-fill">. The DataTable's top toolbar and
+  bottom toolbar (pagination) stay pinned, the table head sticks to the
+  top, and only the body scrolls. The page itself never scrolls.
+*/
+.page-layout-fill {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.page-layout-bounded .page-layout-fill .MuiPaper-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-layout-bounded .page-layout-fill .MuiTableContainer-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.page-layout-bounded .page-layout-fill .MuiTableHead-root {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.page-layout-bounded
+  .page-layout-fill
+  .MuiTableHead-root
+  .MuiTableCell-root {
+  background: var(--color-bg-subtle);
+}
+
+.page-layout-bounded .page-layout-fill .MuiBottomToolbar-root,
+.page-layout-bounded .page-layout-fill [data-position="bottom"] {
+  flex: 0 0 auto;
+}
+
+/*
+  When the bottom of the card is occupied by a `.page-layout-fill`, the
+  table's own bottom toolbar (pagination) provides the natural vertical
+  rhythm — the card's bottom padding becomes redundant and reads as a
+  blank strip below the pagination. Drop it so the pagination sits flush
+  with the card edge, matching the Subscriptions page.
+*/
+.page-layout-card:has(> .page-layout-fill:last-child) {
+  gap: 0;
+}
+
+.page-layout-card:has(> .page-layout-fill:last-child) > .page-layout-fill {
+  margin-top: clamp(8px, 1vw, 12px);
+}

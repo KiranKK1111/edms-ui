@@ -1,43 +1,32 @@
-import { QuestionCircleOutlined } from "@ant-design/icons";
-import {
-  Button,
-  Col,
-  Form,
-  Input,
-  Row,
-  Select,
-  Checkbox,
-  DatePicker,
-} from "antd";
-import "antd/dist/antd.css";
-import React, { createRef, useEffect, useState } from "react";
+import { Box, Checkbox, FormControlLabel, Grid, InputAdornment } from "@mui/material";
+import React, { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { connect, useDispatch, useSelector } from "react-redux";
+import { FormField } from "../../../design-system";
 import { licenseDetails } from "../../../store/actions/licensedataAction";
 import { bindData } from "../bindData/bindData";
 import "./licensedetails.css";
 import countryList from "country-list";
 import { useParams, useLocation } from "react-router-dom";
-import moment from "moment";
+import dayjs from "../../../design-system/dayjs";
 import { getLicenseCountById } from "../../../store/services/LicenseService";
 
-const { Option } = Select;
-const layout = {
-  labelCol: {
-    span: 8,
-  },
-  wrapperCol: {
-    span: 16,
-  },
-};
-const { TextArea } = Input;
+const LICENCE_TYPE_OPTIONS = [
+  { value: "Enterprise Licence", label: "Enterprise Licence" },
+  { value: "User Licence", label: "User Licence" },
+];
+
+const DATA_PROCUREMENT_OPTIONS = [
+  { value: "Data Leasing", label: "Data Leasing" },
+  { value: "Data Purchase", label: "Data Purchase" },
+  { value: "Free Data", label: "Free Data" },
+];
 
 const Licensedetails = (props) => {
   const dispatch = useDispatch();
   const reduxData = useSelector((state) => state.licenseReq);
   const reduxData1 = useSelector((state) => state.license);
   const params = useParams();
-  const formRef = createRef();
-  const button = createRef();
   const { formData } = props;
   let countryListNew = countryList.getCodeList();
   countryListNew = { GO: "Global", ...countryListNew };
@@ -54,36 +43,86 @@ const Licensedetails = (props) => {
   const [nameFound, setNameFound] = useState(false);
   const [checked, setChecked] = useState(false);
   const location = useLocation();
-  const [form] = Form.useForm();
-  let formFinalData = [];
   const path = location.pathname.includes("addLicense");
   const [noOfLicensesPurchased, setNoOfLicensesPurchased] = useState("");
 
-  const onFinish = (values) => {
+  const {
+    control,
+    watch,
+    setValue,
+    getValues,
+    reset,
+    trigger,
+    setError,
+    clearErrors,
+  } = useForm({
+    defaultValues: {
+      licenceId: "",
+      licenceValue: "",
+      longName: "",
+      expirationDate: null,
+      shortName: "",
+      NoOfLicencePurchased: "",
+      licenceType: "",
+      NoOfLicenceUsed: "",
+      dataProcurementType: "",
+      status: "",
+      contractId: "",
+      licenseStatus: "",
+      "Subscription ID": "",
+    },
+    mode: "onChange",
+  });
+
+  // Adapter that mimics the antd form API so the shared bindData helper and
+  // the existing field read/write call-sites keep working without changes.
+  const form = useMemo(
+    () => ({
+      setFieldsValue: (vals) =>
+        Object.entries(vals).forEach(([k, v]) => setValue(k, v)),
+      getFieldValue: (name) => getValues(name),
+      resetFields: () => reset(),
+    }),
+    [setValue, getValues, reset]
+  );
+
+  const onFinish = () => {
     if (!shortNameFound && !longNameFound) {
-      formFinalData.push(values);
-      if (formFinalData.length === 1) {
-        dispatch(licenseDetails(formFinalData));
-        props.next(true);
+      const v = getValues();
+      const payload = {
+        licenceId: v.licenceId,
+        licenceValue: v.licenceValue,
+        longName: v.longName,
+        expirationDate: v.expirationDate,
+        shortName: v.shortName,
+        NoOfLicencePurchased: v.NoOfLicencePurchased,
+        licenceType: v.licenceType,
+        dataProcurementType: v.dataProcurementType,
+        status: v.status,
+      };
+      if (!path) {
+        payload.NoOfLicenceUsed = v.NoOfLicenceUsed;
       }
+      dispatch(licenseDetails([payload]));
+      props.next(true);
     }
   };
 
   useEffect(() => {
     let agreementRecord = localStorage.getItem("agRecord");
     agreementRecord = JSON.parse(agreementRecord);
-    const ddd = moment("2099-12-31").format("YYYY-MM-DD[T]HH:mm:ss");
-    const existingDate = moment(agreementRecord.agreementExpiryDate).format(
+    const ddd = dayjs("2099-12-31").format("YYYY-MM-DD[T]HH:mm:ss");
+    const existingDate = dayjs(agreementRecord.agreementExpiryDate).format(
       "YYYY-MM-DD[T]HH:mm:ss"
     );
-    formRef.current.setFieldsValue({
+    form.setFieldsValue({
       "Subscription ID": "e6cddc38-674c-4c85-860d-5b2a873fd667",
       contractId: props.contractId,
       licenseStatus: props.licenseStatus,
       expirationDate:
         agreementRecord.agreementNoExpiryFlag.toLowerCase() === "y"
-          ? moment.utc(ddd)
-          : moment.utc(existingDate),
+          ? dayjs.utc(ddd)
+          : dayjs.utc(existingDate),
     });
     let data;
     if (
@@ -121,45 +160,37 @@ const Licensedetails = (props) => {
     } else {
       data = [{ NoOfLicenceUsed: 0, status: "Pending" }];
     }
-    bindData(data, formRef.current);
+    bindData(data, form);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduxData1.selectedLicense, location]);
 
   useEffect(() => {
     if (props.contractId) {
-      formRef.current.setFieldsValue({
+      form.setFieldsValue({
         contractId: props.contractId,
         licenseStatus: props.licenseStatus,
       });
-      if (formRef.current && formRef.current.getFieldValue("licenceName")) {
+      if (getValues("licenceName")) {
         handleDuplicateChange(props.contractId);
       }
     }
     if (formData) {
-      button.current.click();
+      trigger().then((ok) => {
+        if (ok) {
+          onFinish();
+        }
+      });
       props.next(false);
     }
-  }, [formData, formRef]);
-
-  const onRequiredTypeChange = ({ requiredMark }) => {};
-
-  /*const checkValidation = (rule, value) => {
-    const RGX = /^(?:[A-Za-z]+)(?:[A-Za-z0-9 ]*)$/;
-
-    if (RGX.test(value)) {
-      return Promise.resolve("");
-    } else {
-      const msg = "Invalid characters";
-      return Promise.reject(msg);
-    }
-  };*/
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, props.contractId]);
 
   const handleDuplicateChange = (e) => {
     let inputValue = "";
     if (e && e.target) {
       inputValue = e.target.value;
     } else {
-      inputValue =
-        formRef.current && formRef.current.getFieldValue("licenseName");
+      inputValue = getValues("licenseName");
     }
 
     if (props.licenseList) {
@@ -200,26 +231,21 @@ const Licensedetails = (props) => {
     }
   };
 
-  const prefixSelector = (
-    <Select defaultValue="USD">
-      <Option value="USD">USD</Option>
-    </Select>
-  );
-
   const compareDate = (e) => {
     let agreementRecord = localStorage.getItem("agRecord");
     agreementRecord = JSON.parse(agreementRecord);
-    const date1 = moment(e).format("YYYY-MM-DD");
+    const date1 = dayjs(e).format("YYYY-MM-DD");
     const date2 = agreementRecord.agreementExpiryDate
-      ? moment(agreementRecord.agreementExpiryDate).format("YYYY-MM-DD")
+      ? dayjs(agreementRecord.agreementExpiryDate).format("YYYY-MM-DD")
       : "";
 
-    if (!moment(date1).isSame(date2)) {
+    if (!dayjs(date1).isSame(date2)) {
       setChecked(true);
     } else {
       setChecked(false);
     }
   };
+
   const handleNameCheck = (e) => {
     let licenseId = document.getElementsByClassName("LicenseId");
     let inputValue = e.target.value;
@@ -247,8 +273,13 @@ const Licensedetails = (props) => {
       });
       if (result && result.length) {
         setShortNameFound(true);
+        setError("shortName", {
+          type: "manual",
+          message: "Licence name already exists under this agreement",
+        });
       } else {
         setShortNameFound(false);
+        clearErrors("shortName");
       }
     }
   };
@@ -280,8 +311,13 @@ const Licensedetails = (props) => {
       });
       if (result && result.length) {
         setLongNameFound(true);
+        setError("longName", {
+          type: "manual",
+          message: "Licence name already exists under this agreement",
+        });
       } else {
         setLongNameFound(false);
+        clearErrors("longName");
       }
     }
   };
@@ -294,20 +330,20 @@ const Licensedetails = (props) => {
   };
 
   useEffect(() => {
+    let mounted = true;
     if (!path) {
       getLicenseCountById(form.getFieldValue("licenceId")).then((res) => {
+        if (!mounted) return;
         if (res && res.data && res.data.licenseListCount >= 0) {
           form.setFieldsValue({ NoOfLicenceUsed: res.data.licenseListCount });
         }
       });
     }
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  /*useEffect(() => {
-    if (form.getFieldValue("licenceType") === "Enterprise Licence") {
-      form.setFieldsValue({ NoOfLicencePurchased: "Unlimited" });
-    }
-  });*/
 
   useEffect(() => {
     if (
@@ -319,245 +355,149 @@ const Licensedetails = (props) => {
       const date = location.state.record.licenseExpiryDate;
       compareDate(date);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduxData, location]);
 
+  const isUserLicence = watch("licenceType") === "User Licence";
+
   return (
-    <div>
-      <Form
-        form={form}
-        {...layout}
-        onValuesChange={onRequiredTypeChange}
-        ref={formRef}
-        onFinish={onFinish}
-      >
-        <Row gutter={[72, 0]}>
-          <Col span={12}>
-            <Form.Item label="Licence ID" name="licenceId">
-              <Input
-                name="licenceId"
-                placeholder="Licence ID will be generated after submission"
-                disabled
-                className="LicenseId"
-              />
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              label="Licence Value"
-              name="licenceValue"
-              rules={[
-                { required: true, message: "Licence value is mandatory !" },
-                {
-                  pattern: new RegExp("^[0-9]+$"),
-                  message: "Only numbers and positive numbers are allowed",
-                },
-              ]}
-            >
-              <Input
-                addonBefore={prefixSelector}
-                style={{ width: "100%" }}
-                defaultValue={licenseCost}
-                placeholder="Enter Licence Value"
-                name="licenceValue"
-                onChange={props.handleChange}
-              />
-            </Form.Item>
-          </Col>
+    <Box>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="licenceId"
+            label="Licence ID"
+            control={control}
+            placeholder="Licence ID will be generated after submission"
+            disabled
+            className="LicenseId"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="licenceValue"
+            label="Licence Value"
+            control={control}
+            placeholder="Enter Licence Value"
+            required="Licence value is mandatory !"
+            rules={{
+              pattern: {
+                value: /^[0-9]+$/,
+                message: "Only numbers and positive numbers are allowed",
+              },
+            }}
+            onChange={props.handleChange}
+            startAdornment={
+              <InputAdornment position="start">USD</InputAdornment>
+            }
+          />
+        </Grid>
 
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              label="Long Name"
-              name="longName"
-              rules={[
-                {
-                  required: true,
-                  message: "Long name is mandatory!",
-                },
-              ]}
-              {...(longNameFound && {
-                hasFeedback: true,
-                help: longNameFound
-                  ? "Licence name already exists under this agreement"
-                  : "",
-                validateStatus: longNameFound === false ? "success" : "error",
-              })}
-            >
-              <Input
-                placeholder="Enter Long Name"
-                name="longName"
-                type="text"
-                onBlur={handleLongNameCheck}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="longName"
+            label="Long Name"
+            control={control}
+            placeholder="Enter Long Name"
+            required="Long name is mandatory!"
+            onBlur={handleLongNameCheck}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <FormField
+                name="expirationDate"
+                label="Expiration Date"
+                type="date"
+                control={control}
+                required="Please select a expiration date"
+                onChange={compareDate}
               />
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              label={<span className="asterisk-custom">Expiration Date</span>}
-              style={{ padding: 0, margin: 0 }}
-            >
-              <Row>
-                <Col span={12}>
-                  <Form.Item
-                    name="expirationDate"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please select a expiration date",
-                      },
-                    ]}
-                  >
-                    <DatePicker
-                      name="expirationDate"
-                      format="DD/MMM/YYYY"
-                      style={{ width: "100%" }}
-                      onChange={compareDate}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12} style={{ textAlign: "right" }}>
-                  <Form.Item>
-                    <Checkbox
-                      style={{ marginRight: "5px" }}
-                      checked={checked}
-                    />
-                    Different from Agreement
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              label="Short Name"
-              name="shortName"
-              rules={[
-                {
-                  required: true,
-                  message: "Short name is mandatory!",
-                },
-              ]}
-              {...(shortNameFound && {
-                hasFeedback: true,
-                help: shortNameFound
-                  ? "Licence name already exists under this agreement"
-                  : "",
-                validateStatus: shortNameFound === false ? "success" : "error",
-              })}
-            >
-              <Input
-                placeholder="Enter Short Name"
-                name="shortName"
-                type="text"
-                onBlur={handleNameCheck}
-              />
-            </Form.Item>
-          </Col>
+            </Box>
+            <FormControlLabel
+              sx={{ mt: 1, mr: 0, whiteSpace: "nowrap" }}
+              control={<Checkbox size="small" checked={checked} readOnly />}
+              label="Different from Agreement"
+            />
+          </Box>
+        </Grid>
 
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              label="No. of Licences purchased"
-              name="NoOfLicencePurchased"
-              rules={[
-                {
-                  required: true,
-                  message: "No. of licences purchased is mandatory!",
-                },
-                {
-                  pattern:
-                    form.getFieldValue("licenceType") === "User Licence"
-                      ? new RegExp("^[0-9]+$")
-                      : "",
-                  message: "Only numbers and positive numbers are allowed",
-                },
-              ]}
-            >
-              <Input
-                placeholder="No. of Licences purchased"
-                name="NoOfLicencePurchased"
-                type="text"
-                // disabled={form.getFieldValue("licenceType") === "User Licence" ? false : true}
-              />
-            </Form.Item>
-          </Col>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="shortName"
+            label="Short Name"
+            control={control}
+            placeholder="Enter Short Name"
+            required="Short name is mandatory!"
+            onBlur={handleNameCheck}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="NoOfLicencePurchased"
+            label="No. of Licences purchased"
+            control={control}
+            placeholder="No. of Licences purchased"
+            required="No. of licences purchased is mandatory!"
+            rules={{
+              pattern: isUserLicence
+                ? {
+                    value: /^[0-9]+$/,
+                    message: "Only numbers and positive numbers are allowed",
+                  }
+                : undefined,
+            }}
+          />
+        </Grid>
 
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              label="Licence Type"
-              name="licenceType"
-              rules={[
-                { required: true, message: "Licence Type is mandatory !" },
-              ]}
-            >
-              <Select
-                defaultValue="Select"
-                name="licenceType"
-                onChange={(e) => {
-                  props.handleLicenseType(e);
-                  // handleLicenseTypeChange(e);
-                }}
-                className="licenceType"
-              >
-                <Option value="Enterprise Licence">Enterprise Licence</Option>
-                <Option value="User Licence">User Licence</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          {path ? (
-            ""
-          ) : (
-            <Col className="gutter-row" span={12}>
-              <Form.Item label="No. of Licence Used" name="NoOfLicenceUsed">
-                <Input
-                  placeholder="No. of Licence Used"
-                  name="NoOfLicenceUsed"
-                  type="text"
-                  disabled={true}
-                />
-              </Form.Item>
-            </Col>
-          )}
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              label="Data Procurement Type"
-              name="dataProcurementType"
-              rules={[
-                {
-                  required: true,
-                  message: "Data procurement type is mandatory !",
-                },
-              ]}
-            >
-              <Select
-                defaultValue="Select"
-                name="dataProcurementType"
-                onChange={(e) => props.handleLicenseType(e)}
-              >
-                <Option value="Data Leasing">Data Leasing</Option>
-                <Option value="Data Purchase">Data Purchase</Option>
-                <Option value="Free Data">Free Data</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item label="Status" name="status">
-              <Input
-                placeholder="Status"
-                name="status"
-                type="text"
-                disabled={true}
-              />
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item style={{ display: "none" }}>
-              <Button htmlType="submit" ref={button}>
-                Click
-              </Button>
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form>
-    </div>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="licenceType"
+            label="Licence Type"
+            type="select"
+            control={control}
+            placeholder="Select"
+            required="Licence Type is mandatory !"
+            className="licenceType"
+            options={LICENCE_TYPE_OPTIONS}
+            onChange={(e) => props.handleLicenseType(e.target.value)}
+          />
+        </Grid>
+        {path ? null : (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
+              name="NoOfLicenceUsed"
+              label="No. of Licence Used"
+              control={control}
+              placeholder="No. of Licence Used"
+              disabled
+            />
+          </Grid>
+        )}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="dataProcurementType"
+            label="Data Procurement Type"
+            type="select"
+            control={control}
+            placeholder="Select"
+            required="Data procurement type is mandatory !"
+            options={DATA_PROCUREMENT_OPTIONS}
+            onChange={(e) => props.handleLicenseType(e.target.value)}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="status"
+            label="Status"
+            control={control}
+            placeholder="Status"
+            disabled
+          />
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 

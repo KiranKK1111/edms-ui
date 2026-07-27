@@ -1,26 +1,36 @@
 import { checkForString, warning } from "../../utils/warningUtils";
-import { Modal } from "antd";
+import imperativeConfirm from "../../design-system/imperativeConfirm";
 
-jest.mock("antd", () => ({
-  Modal: {
-    warning: jest.fn(),
-  },
+jest.mock("../../design-system/imperativeConfirm", () => ({
+  __esModule: true,
+  default: jest.fn(),
 }));
 
 describe("warning", () => {
-  it("should call Modal.warning with correct title and content", () => {
-    warning();
-    expect(Modal.warning).toHaveBeenCalledWith({
-      title: "A change request is already pending approval.",
-      content: "The current details remain unchanged until the request is approved.",
-    });
+  beforeEach(() => {
+    imperativeConfirm.mockClear();
   });
 
-  it("should call Modal.warning each time it is invoked", () => {
-    Modal.warning.mockClear();
+  it("should call imperativeConfirm without throwing", () => {
+    expect(() => warning()).not.toThrow();
+    expect(imperativeConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("should call imperativeConfirm with the pending-approval title", () => {
+    warning();
+    expect(imperativeConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "A change request is already pending approval.",
+        content:
+          "The current details remain unchanged until the request is approved.",
+      })
+    );
+  });
+
+  it("should call imperativeConfirm each time it is invoked", () => {
     warning();
     warning();
-    expect(Modal.warning).toHaveBeenCalledTimes(2);
+    expect(imperativeConfirm).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -1,70 +1,86 @@
-import { createRef, useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Col, Form, Input, Row, Select, Tooltip } from "antd";
+import { useForm } from "react-hook-form";
+import { Box, Grid, Tooltip } from "@mui/material";
+import { HelpOutlineOutlined as QuestionCircleOutlined } from "@mui/icons-material";
+
+import { FormField } from "../../design-system";
 import { formDataFn } from "../../store/actions/datafeedAction";
-import { bindData } from "../addContract/bindData";
-import { QuestionCircleOutlined } from "@ant-design/icons";
 import "./DatafeedDetails.css";
 
-const { Option } = Select;
-const { TextArea } = Input;
+const DATA_CONFIDENTIALITY_OPTIONS = [
+  { value: "Public", label: "Public" },
+  { value: "Internal", label: "Internal" },
+  { value: "Confidential", label: "Confidential" },
+  { value: "Restricted", label: "Restricted" },
+];
+
+const PERSONAL_DATA_OPTIONS = [
+  { value: "Non-personal data", label: "Non-personal data" },
+  { value: "Non-sensitive personal data", label: "Non-sensitive personal data" },
+  { value: "Sensitive personal data", label: "Sensitive personal data" },
+];
 
 const DatafeedDetails = (props) => {
   const [nameFound, setNameFound] = useState(false);
   const [longNameFound, setLongNameFound] = useState(false);
-  const formRef = createRef();
   const dispatch = useDispatch();
   const location = useLocation();
-  const layout = {
-    labelCol: {
-      span: 6,
-    },
-    wrapperCol: {
-      span: 18,
-    },
-  };
   const data = useSelector((state) => state.datafeedInfo.formData);
   const datafeedsInfo = useSelector(
     (infoState) => infoState.datafeedInfo.datafeedsData
   );
-  const onFinish = (values) => {
-    if (!nameFound && !longNameFound) {
-      dispatch(formDataFn(values));
-      props.next(true);
-    }
-  };
-  useEffect(() => {
-    if (props.formData) {
-      formRef.current.submit();
-      props.next(false);
-    }
-  }, [props.formData]);
 
+  const { control, getValues, reset, setValue, trigger, setError, clearErrors } =
+    useForm({
+      defaultValues: {
+        datafeedId: "",
+        status: "",
+        dataSetName: "",
+        dataConfidentiality: "",
+        longName: "",
+        personalDataType: "",
+        shortName: "",
+        description: "",
+      },
+      mode: "onChange",
+    });
+
+  // Bind existing data in edit / navigate-back scenarios, otherwise seed the
+  // status field with "Pending" (mirrors the original antd form behaviour).
   useEffect(() => {
     if (data && Object.keys(data).length > 1) {
-      const revisedData = ({
-        documentationLink: url,
-        feedDescription: description,
-        feedId: datafeedId,
-        feedStatus: status,
-        personalData: personalDataType,
-        ...rest
-      }) => ({
-        url,
-        description,
-        datafeedId,
-        status,
-        personalDataType,
-        ...rest,
+      reset({
+        datafeedId: data.feedId || "",
+        status: data.feedStatus || "",
+        dataSetName: data.dataSetName || "",
+        dataConfidentiality: data.dataConfidentiality || "",
+        longName: data.longName || "",
+        personalDataType: data.personalData || "",
+        shortName: data.shortName || "",
+        description: data.feedDescription || "",
       });
-      bindData([revisedData(data)], formRef.current);
     } else {
-      formRef.current.setFieldsValue({
-        status: "Pending",
-      });
+      setValue("status", "Pending");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
+
+  // The parent flips `formData` to true when Next is clicked. Validate, and on
+  // success persist + advance to the next step.
+  useEffect(() => {
+    if (props.formData) {
+      trigger().then((ok) => {
+        if (ok && !nameFound && !longNameFound) {
+          dispatch(formDataFn(getValues()));
+          props.next(true);
+        }
+      });
+      props.next(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.formData]);
 
   const handleNameCheck = (e, name) => {
     let inputValue = e.target.value;
@@ -86,6 +102,33 @@ const DatafeedDetails = (props) => {
       return false;
     }
   };
+
+  const handleLongNameBlur = (e) => {
+    const found = handleNameCheck(e, "longName");
+    setLongNameFound(found);
+    if (found) {
+      setError("longName", {
+        type: "manual",
+        message: "Data Feed long name already exists under this DataSet",
+      });
+    } else {
+      clearErrors("longName");
+    }
+  };
+
+  const handleShortNameBlur = (e) => {
+    const found = handleNameCheck(e, "shortName");
+    setNameFound(found);
+    if (found) {
+      setError("shortName", {
+        type: "manual",
+        message: "Data Feed short name already exists under this DataSet",
+      });
+    } else {
+      clearErrors("shortName");
+    }
+  };
+
   const toolTip = (val = "") => {
     const text = val.includes("Dataset")
       ? "The dataset that this feed is under."
@@ -94,164 +137,105 @@ const DatafeedDetails = (props) => {
       <>
         {val}
         <Tooltip title={text}>
-          <span style={{ color: "#007AFF" }}>
-            <QuestionCircleOutlined /> 
+          <span style={{ color: "var(--color-primary)" }}>
+            <QuestionCircleOutlined fontSize="inherit" />
           </span>
         </Tooltip>
       </>
     );
   };
+
   return (
     <div id="main">
-      <Form {...layout} name="br-one" ref={formRef} onFinish={onFinish}>
-        <Row gutter={[78, 0]}>
-          <Col span={12}>
-            <Form.Item name="datafeedId" label="Data Feed ID">
-              <Input
-                placeholder="Auto-generated by system"
-                name="datafeedId"
-                type="text"
-                disabled={true}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="status" label="Status">
-              <Input
-                placeholder="Auto-generated by system"
-                name="status"
-                type="text"
-                disabled={true}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={[78, 0]}>
-          <Col span={12}>
-            <Form.Item
-              id="dataSetNames"
+      <Box>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
+              name="datafeedId"
+              label="Data Feed ID"
+              control={control}
+              placeholder="Auto-generated by system"
+              disabled
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
+              name="status"
+              label="Status"
+              control={control}
+              placeholder="Auto-generated by system"
+              disabled
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
               name="dataSetName"
               label={toolTip("Dataset Short Name ")}
-            >
-              <Input
-                placeholder="Dataset Short Name"
-                name="dataSetName"
-                type="text"
-                disabled={true}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
+              control={control}
+              placeholder="Dataset Short Name"
+              disabled
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
               name="dataConfidentiality"
               label="Data Confidentiality"
-              rules={[
-                {
-                  required: true,
-                  message: "Data confidentiality is mandatory !",
-                },
-              ]}
-            >
-              <Select defaultValue="Select" name="dataConfidentiality">
-                <Option value="Public">Public</Option>
-                <Option value="Internal">Internal</Option>
-                <Option value="Confidential">Confidential</Option>
-                <Option value="Restricted">Restricted</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={[78, 0]}>
-          <Col span={12}>
-            <Form.Item
+              type="select"
+              control={control}
+              required="Data confidentiality is mandatory !"
+              options={DATA_CONFIDENTIALITY_OPTIONS}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
               name="longName"
               label="Long Name"
-              rules={[{ required: true, message: "Long name is mandatory !" }]}
-              {...(longNameFound && {
-                hasFeedback: true,
-                help: longNameFound
-                  ? "Data Feed long name already exists under this DataSet"
-                  : "",
-                validateStatus: longNameFound === false ? "success" : "error",
-              })}
-            >
-              <Input
-                placeholder="Long Name"
-                name="longName"
-                type="text"
-                onBlur={(e) => setLongNameFound(handleNameCheck(e, "longName"))}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              id="personalDataTypes"
+              control={control}
+              placeholder="Long Name"
+              required="Long name is mandatory !"
+              onBlur={handleLongNameBlur}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
               name="personalDataType"
               label={toolTip("Personal Data Type")}
-              rules={[ 
-                {
-                  required: true,
-                  message: "Personal data type is mandatory !",
-                },
-              ]}
-            >
-              <Select defaultValue="Select" name="personalDataType">
-                <Option value="Non-personal data">Non-personal data</Option>
-                <Option value="Non-sensitive personal data">
-                  Non-sensitive personal data
-                </Option>
-                <Option value="Sensitive personal data">
-                  Sensitive personal data
-                </Option>
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={[78, 0]}>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
+              type="select"
+              control={control}
+              required="Personal data type is mandatory !"
+              options={PERSONAL_DATA_OPTIONS}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
               name="shortName"
               label="Short Name"
-              rules={[{ required: true, message: "Short name is mandatory !" }]}
-              {...(nameFound && {
-                hasFeedback: true,
-                help: nameFound
-                  ? "Data Feed short name already exists under this DataSet"
-                  : "",
-                validateStatus: nameFound === false ? "success" : "error",
-              })}
-            >
-              <Input
-                placeholder="Short Name"
-                name="shortName"
-                type="text"
-                onBlur={(e) => setNameFound(handleNameCheck(e, "shortName"))}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={[78, 0]}>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              label="Description"
+              control={control}
+              placeholder="Short Name"
+              required="Short name is mandatory !"
+              onBlur={handleShortNameBlur}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormField
               name="description"
-              rules={[
-                { required: true, message: "Description is mandatory !" },
-              ]}
-            >
-              <TextArea
-                rows={4}
-                maxLength={1000}
-                showCount
-                placeholder="A description about the Data Feed(Max 1000 characters)"
-                name="description"
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form>
+              label="Description"
+              type="textarea"
+              rows={4}
+              control={control}
+              required="Description is mandatory !"
+              placeholder="A description about the Data Feed(Max 1000 characters)"
+              inputProps={{ maxLength: 1000 }}
+            />
+          </Grid>
+        </Grid>
+      </Box>
     </div>
   );
 };
 
-export default DatafeedDetails;
+export default memo(DatafeedDetails);

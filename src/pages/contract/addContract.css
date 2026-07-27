@@ -1,57 +1,232 @@
-.header-one{
-    box-sizing: border-box;
-    height: 129px; 
-    
-    border: 1px solid #DFE3E9;
-    border-radius: 4px;
-    background-color: #FFFFFF;
-    box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
-    padding: 0px 25px;
+.header-one {
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  padding: 8px 24px;
 }
 
-.reactangletwo{
-    box-sizing: border-box;
-    padding-left: 24px;
-    margin-left: -24px;
-    border-radius: 4px;
-    background-color: #FFFFFF;
-    box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
-    padding: 35px;
-      margin: 24px;
-      
-  }
+.header-one-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
 
-  .add-new-license-headers{
-    height: 28px;
+.header-one-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reactangletwo {
+  box-sizing: border-box;
+  padding-left: 24px;
+  margin-left: -24px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  padding: 35px;
+  margin: 24px;
+}
+
+.add-new-license-headers {
+  height: 28px;
   width: 119px;
-  color: #0F1217;
-  font-family: Inter;
+  color: var(--color-text);
   font-size: 20px;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 28px;
-  }
-  .arrow-left{
-    height: 16px;
-    width: 16px;
-    color: #000000;
-    margin-right: 7px;
-  }
+}
+.arrow-left {
+  height: 16px;
+  width: 16px;
+  color: var(--color-text);
+  margin-right: 7px;
+}
 
-  .alert-header{
-      margin: 24px;
-      box-sizing: border-box;
-  height: 38px;
- 
-  border: 1px solid #FFEEBB;
-  border-radius: 4px;
-  background-color: #FFF9E7;
-  box-shadow: 0 1px 4px 0 rgba(223,227,233,0.5);
+.alert-header {
+  margin: 24px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-warning-bg);
+  box-shadow: var(--shadow-sm);
+}
+.home-page {
+  margin-left: -25px;
+  margin-top: -13px;
+}
+.contract-banner {
+  margin: 20px 24px 0px 24px !important;
+}
+
+@media (max-width: 768px) {
+  .header-one {
+    padding: 8px 12px;
   }
-  .home-page{
-    margin-left: -25px;
-    margin-top: -13px;
+  .header-one-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .header-one-actions {
+    justify-content: flex-end;
+  }
+  .home-page {
+    margin-left: 0;
+    margin-top: 0;
   }
   .contract-banner {
-    margin: 20px 24px 0px 24px !important; 
+    margin: 12px !important;
+  }
+  .reactangletwo {
+    padding: 16px;
+    margin: 12px;
+    margin-left: 12px;
+  }
+}
+
+
+/* ------------------------------------------------------------------ *
+   Add / Edit Agreement — match the Add Entity wizard:
+   • the step content fills the card and the Previous/Next actions are
+     pushed all the way to the bottom edge.
+   • antd fields and labels get clear, theme-aware contrast.
+ * ------------------------------------------------------------------ */
+
+/* RequestFormSteps renders <div id="main"> directly inside the form card
+   content. Make it a full-height flex column so the action row can sink to
+   the bottom exactly like the MUI entity wizard footer. */
+.page-form-content #main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 100%;
+}
+
+.page-form-content #main .steps-content {
+  flex: 1 1 auto;
+}
+
+/* Pin the Previous / Next buttons to the bottom of the card with a divider,
+   mirroring .page-form-actions on the entity page. Previous sits on the
+   left, Next (primary) is pushed to the right in every step state. */
+.page-form-content #main .steps-action {
+  margin-top: auto;
+  padding-top: clamp(14px, 1.6vw, 20px);
+  border-top: 1px solid var(--color-border-secondary);
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Previous (the non-primary button) is pushed to the far left; Next /
+   primary stays on the right via the flex-end default above. */
+.page-form-content #main .steps-action .ant-btn:not(.ant-btn-primary) {
+  margin-right: auto;
+}
+
+/* Labels — stronger colour/weight so they read clearly as field labels. */
+.page-form-content .ant-form-horizontal .ant-form-item-label > label,
+.page-form-content .ant-form-vertical .ant-form-item-label > label {
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Required asterisk stays visible against the theme. */
+.page-form-content .ant-form-item-required::before {
+  color: var(--color-error-text, #d4380d);
+}
+
+/* Inputs, selects, date pickers — visible borders + theme surface so each
+   field clearly reads as an editable control. */
+.page-form-content .ant-input,
+.page-form-content .ant-input-affix-wrapper,
+.page-form-content .ant-input-number,
+.page-form-content .ant-input-group-addon,
+.page-form-content .ant-picker,
+.page-form-content .ant-select .ant-select-selector {
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
+  min-height: 36px;
+}
+
+/* Vertically centre the select's chosen value within the taller control. */
+.page-form-content .ant-select-single .ant-select-selector .ant-select-selection-item,
+.page-form-content .ant-select-single .ant-select-selector .ant-select-selection-placeholder {
+  line-height: 34px;
+}
+
+/* Clear focus + hover affordance using the theme accent. */
+.page-form-content .ant-input:hover,
+.page-form-content .ant-input-affix-wrapper:hover,
+.page-form-content .ant-input-number:hover,
+.page-form-content .ant-picker:hover,
+.page-form-content .ant-select:hover .ant-select-selector {
+  border-color: var(--color-primary) !important;
+}
+
+.page-form-content .ant-input:focus,
+.page-form-content .ant-input-focused,
+.page-form-content .ant-input-affix-wrapper-focused,
+.page-form-content .ant-picker-focused,
+.page-form-content .ant-select-focused .ant-select-selector {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px var(--color-primary-bg) !important;
+}
+
+/* Disabled fields (Agreement ID, Name, Status) stay legible but muted. */
+.page-form-content .ant-input[disabled],
+.page-form-content .ant-input-affix-wrapper-disabled {
+  background-color: var(--color-bg-subtle) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+
+/* Currency prefix (USD) on the Agreement Value field. The addon wraps an
+   antd <Select>; keep the addon as the bordered shell and make the inner
+   select borderless so it reads as one clean control instead of a cramped,
+   double-bordered box. */
+.page-form-content .ant-input-group-addon {
+  padding: 0 8px !important;
+}
+
+.page-form-content .ant-input-group-addon .ant-select {
+  min-width: 74px;
+  margin: 0;
+}
+
+.page-form-content .ant-input-group-addon .ant-select .ant-select-selector {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-height: 34px !important;
+  padding: 0 4px !important;
+}
+
+.page-form-content
+  .ant-input-group-addon
+  .ant-select-single
+  .ant-select-selector
+  .ant-select-selection-item {
+  line-height: 34px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+
+/* Per design request: no field labels on the Add/Edit Agreement wizard —
+   the placeholders identify each field. Scoped to #main so only the
+   agreement steps are affected, not other forms. */
+.page-form-content #main .ant-form-item-label {
+  display: none;
 }

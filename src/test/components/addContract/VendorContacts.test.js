@@ -1,16 +1,17 @@
+import React from "react";
 import * as redux from "react-redux";
-import { configure, shallow, sleep, mount } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
+import { render, screen } from "@testing-library/react";
 
-import { Form, Button } from "antd";
 import VendorContacts from "../../../components/addContract/VendorContacts";
-
-configure({ adapter: new Adapter() });
 
 const mockDispatch = jest.fn();
 jest.mock("react-redux", () => ({
   useSelector: jest.fn(),
   useDispatch: () => mockDispatch,
+}));
+
+jest.mock("../../../components/addContract/bindData", () => ({
+  bindData: jest.fn(),
 }));
 
 const contract = {
@@ -19,15 +20,23 @@ const contract = {
 };
 const state = { contract };
 
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(state));
+describe("VendorContacts", () => {
+  beforeEach(() => {
+    jest
+      .spyOn(redux, "useSelector")
+      .mockImplementation((callback) => callback(state));
+  });
 
-const wrapper = shallow(<VendorContacts />);
+  it("should render the Agreement Limitations field", () => {
+    render(<VendorContacts next={jest.fn()} />);
+    expect(screen.getAllByText("Agreement Limitations").length).toBeGreaterThanOrEqual(1);
+  });
 
-describe("Parent", () => {
-  it("wrapper", () => {
-    const element = wrapper.find(Form);
-    expect(element.length).toBe(1);
+  it("should render the agreement limitations textarea", () => {
+    const { container } = render(<VendorContacts next={jest.fn()} />);
+    expect(
+      screen.getByPlaceholderText("Agreement Limitations")
+    ).toBeInTheDocument();
+    expect(container.querySelector("textarea")).toBeInTheDocument();
   });
 });

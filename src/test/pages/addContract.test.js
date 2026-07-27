@@ -1,83 +1,43 @@
-import * as redux from "react-redux";
-import { configure, shallow } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
-import { Button, Breadcrumb } from "antd";
+import React from "react";
+import { render, screen } from "@testing-library/react";
+
+// addContract is now a thin wrapper that delegates to the generic
+// RecordFormPage controller for the "agreement" resource. Mock the controller
+// so this unit test verifies only the wrapper's wiring (resource + mode).
+let mockPathname = "/masterData/StageOne/addAgreement";
+jest.mock("react-router-dom", () => ({
+  useHistory: () => ({ location: { pathname: mockPathname } }),
+}));
+
+jest.mock("../../components/recordForm/RecordFormPage", () => ({
+  __esModule: true,
+  default: (props) => (
+    <div
+      data-testid="record-form-page"
+      data-resource={props.resource}
+      data-mode={props.mode}
+    />
+  ),
+}));
 
 import AddContract from "../../pages/contract/addContract";
 
-configure({ adapter: new Adapter() });
-
-const mockDispatch = jest.fn();
-const mockPush = jest.fn();
-
-jest.mock("react-redux", () => ({
-  useSelector: jest.fn(),
-  useDispatch: () => mockDispatch,
-  connect: () => (Component) => Component,
-}));
-
-jest.mock("react-router-dom", () => ({
-  __esModule: true,
-  useParams: jest.fn().mockReturnValue({}),
-  useHistory: () => ({
-    push: mockPush,
-    location: { pathname: "/addAgreement" },
-  }),
-  Link: ({ children }) => children,
-}));
-
-const contractState = {
-  contract: {
-    saveFinalData: {},
-    data: [[]],
-    contractDetails: null,
-    selectedContract: [{ agreementStatus: "Active" }],
-  },
-  license: {
-    licenseList: [],
-  },
-};
-
-jest
-  .spyOn(redux, "useSelector")
-  .mockImplementation((callback) => callback(contractState));
-
-const mockProps = {
-  match: { params: {} },
-};
-
-const wrapper = shallow(<AddContract {...mockProps} />);
-
-describe("AddContract", () => {
-  it("should render the component", () => {
-    expect(wrapper.exists()).toBe(true);
+describe("AddContract (wrapper)", () => {
+  it("renders RecordFormPage for the agreement resource in create mode", () => {
+    mockPathname = "/masterData/StageOne/addAgreement";
+    render(<AddContract />);
+    const el = screen.getByTestId("record-form-page");
+    expect(el).toBeInTheDocument();
+    expect(el).toHaveAttribute("data-resource", "agreement");
+    expect(el).toHaveAttribute("data-mode", "create");
   });
 
-  it("should render Breadcrumb", () => {
-    expect(wrapper.find(Breadcrumb).length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("should render Cancel button", () => {
-    const buttons = wrapper.find(Button);
-    const cancelBtn = buttons.filterWhere(
-      (btn) => btn.children().text() === "Cancel"
+  it("renders in edit mode on the modifyAgreement route", () => {
+    mockPathname = "/masterData/StageOne/modifyAgreement";
+    render(<AddContract />);
+    expect(screen.getByTestId("record-form-page")).toHaveAttribute(
+      "data-mode",
+      "edit"
     );
-    expect(cancelBtn.length).toBe(1);
-  });
-
-  it("should render Submit button", () => {
-    const buttons = wrapper.find(Button);
-    const submitBtn = buttons.filterWhere(
-      (btn) => btn.children().text() === "Submit"
-    );
-    expect(submitBtn.length).toBe(1);
-  });
-
-  it("Submit button should be disabled initially", () => {
-    const buttons = wrapper.find(Button);
-    const submitBtn = buttons.filterWhere(
-      (btn) => btn.children().text() === "Submit"
-    );
-    expect(submitBtn.prop("disabled")).toBe(true);
   });
 });

@@ -1,22 +1,34 @@
-import { QuestionCircleOutlined } from "@ant-design/icons";
-import { Button, Col, Form, Radio, Row, Select } from "antd";
-import React, { createRef, useEffect, useState } from "react";
+import { HelpOutlineOutlined } from "@mui/icons-material";
+import { Box, Grid, Tooltip } from "@mui/material";
+import React, { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import { FormField } from "../../../design-system";
 import { dataset } from "../../../store/actions/licensedataAction";
 import { bindData } from "../bindData/bindData";
-import { useParams } from "react-router-dom";
 
-const layout = {
-  labelCol: {
-    span: 6,
-  },
-  wrapperCol: {
-    span: 18,
-  },
-};
+const YES_NO_OPTIONS = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+];
+
+// Render a field label with the antd-style help tooltip affordance.
+const labelWithTip = (text) => (
+  <Box
+    component="span"
+    sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+  >
+    {text}
+    <Tooltip title={text}>
+      <HelpOutlineOutlined
+        sx={{ fontSize: 16, color: "var(--color-primary)" }}
+      />
+    </Tooltip>
+  </Box>
+);
 
 function Dataset(props) {
-  const { Option } = Select;
   const reduxData1 = useSelector((state) => state.license);
   const [personalData] = useState(props.personalData);
   const [dataValidity] = useState(props.dataValidity);
@@ -26,34 +38,42 @@ function Dataset(props) {
   const [securityRating, setSecurityRating] = useState(null);
 
   const [metaDataViewPermission] = useState(props.metaDataViewPermission);
-  const [form] = Form.useForm();
 
   const dispatch = useDispatch();
   const reduxData = useSelector((state) => state.licenseReq);
 
-  const formRef = createRef();
- 
-  const button = createRef();
-
   const { formData } = props;
 
-  let formFinalData = [];
-  const onFinish = (values) => {
-    formFinalData.push(values);
-    if (formFinalData.length === 1) {
-      dispatch(dataset(formFinalData));
-      props.next(true);
-    }
-  };
+  const { control, setValue, getValues, reset, trigger } = useForm({
+    defaultValues: {
+      personalData: "yes",
+      securityRating: "",
+      dataValidity: "yes",
+      metaData: "yes",
+      metaDataViewPermission: "yes",
+    },
+    mode: "onChange",
+  });
+
+  // Adapter that mimics the antd form API so the shared bindData helper keeps
+  // working without modification.
+  const form = useMemo(
+    () => ({
+      setFieldsValue: (vals) =>
+        Object.entries(vals).forEach(([k, v]) => setValue(k, v)),
+      getFieldValue: (name) => getValues(name),
+      resetFields: () => reset(),
+    }),
+    [setValue, getValues, reset]
+  );
 
   useEffect(() => {
     if (!params.id) {
-      
-      formRef.current.setFieldsValue({
-        ["personalData"]: "yes",
-        ["dataValidity"]: "yes",
-        ["metaData"]: "yes",
-        ["metaDataViewPermission"]: "yes",
+      form.setFieldsValue({
+        personalData: "yes",
+        dataValidity: "yes",
+        metaData: "yes",
+        metaDataViewPermission: "yes",
       });
     }
 
@@ -63,161 +83,121 @@ function Dataset(props) {
         : reduxData1.selectedLicense;
 
     if (typeof selectedData === "object" && Object.keys(selectedData).length) {
-      bindData(selectedData, formRef.current);
+      bindData(selectedData, form);
       setSecurityRating(
         selectedData[0] && selectedData[0].securityRating
           ? selectedData[0].securityRating
           : null
       );
     } else {
-      bindData([], formRef.current);
-      
-      formRef.current.setFieldsValue({
-        ["personalData"]: "yes",
-        ["dataValidity"]: "yes",
-        ["metaData"]: "yes",
-        ["metaDataViewPermission"]: "yes",
+      bindData([], form);
+
+      form.setFieldsValue({
+        personalData: "yes",
+        dataValidity: "yes",
+        metaData: "yes",
+        metaDataViewPermission: "yes",
       });
     }
-    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (formData) {
-      button.current.click();
-      
+      trigger().then((ok) => {
+        if (ok) {
+          const v = getValues();
+          dispatch(
+            dataset([
+              {
+                personalData: v.personalData,
+                securityRating: v.securityRating,
+                dataValidity: v.dataValidity,
+                metaData: v.metaData,
+                metaDataViewPermission: v.metaDataViewPermission,
+              },
+            ])
+          );
+          props.next(true);
+        }
+      });
+
       props.next(false);
     }
-    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
 
+  // Preserve the antd Radio.Group onChange contract (handleChange reads
+  // e.target.name and e.target.value in the parent).
+  const handleRadioChange = (name) => (e) =>
+    props.handleChange({ target: { name, value: e.target.value } });
+
   return (
-    <div>
-      <Form
-        form={form}
-        layout="horizontal"
-        {...layout}
-        labelCol={{ span: 10 }}
-        ref={formRef}
-        onFinish={onFinish}
-      >
-        <Row gutter={[72, 0]}>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              name="radio-group1"
-              label="Dataset contains Personal Data"
-              tooltip={{
-                title: "Dataset contains Personal Data",
-                icon: <QuestionCircleOutlined style={{ color: "#1890ff" }} />,
-              }}
-            >
-              <Radio.Group
-                name="personalData"
-                defaultValue={personalData}
-                onChange={(e) => props.handleChange(e)}
-              >
-                <Radio.Button value="yes">Yes</Radio.Button>
-                <Radio.Button value="no">No</Radio.Button>
-              </Radio.Group>
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              name="securityRating"
-              label="Information Security Rating"
-              tooltip={{
-                title: "Information Security Rating",
-                icon: <QuestionCircleOutlined style={{ color: "#1890ff" }} />,
-              }}
-              rules={[
-                {
-                  required: true,
-                  message: "Information Security Rating is mandatory !",
-                },
-              ]}
-            >
-              <Select
-                
-                name="securityRating"
-                defaultValue={securityRating}
-                onChange={(e) => props.handleInformationSecurityRating(e)}
-                placeholder="Select your security rating"
-                allowClear
-              >
-                <Option value="C1-Public data">Public data</Option>
-                <Option value="C2-Internal data">Internal data</Option>
-                <Option value="C3-Confidential data">Confidential data</Option>
-                <Option value="C4-Restrcited data">Restricted data</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              name="dataValidity"
-              label="Data Validity"
-              tooltip={{
-                title: "Data Validity",
-                icon: <QuestionCircleOutlined style={{ color: "#1890ff" }} />,
-              }}
-            >
-              <Radio.Group
-                name="dataValidity"
-                defaultValue={dataValidity}
-                onChange={(e) => props.handleChange(e)}
-              >
-                <Radio.Button value="yes">Yes</Radio.Button>
-                <Radio.Button value="no">No</Radio.Button>
-              </Radio.Group>
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              name="metaData"
-              label="Metadata Available"
-              tooltip={{
-                title: "Metadata Available",
-                icon: <QuestionCircleOutlined style={{ color: "#1890ff" }} />,
-              }}
-            >
-              <Radio.Group
-                name="metaData"
-                defaultValue={metaData}
-                onChange={(e) => props.handleChange(e)}
-              >
-                <Radio.Button value="yes">Yes</Radio.Button>
-                <Radio.Button value="no">No</Radio.Button>
-              </Radio.Group>
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item
-              name="metaDataViewPermission"
-              label="Metadata Viewing Permission"
-              tooltip={{
-                title: "Metadata Viewing Permission",
-                icon: <QuestionCircleOutlined style={{ color: "#1890ff" }} />,
-              }}
-            >
-              <Radio.Group
-                name="metaDataViewPermission"
-                defaultValue={metaDataViewPermission}
-                onChange={(e) => props.handleChange(e)}
-              >
-                <Radio.Button value="yes">Yes</Radio.Button>
-                <Radio.Button value="no">No</Radio.Button>
-              </Radio.Group>
-            </Form.Item>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Form.Item style={{ display: "none" }}>
-              <Button htmlType="submit" ref={button}>
-                Click
-              </Button>
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form>
-    </div>
+    <Box>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="personalData"
+            type="radio"
+            row
+            control={control}
+            label={labelWithTip("Dataset contains Personal Data")}
+            options={YES_NO_OPTIONS}
+            onChange={handleRadioChange("personalData")}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="securityRating"
+            type="select"
+            control={control}
+            label={labelWithTip("Information Security Rating")}
+            required="Information Security Rating is mandatory !"
+            placeholder="Select your security rating"
+            onChange={(e) => props.handleInformationSecurityRating(e.target.value)}
+            options={[
+              { value: "C1-Public data", label: "Public data" },
+              { value: "C2-Internal data", label: "Internal data" },
+              { value: "C3-Confidential data", label: "Confidential data" },
+              { value: "C4-Restrcited data", label: "Restricted data" },
+            ]}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="dataValidity"
+            type="radio"
+            row
+            control={control}
+            label={labelWithTip("Data Validity")}
+            options={YES_NO_OPTIONS}
+            onChange={handleRadioChange("dataValidity")}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="metaData"
+            type="radio"
+            row
+            control={control}
+            label={labelWithTip("Metadata Available")}
+            options={YES_NO_OPTIONS}
+            onChange={handleRadioChange("metaData")}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormField
+            name="metaDataViewPermission"
+            type="radio"
+            row
+            control={control}
+            label={labelWithTip("Metadata Viewing Permission")}
+            options={YES_NO_OPTIONS}
+            onChange={handleRadioChange("metaDataViewPermission")}
+          />
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 
